@@ -197,23 +197,42 @@ const receivePayment = async (req, res) => {
 // Get all transactions
 const getTransactions = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
-        const role = req.user.role;
+        const { branchId, search, startDate, endDate, method, status } = req.query;
+        const { role, tenantId: userTenantId } = req.user;
 
-        let invoices;
-        if (role === 'SUPER_ADMIN') {
-            invoices = await prisma.invoice.findMany({
-                where: { status: 'Paid' },
-                include: { member: true },
-                orderBy: { paidDate: 'desc' }
-            });
-        } else {
-            invoices = await prisma.invoice.findMany({
-                where: { tenantId, status: 'Paid' },
-                include: { member: true },
-                orderBy: { paidDate: 'desc' }
-            });
+        let where = {};
+        if (role !== 'SUPER_ADMIN') {
+            where.tenantId = userTenantId || 1;
+        } else if (branchId && branchId !== 'all') {
+            where.tenantId = parseInt(branchId);
         }
+
+        if (status && status !== 'All Status') {
+            where.status = status;
+        }
+
+        if (method && method !== 'All Methods') {
+            where.paymentMode = method;
+        }
+
+        if (startDate || endDate) {
+            where.paidDate = {};
+            if (startDate) where.paidDate.gte = new Date(startDate);
+            if (endDate) where.paidDate.lte = new Date(endDate);
+        }
+
+        if (search) {
+            where.OR = [
+                { invoiceNumber: { contains: search } },
+                { member: { name: { contains: search } } }
+            ];
+        }
+
+        const invoices = await prisma.invoice.findMany({
+            where,
+            include: { member: true },
+            orderBy: { paidDate: 'desc' }
+        });
 
         const formatted = invoices.map(inv => ({
             id: inv.invoiceNumber,
@@ -221,10 +240,31 @@ const getTransactions = async (req, res) => {
             type: 'Membership',
             method: inv.paymentMode || 'Cash',
             amount: Number(inv.amount),
-            date: inv.paidDate ? inv.paidDate.toISOString().split('T')[0] : (inv.dueDate ? inv.dueDate.toISOString().split('T')[0] : 'N/A')
+            date: inv.paidDate || inv.dueDate,
+            status: inv.status
         }));
 
-        res.status(200).json(formatted);
+        // Stats Calculation
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todayCollection = invoices
+            .filter(i => i.status === 'Paid' && i.paidDate && new Date(i.paidDate) >= today)
+            .reduce((acc, i) => acc + Number(i.amount), 0);
+
+        const filteredTotal = invoices.reduce((acc, i) => acc + Number(i.amount), 0);
+        const completed = invoices.filter(i => i.status === 'Paid').reduce((acc, i) => acc + Number(i.amount), 0);
+        const pending = invoices.filter(i => i.status !== 'Paid').reduce((acc, i) => acc + Number(i.amount), 0);
+
+        res.status(200).json({
+            transactions: formatted,
+            stats: {
+                todayCollection,
+                filteredTotal,
+                completed,
+                pending
+            }
+        });
     } catch (error) {
         console.error('Error fetching transactions:', error);
         res.status(500).json({ message: 'Failed to fetch transactions' });

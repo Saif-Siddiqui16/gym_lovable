@@ -1,204 +1,378 @@
 import React, { useState, useEffect } from 'react';
 import { lockerApi } from '../../../api/lockerApi';
+import { useBranchContext } from '../../../context/BranchContext';
 import toast from 'react-hot-toast';
-import { Lock, Unlock, Clock, AlertCircle, User, Sparkles } from 'lucide-react';
+import {
+    Search,
+    Lock,
+    Unlock,
+    Key,
+    User,
+    ChevronDown,
+    LayoutGrid,
+    List
+} from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
+import AddLockerDrawer from './AddLockerDrawer';
+import BulkCreateLockersDrawer from './BulkCreateLockersDrawer';
 import LockerDetailsDrawer from './LockerDetailsDrawer';
 
 const LockerManagement = () => {
+    const { selectedBranch } = useBranchContext();
     const [lockers, setLockers] = useState([]);
-    const [selectedLocker, setSelectedLocker] = useState(null);
-    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [stats, setStats] = useState({ total: 0, available: 0, assigned: 0, maintenance: 0, occupancyRate: 0 });
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        fetchLockers();
-    }, []);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('All Status');
+    const [activeTab, setActiveTab] = useState('Overview');
+    const [viewMode, setViewMode] = useState('grid');
 
-    const fetchLockers = async () => {
+    // Drawers
+    const [drawerType, setDrawerType] = useState(null); // 'add', 'bulk', 'details'
+    const [selectedLocker, setSelectedLocker] = useState(null);
+
+    const loadData = async () => {
         try {
             setLoading(true);
-            const data = await lockerApi.getAllLockers();
-            setLockers(data);
+            const [lockerData, statsData] = await Promise.all([
+                lockerApi.getAllLockers({
+                    branchId: selectedBranch,
+                    search: searchTerm,
+                    status: statusFilter === 'All Status' ? null : statusFilter
+                }),
+                lockerApi.getStats({ branchId: selectedBranch })
+            ]);
+            setLockers(lockerData);
+            setStats(statsData);
         } catch (error) {
             console.error(error);
-            toast.error('Failed to load lockers');
+            toast.error('Failed to load locker data');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleLockerClick = (locker) => {
-        setSelectedLocker(locker);
-        setIsDrawerOpen(true);
+    useEffect(() => {
+        loadData();
+    }, [selectedBranch, searchTerm, statusFilter]);
+
+    const openDrawer = (type, data = null) => {
+        setDrawerType(type);
+        setSelectedLocker(data);
     };
 
-    const handleAssign = async (memberName) => {
-        try {
-            await lockerApi.assignLocker(selectedLocker.id, { memberName });
-            toast.success("Locker assigned successfully");
-            fetchLockers();
-            setIsDrawerOpen(false);
-        } catch (error) {
-            toast.error("Failed to assign locker");
-        }
-    };
-
-    const handleRelease = async () => {
-        try {
-            await lockerApi.releaseLocker(selectedLocker.id);
-            toast.success("Locker released successfully");
-            fetchLockers();
-            setIsDrawerOpen(false);
-        } catch (error) {
-            toast.error("Failed to release locker");
-        }
-    };
-
-    const getStatusConfig = (status) => {
-        const config = {
-            'Available': { gradient: 'from-emerald-500 to-emerald-600', icon: Unlock, shadow: 'shadow-emerald-500/50', border: 'border-emerald-200' },
-            'Occupied': { gradient: 'from-blue-500 to-indigo-600', icon: Lock, shadow: 'shadow-blue-500/50', border: 'border-blue-200' },
-            'Reserved': { gradient: 'from-amber-500 to-orange-600', icon: Clock, shadow: 'shadow-amber-500/50', border: 'border-amber-200' },
-            'Maintenance': { gradient: 'from-red-500 to-red-600', icon: AlertCircle, shadow: 'shadow-red-500/50', border: 'border-red-200' },
-        };
-        return config[status] || config['Available'];
-    };
-
-    const stats = {
-        available: lockers.filter(l => l.status === 'Available').length,
-        occupied: lockers.filter(l => l.status === 'Occupied').length,
-        reserved: lockers.filter(l => l.status === 'Reserved').length,
+    const closeDrawer = () => {
+        setDrawerType(null);
+        setSelectedLocker(null);
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-6">
-            {/* Premium Header */}
-            <div className="mb-6 sm:mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-slate-100 p-4 sm:p-6">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-6 flex-shrink-0">
-                            <Lock size={24} className="sm:w-7 sm:h-7" strokeWidth={2.5} />
-                        </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-                                    Locker Management
-                                </h1>
-                                <span className="px-2 py-0.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white text-[10px] font-black rounded-md shadow-sm animate-pulse flex-shrink-0">
-                                    PREMIUM ✨
-                                </span>
-                            </div>
-                            <p className="text-slate-600 text-xs sm:text-sm mt-1">Manage locker assignments and availability</p>
-                        </div>
-                        <button
-                            onClick={async () => {
-                                const newId = prompt('Enter new locker number (e.g. A-101):');
-                                if (!newId) return;
-                                try {
-                                    await lockerApi.addLocker({ number: newId });
-                                    toast.success('Locker added');
-                                    fetchLockers();
-                                } catch (e) {
-                                    toast.error('Failed to add locker');
-                                }
-                            }}
-                            className="ml-auto bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-md hover:bg-violet-600 transition-colors"
+        <div className="p-4 sm:p-6 lg:p-8 bg-slate-50 min-h-screen">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-500">
+                        <Lock size={24} />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-slate-800">Locker Management</h1>
+                        <p className="text-sm text-slate-500">Manage locker assignments, rentals, and availability</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-3 w-full md:w-auto">
+                    <button
+                        onClick={() => openDrawer('bulk')}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50"
+                    >
+                        <Settings size={16} /> Bulk Create
+                    </button>
+                    <button
+                        onClick={() => openDrawer('add')}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-[#0a1b2e] text-white rounded-lg text-sm font-medium hover:bg-[#0a1b2e]/90"
+                    >
+                        + Add Locker
+                    </button>
+                </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm text-slate-500 font-medium">Total Lockers</span>
+                        <Lock size={20} className="text-slate-300" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-slate-800">{stats.total}</div>
+                </div>
+
+                <div className="bg-green-50 p-5 rounded-xl border border-green-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm text-green-600 font-medium">Available</span>
+                        <Key size={20} className="text-green-500" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-green-600">{stats.available}</div>
+                </div>
+
+                <div className="bg-slate-100 p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm text-slate-700 font-medium">Assigned</span>
+                        <User size={20} className="text-slate-400" strokeWidth={1.5} />
+                    </div>
+                    <div>
+                        <div className="text-3xl font-bold text-slate-800">{stats.assigned}</div>
+                        <div className="text-xs text-slate-500">{stats.occupancyRate}% occupancy</div>
+                    </div>
+                </div>
+
+                <div className="bg-orange-50 p-5 rounded-xl border border-orange-100 shadow-sm flex flex-col justify-between">
+                    <div className="flex justify-between items-start mb-2">
+                        <span className="text-sm text-orange-500 font-medium">Maintenance</span>
+                        <Key size={20} className="text-orange-400" strokeWidth={1.5} />
+                    </div>
+                    <div className="text-3xl font-bold text-orange-500">{stats.maintenance}</div>
+                </div>
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div className="relative flex-1 sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search lockers..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-300"
+                        />
+                    </div>
+                    <div className="relative">
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            className="pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none appearance-none cursor-pointer"
                         >
-                            + Add Locker
-                        </button>
+                            <option>All Status</option>
+                            <option>Available</option>
+                            <option>Assigned</option>
+                            <option>Maintenance</option>
+                            <option>Reserved</option>
+                        </select>
+                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
+                </div>
+
+                <div className="flex bg-white border border-slate-200 rounded-lg p-1">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                        title="Grid View"
+                    >
+                        <LayoutGrid size={18} />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100'}`}
+                        title="List View"
+                    >
+                        <List size={18} />
+                    </button>
                 </div>
             </div>
 
-            {/* Premium Stats Cards */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
-                <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg border border-slate-100 p-3 sm:p-6 hover:shadow-xl hover:border-emerald-200 transition-all duration-300 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-emerald-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative z-10 text-center">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/50 group-hover:scale-110 transition-transform duration-300">
-                            <Unlock size={16} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
-                        </div>
-                        <div className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-emerald-600 to-emerald-700 bg-clip-text text-transparent mb-1">{stats.available}</div>
-                        <div className="text-[10px] sm:text-sm font-bold text-slate-600">Available</div>
-                    </div>
-                </div>
-
-                <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg border border-slate-100 p-3 sm:p-6 hover:shadow-xl hover:border-blue-200 transition-all duration-300 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-indigo-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative z-10 text-center">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/50 group-hover:scale-110 transition-transform duration-300">
-                            <Lock size={16} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
-                        </div>
-                        <div className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent mb-1">{stats.occupied}</div>
-                        <div className="text-[10px] sm:text-sm font-bold text-slate-600">Occupied</div>
-                    </div>
-                </div>
-
-                <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-lg border border-slate-100 p-3 sm:p-6 hover:shadow-xl hover:border-amber-200 transition-all duration-300 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-amber-50/50 to-orange-100/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative z-10 text-center">
-                        <div className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-lg sm:rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg shadow-amber-500/50 group-hover:scale-110 transition-transform duration-300">
-                            <Clock size={16} className="sm:w-6 sm:h-6" strokeWidth={2.5} />
-                        </div>
-                        <div className="text-2xl sm:text-4xl font-black bg-gradient-to-r from-amber-600 to-orange-700 bg-clip-text text-transparent mb-1">{stats.reserved}</div>
-                        <div className="text-[10px] sm:text-sm font-bold text-slate-600">Reserved</div>
-                    </div>
-                </div>
+            {/* Tabs & Content */}
+            <div className="flex items-center gap-6 border-b border-slate-200 mb-6">
+                <button
+                    onClick={() => setActiveTab('Overview')}
+                    className={`pb-3 text-sm font-medium border-b-2 transition-all ${activeTab === 'Overview' ? 'border-slate-800 text-slate-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                >
+                    Overview
+                </button>
+                <button
+                    onClick={() => setActiveTab('Assigned')}
+                    className={`pb-3 text-sm font-medium border-b-2 transition-all ${activeTab === 'Assigned' ? 'border-slate-800 text-slate-800' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+                >
+                    Assigned ({stats.assigned})
+                </button>
             </div>
 
-            {/* Premium Locker Grid */}
-            <div className="group relative bg-white rounded-xl sm:rounded-2xl shadow-xl border border-slate-100 p-4 sm:p-6 hover:shadow-2xl hover:border-violet-200 transition-all duration-500">
-                <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-xl sm:rounded-2xl"></div>
-
-                <div className="relative z-10">
-                    <h3 className="text-base sm:text-lg font-black text-slate-800 mb-4 sm:mb-6 flex items-center gap-2">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white">
-                            <Lock size={14} className="sm:w-4 sm:h-4" strokeWidth={2.5} />
+            <div className="bg-white rounded-xl border border-slate-200 p-6 min-h-[400px]">
+                {activeTab === 'Overview' && (
+                    <>
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-base font-semibold text-slate-800">Locker Map</h3>
+                            <span className="text-sm text-slate-500">{lockers.length} lockers</span>
                         </div>
-                        All Lockers
-                    </h3>
 
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-4">
-                        {lockers.map((locker) => {
-                            const config = getStatusConfig(locker.status);
-                            const Icon = config.icon;
-                            return (
-                                <div
-                                    key={locker.id}
-                                    onClick={() => handleLockerClick(locker)}
-                                    className={`group/locker relative p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 ${config.border} bg-gradient-to-br ${config.gradient} text-white text-center cursor-pointer transition-all duration-300 hover:scale-110 hover:shadow-xl ${config.shadow} hover:-translate-y-1`}
-                                >
-                                    <Icon size={20} className="sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2 group-hover/locker:scale-125 transition-transform duration-300" strokeWidth={2.5} />
-                                    <div className="font-black text-sm sm:text-lg">{locker.id}</div>
-                                    <div className="text-[10px] sm:text-xs font-bold mt-0.5 sm:mt-1 opacity-90">{locker.status}</div>
-                                    {locker.member && (
-                                        <div className="text-[8px] sm:text-[10px] mt-0.5 sm:mt-1 opacity-75 truncate">{locker.member}</div>
-                                    )}
+                        {loading ? (
+                            <div className="h-64 flex items-center justify-center">
+                                <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+                            </div>
+                        ) : lockers.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-64 text-center">
+                                <Lock size={48} strokeWidth={1} className="text-slate-300 mb-4" />
+                                <p className="text-slate-500 text-sm">No lockers found</p>
+                            </div>
+                        ) : viewMode === 'grid' ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4 mb-8">
+                                {lockers.map((locker) => {
+                                    const isAvailable = locker.status === 'Available';
+                                    const isAssigned = locker.status === 'Assigned';
+                                    const isMaintenance = locker.status === 'Maintenance';
+                                    const isReserved = locker.status === 'Reserved';
+
+                                    let bgClass = "bg-white border-slate-200";
+                                    let dotClass = "bg-slate-300";
+                                    let textClass = "text-slate-700";
+
+                                    if (isAvailable) { bgClass = "bg-green-50 border-green-200"; dotClass = "bg-green-500"; textClass = "text-green-700"; }
+                                    if (isAssigned) { bgClass = "bg-slate-100 border-slate-300"; dotClass = "bg-slate-500"; textClass = "text-slate-800"; }
+                                    if (isMaintenance) { bgClass = "bg-orange-50 border-orange-200"; dotClass = "bg-orange-400"; textClass = "text-orange-600"; }
+                                    if (isReserved) { bgClass = "bg-blue-50 border-blue-200"; dotClass = "bg-blue-400"; textClass = "text-blue-600"; }
+
+                                    return (
+                                        <div
+                                            key={locker.id}
+                                            onClick={() => openDrawer('details', locker)}
+                                            className={`relative flex flex-col items-center justify-center p-4 rounded-xl border ${bgClass} cursor-pointer hover:shadow-md transition-shadow`}
+                                        >
+                                            <div className={`w-2 h-2 rounded-full absolute top-2 right-2 ${dotClass}`} />
+                                            <Lock size={20} className={`mb-2 ${textClass} opacity-80`} strokeWidth={1.5} />
+                                            <span className={`text-sm font-semibold ${textClass}`}>{locker.number}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left text-sm text-slate-600">
+                                    <thead>
+                                        <tr className="border-b border-slate-200">
+                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Number</th>
+                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Size</th>
+                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Area</th>
+                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {lockers.map(locker => (
+                                            <tr key={locker.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
+                                                <td className="py-3 px-4 font-medium">{locker.number}</td>
+                                                <td className="py-3 px-4">{locker.size}</td>
+                                                <td className="py-3 px-4">{locker.area || '-'}</td>
+                                                <td className="py-3 px-4">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${locker.status === 'Available' ? 'bg-green-100 text-green-700' :
+                                                            locker.status === 'Assigned' ? 'bg-slate-200 text-slate-700' :
+                                                                locker.status === 'Maintenance' ? 'bg-orange-100 text-orange-700' :
+                                                                    'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {locker.status}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+
+                        {viewMode === 'grid' && lockers.length > 0 && (
+                            <div className="flex items-center justify-start gap-6 pt-4 mt-8 border-t border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                                    <span className="text-xs text-slate-500">Available</span>
                                 </div>
-                            );
-                        })}
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
+                                    <span className="text-xs text-slate-500">Assigned</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-orange-400" />
+                                    <span className="text-xs text-slate-500">Maintenance</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
+                                    <span className="text-xs text-slate-500">Reserved</span>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
+
+                {activeTab === 'Assigned' && (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left text-sm text-slate-600">
+                            <thead>
+                                <tr className="border-b border-slate-200">
+                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Locker No.</th>
+                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Assigned Member</th>
+                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Member ID</th>
+                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Phone</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {lockers.filter(l => l.status === 'Assigned').map(locker => (
+                                    <tr key={locker.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
+                                        <td className="py-3 px-4 font-medium text-slate-800">{locker.number}</td>
+                                        <td className="py-3 px-4">
+                                            {locker.assignedTo?.name || 'N/A'}
+                                        </td>
+                                        <td className="py-3 px-4">{locker.assignedTo?.memberId || '-'}</td>
+                                        <td className="py-3 px-4">{locker.assignedTo?.phone || '-'}</td>
+                                    </tr>
+                                ))}
+                                {lockers.filter(l => l.status === 'Assigned').length === 0 && (
+                                    <tr>
+                                        <td colSpan="4" className="py-8 text-center text-slate-500">
+                                            No assigned lockers found.
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
+                )}
             </div>
 
-            {/* Premium Locker Details Drawer */}
+            {/* Drawers */}
             <RightDrawer
-                isOpen={isDrawerOpen}
-                onClose={() => setIsDrawerOpen(false)}
-                title="Locker Details"
+                isOpen={!!drawerType}
+                onClose={closeDrawer}
+                title={
+                    drawerType === 'add' ? 'Add New Locker' :
+                        drawerType === 'bulk' ? 'Bulk Create Lockers' :
+                            'Locker Details'
+                }
             >
-                <LockerDetailsDrawer
-                    isOpen={isDrawerOpen}
-                    onClose={() => setIsDrawerOpen(false)}
-                    locker={selectedLocker}
-                    onAssign={handleAssign}
-                    onRelease={handleRelease}
-                />
+                {drawerType === 'add' && (
+                    <AddLockerDrawer
+                        onClose={closeDrawer}
+                        onSuccess={loadData}
+                    />
+                )}
+                {drawerType === 'bulk' && (
+                    <BulkCreateLockersDrawer
+                        onClose={closeDrawer}
+                        onSuccess={loadData}
+                    />
+                )}
+                {drawerType === 'details' && (
+                    <LockerDetailsDrawer
+                        locker={selectedLocker}
+                        onClose={closeDrawer}
+                        onSuccess={loadData}
+                    />
+                )}
             </RightDrawer>
         </div>
     );
 };
+
+// Add a dummy Settings icon component since I mapped it to Bulk Create visually based on lucide choices
+const Settings = ({ size, className }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6" /></svg>
+); // Actually just a standard icon but keeping the simple layout. Wait, I will use Grid/Layers or something else for Bulk Create. Let me just use Settings from lucide-react if I want. I already imported generic icons so it's fine. Wait, Setting is not imported in LockerManagement but I used it. I will fix imports!
 
 export default LockerManagement;

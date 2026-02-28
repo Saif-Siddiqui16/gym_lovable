@@ -289,7 +289,7 @@ export const menuConfig = {
             children: [
                 { label: 'Overview', path: '/finance/dashboard', icon: LayoutDashboard },
                 { label: 'Invoices', path: '/finance/invoices', icon: FileText },
-                { label: 'Payments', path: '/finance/transactions', icon: History },
+                { label: 'Payments', path: '/finance/payments', icon: History },
             ]
         },
         {
@@ -298,7 +298,6 @@ export const menuConfig = {
             children: [
                 { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
                 { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },
-                { label: 'Equipment', path: '/facility/equipment', icon: Package },
                 { label: 'Lockers', path: '/operations/lockers', icon: Lock },
                 { label: 'Devices', path: '/operations/devices', icon: Smartphone },
             ]
@@ -366,9 +365,7 @@ export const menuConfig = {
             label: 'Operations',
             icon: Activity,
             children: [
-                { label: 'Staff Schedule', path: '/operations', icon: Users },
                 { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
-                { label: 'Equipment', path: '/operations/equipment', icon: Wrench },
                 { label: 'Lockers', path: '/operations/lockers', icon: Lock },
                 { label: 'Inventory', path: '/operations/inventory', icon: Package },
                 { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },

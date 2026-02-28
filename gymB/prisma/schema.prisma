@@ -29,6 +29,7 @@ model Tenant {
   plans      MembershipPlan[]
   payroll    Payroll[]
   users      User[]
+  announcements   Announcement[]
   coupons    Coupon[]
   storeCategories StoreCategory[]
   storeProducts   StoreProduct[]
@@ -196,6 +197,7 @@ model Member {
   targetBodyFat  Decimal?        @db.Decimal(5, 2)
   bookings       Booking[]
   storeOrders    StoreOrder[]
+  lockers        Locker[]
   invoices       Invoice[]
   plan           MembershipPlan? @relation(fields: [planId], references: [id])
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
@@ -321,14 +323,22 @@ model Inventory {
 }
 
 model Locker {
-  id           Int     @id @default(autoincrement())
+  id           Int      @id @default(autoincrement())
   tenantId     Int?
   number       String
-  status       String  @default("Available")
+  status       String   @default("Available") // Available, Assigned, Maintenance, Reserved
+  size         String   @default("Medium") // Small, Medium, Large
+  area         String?
+  notes        String?  @db.Text
+  isChargeable Boolean  @default(false)
   assignedToId Int?
-  tenant       Tenant? @relation(fields: [tenantId], references: [id])
+  assignedTo   Member?  @relation(fields: [assignedToId], references: [id])
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([tenantId], map: "locker_tenantId_fkey")
+  @@index([assignedToId], map: "locker_memberId_fkey")
   @@map("locker")
 }
 
@@ -344,6 +354,7 @@ model Equipment {
   location       String?
   model          String?
   purchaseDate   DateTime?
+  purchasePrice  Decimal?             @db.Decimal(10, 2)
   serialNumber   String?
   warrantyExpiry DateTime?
   tenant         Tenant?              @relation(fields: [tenantId], references: [id])
@@ -357,9 +368,12 @@ model MaintenanceRequest {
   id          Int       @id @default(autoincrement())
   equipmentId Int
   issue       String
+  description String?   @db.Text
   priority    String
   status      String    @default("Pending")
+  cost        Decimal?  @db.Decimal(10, 2) @default(0.00)
   createdAt   DateTime  @default(now())
+  completedAt DateTime?
   equipment   Equipment @relation(fields: [equipmentId], references: [id])
 
   @@index([equipmentId], map: "maintenancerequest_equipmentId_fkey")
@@ -528,16 +542,45 @@ model MemberProgress {
 
 model Announcement {
   id         Int      @id @default(autoincrement())
+  tenantId   Int      @default(1)
+  authorId   Int
   title      String
   content    String   @db.Text
-  authorId   Int
-  createdAt  DateTime @default(now())
-  priority   String   @default("medium")
   targetRole String   @default("all")
-  tenantId   Int?
+  priority   Int      @default(0)
+  status     String   @default("Active")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
 
   @@index([authorId], map: "Announcement_authorId_fkey")
   @@map("announcement")
+}
+
+model MessageTemplate {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @default(1)
+  name      String
+  content   String   @db.LongText
+  channel   String   // WhatsApp, SMS, Email
+  category  String   // Welcome, Reminder, Promo, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("message_template")
+}
+
+model CommunicationLog {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @default(1)
+  senderId  Int?
+  memberId  Int?
+  channel   String   // WhatsApp, SMS, Email
+  message   String   @db.LongText
+  status    String   @default("Sent") // Sent, Failed, Pending
+  createdAt DateTime @default(now())
+
+  @@map("communication_log")
 }
 
 model TenantSettings {
