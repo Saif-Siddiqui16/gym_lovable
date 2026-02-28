@@ -1,20 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Award, Users, CheckCircle, Clock, Link as LinkIcon, Gift } from 'lucide-react';
+import {
+    Plus,
+    Award,
+    Users,
+    CheckCircle,
+    Clock,
+    Link as LinkIcon,
+    Gift,
+    Copy,
+    MessageCircle,
+    UserPlus,
+    Share2,
+    IndianRupee,
+    UserCheck,
+    History,
+    Shield
+} from 'lucide-react';
 import { referralApi } from '../../../api/referralApi';
 import RightDrawer from '../../../components/common/RightDrawer';
 import { useBranchContext } from '../../../context/BranchContext';
 import { getMembers } from '../../../api/manager/managerApi';
+import { ROLES } from '../../../config/roles';
+import Card from '../../../components/ui/Card';
 import toast from 'react-hot-toast';
+import '../../../styles/GlobalDesign.css';
 
-const Referrals = () => {
+const Referrals = ({ role }) => {
     const [referrals, setReferrals] = useState([]);
     const [members, setMembers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(role !== ROLES.MEMBER);
     const { selectedBranch } = useBranchContext();
     const [activeTab, setActiveTab] = useState('Referrals');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-    // Form State
+    // Form State for Admin
     const [formData, setFormData] = useState({
         referrerId: '',
         referredName: '',
@@ -23,9 +42,11 @@ const Referrals = () => {
     });
 
     useEffect(() => {
-        loadReferrals();
-        loadMembersList();
-    }, [selectedBranch]);
+        if (role !== ROLES.MEMBER) {
+            loadReferrals();
+            loadMembersList();
+        }
+    }, [selectedBranch, role]);
 
     const loadMembersList = async () => {
         try {
@@ -71,6 +92,144 @@ const Referrals = () => {
         }
     };
 
+    const handleCopyCode = () => {
+        navigator.clipboard.writeText('MEM001');
+        toast.success('Referral code copied!');
+    };
+
+    const handleWhatsAppShare = () => {
+        const text = encodeURIComponent('Join me at the gym! Use my referral code MEM001 to get special rewards.');
+        window.open(`https://wa.me/?text=${text}`, '_blank');
+    };
+
+    // Member-specific UI rendering
+    if (role === ROLES.MEMBER) {
+        return (
+            <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-10 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+                {/* Header Section */}
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-10 border-b-2 border-slate-100">
+                    <div className="flex items-center gap-6">
+                        <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-100 animate-in zoom-in duration-500">
+                            <Gift size={40} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1 uppercase">
+                                Refer & <span className="text-indigo-600">Earn</span>
+                            </h1>
+                            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                                Invite friends and earn rewards
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-1 gap-10 max-w-5xl">
+                    {/* Referral Code Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3 px-1">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                <Share2 size={16} />
+                            </div>
+                            <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Referral Link</h2>
+                        </div>
+                        <Card className="p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white overflow-hidden relative">
+                            <div className="flex flex-col items-center justify-center text-center space-y-8 relative z-10">
+                                <div className="space-y-2">
+                                    <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Your Referral Code</h2>
+                                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">
+                                        Share this code with friends to earn rewards
+                                    </p>
+                                </div>
+
+                                <div className="bg-slate-50 border-2 border-dashed border-slate-200 px-8 py-4 rounded-2xl">
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-[0.2em]">MEM001</h3>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-center gap-4 w-full">
+                                    <button
+                                        onClick={handleCopyCode}
+                                        className="flex-1 min-w-[160px] h-12 bg-white border-2 border-slate-100 text-slate-900 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-slate-100/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group"
+                                    >
+                                        <Copy size={14} strokeWidth={3} className="text-indigo-600 group-hover:scale-110 transition-transform" /> Copy Link
+                                    </button>
+                                    <button
+                                        onClick={handleWhatsAppShare}
+                                        className="flex-1 min-w-[160px] h-12 bg-[#25D366] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-emerald-100/30 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group border-none"
+                                    >
+                                        <MessageCircle size={14} strokeWidth={3} className="text-white group-hover:rotate-12 transition-transform" /> Share on WhatsApp
+                                    </button>
+                                </div>
+                            </div>
+                            {/* Decorative element */}
+                            <div className="absolute -top-10 -right-10 p-20 text-indigo-600/[0.02] rotate-12">
+                                <UserPlus size={400} strokeWidth={0.5} />
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Stats Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3 px-1">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                <Award size={16} />
+                            </div>
+                            <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Stats Overview</h2>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <Card className="p-8 border-2 border-slate-100 shadow-sm rounded-3xl bg-white text-center space-y-2">
+                                <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                    <Users size={20} />
+                                </div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Referrals Sent</h4>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </Card>
+                            <Card className="p-8 border-2 border-slate-100 shadow-sm rounded-3xl bg-white text-center space-y-2">
+                                <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                    <UserCheck size={20} />
+                                </div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Successful Signups</h4>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">0</p>
+                            </Card>
+                            <Card className="p-8 border-2 border-slate-100 shadow-sm rounded-3xl bg-white text-center space-y-2">
+                                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
+                                    <IndianRupee size={20} />
+                                </div>
+                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rewards Earned</h4>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">₹0</p>
+                            </Card>
+                        </div>
+                    </div>
+
+                    {/* Referral History Section */}
+                    <div className="space-y-6 pb-10">
+                        <div className="flex items-center gap-3 px-1">
+                            <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                <History size={16} />
+                            </div>
+                            <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Referral History</h2>
+                        </div>
+                        <Card className="p-12 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
+                            <div className="flex flex-col items-center justify-center text-center space-y-6">
+                                <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-100">
+                                    <Users size={48} strokeWidth={1.5} />
+                                </div>
+                                <div className="space-y-2">
+                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                                        No Referrals Yet
+                                    </h3>
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                                        No referrals yet. Share your code to get started!
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // Existing Admin/Staff UI
     const kpiCards = [
         { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'text-blue-500' },
         { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'text-emerald-500' },
@@ -85,7 +244,7 @@ const Referrals = () => {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                        Referrals & Rewards
+                        <Shield className="text-indigo-600" /> Referrals & Rewards
                     </h1>
                     <button
                         onClick={() => setIsDrawerOpen(true)}
@@ -99,7 +258,10 @@ const Referrals = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {kpiCards.map((kpi, idx) => (
                         <div key={idx} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
-                            <p className="text-sm font-medium text-slate-500">{kpi.label}</p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-slate-500">{kpi.label}</p>
+                                <kpi.icon size={18} className={kpi.color} />
+                            </div>
                             <div className="mt-4 flex items-baseline gap-2">
                                 <h3 className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</h3>
                                 {kpi.subtext && <span className="text-xs text-slate-400">{kpi.subtext}</span>}

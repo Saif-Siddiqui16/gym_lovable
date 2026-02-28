@@ -45,7 +45,8 @@ import {
     AlertCircle,
     History,
     Key,
-    Layout
+    Layout,
+    Target,
 } from 'lucide-react';
 
 export const menuConfig = {
@@ -504,47 +505,86 @@ export const menuConfig = {
     ],
 
     [ROLES.TRAINER]: [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-        { label: 'My Leads', path: '/crm/my-leads', icon: Search },
         {
-            label: 'Sessions',
-            icon: Calendar,
+            label: 'Dashboard',
+            icon: LayoutDashboard,
             children: [
-                { label: 'Session Calendar', path: '/trainer/sessions/calendar', icon: Calendar },
-                { label: 'Upcoming Sessions', path: '/trainer/sessions/upcoming', icon: Clock },
+                { label: 'My Dashboard', path: '/dashboard', icon: LayoutDashboard },
             ]
         },
-        { label: 'My Attendance', path: '/trainer/attendance', icon: Clock },
-        { label: 'Availability', path: '/trainer/availability', icon: Calendar },
-        { label: 'Classes', path: '/classes', icon: Calendar },
-        { label: 'My Members', path: '/trainer/members/assigned', icon: Users },
-        { label: 'Diet Plans', path: '/diet-plans', icon: Utensils },
-        { label: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
-        { label: 'My Earnings', path: '/trainer/earnings', icon: IndianRupee },
-        { label: 'Announcements', path: '/trainer/announcements', icon: Megaphone },
-        { label: 'Progress', path: '/progress', icon: TrendingUp },
+        {
+            label: 'Training',
+            icon: Dumbbell,
+            children: [
+                { label: 'My Clients', path: '/trainer/members/assigned', icon: Users },
+                { label: 'PT Sessions', path: '/pt-sessions', icon: Clock },
+                { label: 'Schedule Session', path: '/trainer/sessions/calendar', icon: Calendar },
+                { label: 'My Classes', path: '/classes', icon: Calendar },
+                { label: 'Plan Builder', path: '/workout-plans', icon: Dumbbell },
+            ]
+        },
+        {
+            label: 'Earnings',
+            icon: IndianRupee,
+            children: [
+                { label: 'My Earnings', path: '/trainer/earnings', icon: IndianRupee },
+            ]
+        },
+        {
+            label: 'Work',
+            icon: ClipboardList,
+            children: [
+                { label: 'My Attendance', path: '/trainer/attendance', icon: Clock },
+                { label: 'Announcements', path: '/trainer/announcements', icon: Megaphone },
+            ]
+        }
+    ],
+
+    [ROLES.MEMBER]: [
+        {
+            label: 'My Account',
+            icon: Home,
+            children: [
+                { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { label: 'My Profile', path: '/member/profile/me', icon: User },
+                { label: 'My Attendance', path: '/member/attendance', icon: Clock },
+                { label: 'My Progress', path: '/progress', icon: Activity },
+            ]
+        },
+        {
+            label: 'Fitness',
+            icon: Dumbbell,
+            children: [
+                { label: 'Book & Schedule', path: '/member/bookings', icon: Calendar },
+                { label: 'Workout Plan', path: '/workout-plans', icon: Dumbbell },
+                { label: 'Diet Plan', path: '/diet-plans', icon: Utensils },
+            ]
+        },
+        {
+            label: 'Services',
+            icon: Target,
+            children: [
+                { label: 'My Benefits', path: '/member/benefits', icon: FileText },
+                { label: 'Refer & Earn', path: '/referrals', icon: UserPlus },
+                { label: 'Store', path: '/member/store', icon: ShoppingCart },
+                { label: 'My Invoices', path: '/member/payments', icon: Receipt },
+                { label: 'My Requests', path: '/member/requests', icon: ClipboardList },
+            ]
+        },
+        {
+            label: 'Communication',
+            icon: MessageSquare,
+            children: [
+                { label: 'Announcements', path: '/member/announcements', icon: Megaphone },
+                { label: 'Feedback', path: '/member/feedback', icon: MessageSquare },
+            ]
+        },
         {
             label: 'Profile',
             icon: User,
             children: [
-                { label: 'My Profile', path: '/trainer/profile/me', icon: User },
                 { label: 'Logout', path: '/login', icon: LogOut },
             ]
         },
-    ],
-
-    [ROLES.MEMBER]: [
-        { label: 'Home', path: '/dashboard', icon: Home },
-        { label: 'My Membership', path: '/member/membership', icon: FileText },
-        { label: 'Bookings', path: '/member/bookings', icon: Calendar },
-        { label: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
-        { label: 'Diet Plans', path: '/diet-plans', icon: Utensils },
-        { label: 'Progress', path: '/progress', icon: TrendingUp },
-        { label: 'My Wallet', path: '/member/wallet', icon: Wallet },
-        { label: 'My Invoices', path: '/member/payments', icon: Receipt },
-        { label: 'Feedback', path: '/member/feedback', icon: Megaphone },
-        { label: 'Store', path: '/member/store', icon: ShoppingCart },
-        { label: 'Profile', path: '/member/profile/me', icon: User },
-        { label: 'Logout', path: '/login', icon: LogOut },
     ],
 };

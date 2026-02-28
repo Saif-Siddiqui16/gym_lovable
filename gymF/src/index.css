@@ -61,7 +61,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Public Sans', 'Inter', sans-serif;
   background-color: var(--app-bg);
   color: var(--body);
   line-height: 1.5;

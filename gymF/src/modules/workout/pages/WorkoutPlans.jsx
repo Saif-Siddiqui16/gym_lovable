@@ -1,439 +1,503 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
     Dumbbell,
-    ChevronRight,
+    UtensilsCrossed,
     Plus,
+    Trash2,
     Search,
-    Calendar,
-    Clock,
-    Target,
+    Bell,
+    Moon,
+    BookmarkPlus,
+    User,
+    Save,
+    ChevronRight,
     Zap,
     TrendingUp,
-    Timer,
-    Flame,
-    Music,
-    MoreHorizontal,
-    Edit2,
-    Trash2,
-    ArrowUpRight,
-    Activity,
+    Clock,
+    CheckCircle2,
     Info,
-    ChevronLeft,
-    User,
-    Play
+    RefreshCcw,
+    MoreVertical,
+    Target
 } from 'lucide-react';
-import { WORKOUT_PLANS, MEMBER_WORKOUT_STATUS } from '../data/mockWorkoutData';
-import CreateWorkoutDrawer from '../components/CreateWorkoutDrawer';
-import AssignWorkoutDrawer from '../components/AssignWorkoutDrawer';
+import { ROLES } from '../../../config/roles';
+import Card from '../../../components/ui/Card';
 import '../../../styles/GlobalDesign.css';
-import { getWorkoutPlans, createWorkoutPlan, updateWorkoutPlan, toggleWorkoutPlanStatus } from '../../../api/trainer/trainerApi';
-import { fetchMemberWorkoutPlans } from '../../../api/member/memberApi';
 import { toast } from 'react-hot-toast';
+
+const DAY_LABELS = [
+    { key: 'day1', label: 'Day 1', focus: 'Chest & Triceps' },
+    { key: 'day2', label: 'Day 2', focus: 'Back & Biceps' },
+    { key: 'day3', label: 'Day 3', focus: 'Legs & Glutes' },
+    { key: 'day4', label: 'Day 4', focus: 'Shoulders & Arms' },
+    { key: 'day5', label: 'Day 5', focus: 'Core & Cardio' },
+    { key: 'day6', label: 'Day 6', focus: 'Full Body' },
+    { key: 'day7', label: 'Day 7', focus: 'Rest & Recovery' },
+];
 
 const WorkoutPlans = ({ role }) => {
     const navigate = useNavigate();
-    const location = useLocation();
+    const isMember = role === ROLES.MEMBER;
 
-    // Role check
-    const isTrainer = role === 'TRAINER' || role === 'SUPER_ADMIN' || role === 'MANAGER' || role === 'BRANCH_ADMIN';
+    // View States
+    const [memberActiveTab, setMemberActiveTab] = useState('today');
 
-    // State management
-    const [plans, setPlans] = useState([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [activePlan, setActivePlan] = useState(null);
-    const [activeDay, setActiveDay] = useState('monday');
-    const [loading, setLoading] = useState(true);
+    // Trainer States
+    const [planName, setPlanName] = useState('');
+    const [description, setDescription] = useState('');
+    const [activeDay, setActiveDay] = useState('day1');
+    const [workoutExercises, setWorkoutExercises] = useState({
+        day1: [{ id: Date.now(), name: 'Bench Press', sets: '3', reps: '12', rest: '60', equipment: 'Barbell', notes: 'Focus on form' }],
+        day2: [], day3: [], day4: [], day5: [], day6: [], day7: []
+    });
 
-    // Modal States
-    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-    const [editingPlan, setEditingPlan] = useState(null);
-    const [assignModalOpen, setAssignModalOpen] = useState(false);
-    const [selectedPlanId, setSelectedPlanId] = useState(null);
+    const addExercise = (day) => {
+        const newEx = {
+            id: Date.now(),
+            name: '',
+            sets: '',
+            reps: '',
+            rest: '',
+            equipment: '',
+            notes: ''
+        };
+        setWorkoutExercises(prev => ({
+            ...prev,
+            [day]: [...prev[day], newEx]
+        }));
+    };
 
-    // Fetch plans
-    React.useEffect(() => {
-        loadPlans();
-    }, [isTrainer]);
+    const updateExercise = (day, id, field, value) => {
+        setWorkoutExercises(prev => ({
+            ...prev,
+            [day]: prev[day].map(ex => ex.id === id ? { ...ex, [field]: value } : ex)
+        }));
+    };
 
-    const loadPlans = async () => {
-        try {
-            setLoading(true);
-            const data = isTrainer ? await getWorkoutPlans() : await fetchMemberWorkoutPlans();
-            setPlans(data);
-            if (data.length > 0) {
-                setActivePlan(data[0]);
-            }
-        } catch (error) {
-            console.error('Failed to load plans:', error);
-            toast.error('Failed to load workout plans');
-        } finally {
-            setLoading(false);
+    const removeExercise = (day, id) => {
+        setWorkoutExercises(prev => ({
+            ...prev,
+            [day]: prev[day].filter(ex => ex.id !== id)
+        }));
+    };
+
+    const handleSaveAsTemplate = () => {
+        if (!planName.trim()) {
+            toast.error('Please enter a plan name first');
+            return;
         }
+        toast.success('Template saved successfully');
     };
 
-    const handleSavePlan = async (planData) => {
-        try {
-            if (editingPlan && editingPlan.id) {
-                await updateWorkoutPlan(editingPlan.id, planData);
-                toast.success('Protocol updated successfully');
-            } else {
-                await createWorkoutPlan(planData);
-                toast.success('Protocol created successfully');
-            }
-            await loadPlans();
-            setIsCreateModalOpen(false);
-            setEditingPlan(null);
-        } catch (error) {
-            console.error('Error saving plan', error);
-            toast.error('Failed to save protocol');
-        }
-    };
-
-    const handleDeletePlan = async (planId) => {
-        if (window.confirm('Are you sure you want to deactivate this workout protocol?')) {
-            try {
-                await toggleWorkoutPlanStatus(planId);
-                toast.success('Protocol deactivated successfully');
-                await loadPlans();
-            } catch (error) {
-                console.error('Error deleting plan', error);
-                toast.error('Failed to deactivate protocol');
-            }
-        }
-    };
-
-    const openAssignModal = (planId) => {
-        setSelectedPlanId(planId);
-        setAssignModalOpen(true);
-    };
-
-    const handleAssignPlan = (selectedMembers) => {
-        console.log(`Assigned Plan ${selectedPlanId} to members:`, selectedMembers);
-        setAssignModalOpen(false);
-    };
-
-    const openEditModal = (plan) => {
-        setEditingPlan(plan);
-        setIsCreateModalOpen(true);
-    };
-
-    const openCreateModal = () => {
-        setEditingPlan(null);
-        setIsCreateModalOpen(true);
-    };
-
-    const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
-    return (
-        <div className="p-6 md:p-8 min-h-screen font-sans bg-gradient-to-br from-slate-50 via-white to-violet-50/30">
-            <div className="max-w-7xl mx-auto space-y-8">
-
+    if (isMember) {
+        return (
+            <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent tracking-tight mb-2">
-                            {isTrainer ? 'Training Architecture' : 'Force & Hypertrophy'}
-                        </h1>
-                        <p className="text-slate-500 font-medium text-sm md:text-lg max-w-2xl leading-relaxed">
-                            {isTrainer
-                                ? 'Design and manage evidence-based training protocols.'
-                                : `Executing the ${activePlan?.name} protocol. Focus on form and tempo.`}
-                        </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-8 border-b-2 border-slate-100">
+                    <div className="flex items-center gap-5">
+                        <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100 animate-in zoom-in duration-500">
+                            <Dumbbell size={32} strokeWidth={2.5} />
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                                My Workout
+                            </h1>
+                            <div className="flex items-center gap-2">
+                                <span className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                                    Goal:
+                                </span>
+                                <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-indigo-100">
+                                    Weight Loss, Strength
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    {isTrainer && (
-                        <button
-                            onClick={openCreateModal}
-                            className="group px-6 py-3 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:shadow-violet-500/30 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 w-full md:w-auto"
-                        >
-                            <Plus size={18} strokeWidth={2.5} />
-                            Create Protocol
-                        </button>
-                    )}
+                    <button className="px-8 h-12 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all flex items-center gap-2 group">
+                        <RefreshCcw size={16} strokeWidth={3} className="group-hover:rotate-180 transition-transform duration-500" /> Request New Plan
+                    </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8">
-                    {/* Sidebar: Plan Explorer (Trainer/Admin Only) */}
-                    {isTrainer ? (
-                        <div className="lg:col-span-4 space-y-6">
-                            <div className="bg-white p-4 md:p-6 rounded-[32px] shadow-xl shadow-slate-200/50 border border-slate-100 space-y-6">
-                                <div className="relative group">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-colors" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search Protocols..."
-                                        className="w-full h-12 pl-12 pr-4 bg-slate-50 rounded-xl font-semibold border-transparent focus:bg-white focus:ring-2 focus:ring-violet-100 outline-none transition-all placeholder:font-bold placeholder:text-slate-400 text-sm"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                    />
-                                </div>
+                <div className="grid grid-cols-1 gap-8 max-w-4xl">
+                    {/* Tab Switcher: Today's Workout / My Plan */}
+                    <div className="p-1.5 bg-slate-100/50 rounded-2xl w-fit flex items-center gap-1.5 border border-white shadow-sm shadow-slate-200/50">
+                        <button
+                            onClick={() => setMemberActiveTab('today')}
+                            className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 active:scale-95 ${memberActiveTab === 'today'
+                                ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/40'
+                                }`}
+                        >
+                            <Zap
+                                size={18}
+                                className={`transition-colors ${memberActiveTab === 'today' ? 'text-indigo-600' : 'text-slate-400 opacity-60'}`}
+                            />
+                            Today's Workout
+                        </button>
+                        <button
+                            onClick={() => setMemberActiveTab('plan')}
+                            className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all duration-300 active:scale-95 ${memberActiveTab === 'plan'
+                                ? 'bg-white text-slate-900 shadow-xl shadow-slate-200/50'
+                                : 'text-slate-400 hover:text-slate-600 hover:bg-white/40'
+                                }`}
+                        >
+                            <Dumbbell
+                                size={18}
+                                className={`transition-colors ${memberActiveTab === 'plan' ? 'text-indigo-600' : 'text-slate-400 opacity-60'}`}
+                            />
+                            My Plan
+                        </button>
+                    </div>
 
-                                <div className="space-y-3 max-h-[400px] md:max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
-                                    {plans.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase())).map((plan) => (
-                                        <div
-                                            key={plan.id}
-                                            onClick={() => setActivePlan(plan)}
-                                            className={`w-full p-4 md:p-5 rounded-2xl text-left transition-all relative group cursor-pointer border ${activePlan?.id === plan.id
-                                                ? 'bg-gradient-to-r from-violet-600 to-purple-600 border-transparent shadow-lg shadow-violet-200'
-                                                : 'bg-white border-slate-100 hover:border-violet-100 hover:shadow-md hover:shadow-violet-500/5'
-                                                }`}
-                                        >
-                                            <div className="relative z-10">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div className={`p-2 rounded-xl ${activePlan?.id === plan.id ? 'bg-white/20 text-white' : 'bg-violet-50 text-violet-600'}`}>
-                                                        <Dumbbell size={18} strokeWidth={2.5} />
-                                                    </div>
-                                                    <div className="flex gap-1" onClick={e => e.stopPropagation()}>
-                                                        <button
-                                                            onClick={() => openAssignModal(plan.id)}
-                                                            className={`p-1.5 rounded-lg transition-colors ${activePlan?.id === plan.id ? 'text-white/80 hover:bg-white/20 hover:text-white' : 'text-slate-400 hover:bg-violet-50 hover:text-violet-600'}`}
-                                                            title="Assign"
-                                                        >
-                                                            <User size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => openEditModal(plan)}
-                                                            className={`p-1.5 rounded-lg transition-colors ${activePlan?.id === plan.id ? 'text-white/80 hover:bg-white/20 hover:text-white' : 'text-slate-400 hover:bg-violet-50 hover:text-violet-600'}`}
-                                                            title="Edit"
-                                                        >
-                                                            <Edit2 size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleDeletePlan(plan.id)}
-                                                            className={`p-1.5 rounded-lg transition-colors ${activePlan?.id === plan.id ? 'text-white/80 hover:bg-white/20 hover:text-red-200' : 'text-slate-400 hover:bg-red-50 hover:text-red-500'}`}
-                                                            title="Delete"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                                <h3 className={`text-base font-bold mb-1 ${activePlan?.id === plan.id ? 'text-white' : 'text-slate-900'}`}>
-                                                    {plan.name}
-                                                </h3>
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-xs font-bold ${activePlan?.id === plan.id ? 'text-violet-100' : 'text-slate-500'}`}>
-                                                        {plan.level || plan.difficulty || 'Advanced'}
-                                                    </span>
-                                                    <div className={`w-1 h-1 rounded-full ${activePlan?.id === plan.id ? 'bg-violet-300' : 'bg-slate-300'}`}></div>
-                                                    <span className={`text-xs font-bold ${activePlan?.id === plan.id ? 'text-violet-100' : 'text-slate-500'}`}>
-                                                        {plan.duration || '12 Weeks'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                    <div className="space-y-6">
+
+                        {/* Today's Workout Card - Progress Info */}
+                        <Card className="p-6 border-2 border-slate-100 shadow-sm rounded-3xl bg-white space-y-6">
+                            {/* Workout Header Info */}
+                            <div className="space-y-1">
+                                <h3 className="text-xl font-black text-slate-900 uppercase tracking-tight">
+                                    Saturday — Full Body
+                                </h3>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    Current Focus
+                                </p>
+                            </div>
+
+                            {/* Status & Progress Section */}
+                            <div className="grid grid-cols-1 gap-4 pt-2">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Shuffle</span>
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</p>
+                                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">0/0 exercises completed</p>
+                                    </div>
+                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-600 w-0 transition-all duration-1000" />
+                                    </div>
                                 </div>
                             </div>
+                        </Card>
+
+                        {/* Empty State Card - Separated Section */}
+                        <Card className="p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
+                            <div className="flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-100">
+                                    <Info size={32} strokeWidth={1.5} />
+                                </div>
+                                <div className="space-y-1">
+                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                                        No exercises found for full_body.
+                                    </h4>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs">
+                                        Ask your admin to seed exercises and assign them to your plan.
+                                    </p>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* Tips Section */}
+                    <div className="space-y-6">
+                        <div className="flex items-center gap-3 px-1">
+                            <div className="w-8 h-8 rounded-xl bg-amber-50 flex items-center justify-center text-amber-600">
+                                <Info size={16} />
+                            </div>
+                            <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">💡 Workout Tips</h2>
                         </div>
-                    ) : (
-                        /* Member Quick Summary Card (Light Theme) */
-                        <div className="lg:col-span-4 space-y-6 md:space-y-8">
-                            <div className="bg-white rounded-[32px] md:rounded-[40px] p-6 md:p-8 relative overflow-hidden h-full flex flex-col justify-between min-h-[400px] border border-slate-100 shadow-xl shadow-slate-200/50 group">
-                                {/* Ambient Background Gradient */}
-                                <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-violet-100/50 rounded-full blur-[80px] opacity-60 group-hover:opacity-80 transition-opacity duration-700" />
-                                <div className="absolute bottom-0 left-0 w-[250px] h-[250px] bg-fuchsia-100/50 rounded-full blur-[80px] opacity-60" />
 
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-6 md:mb-8">
-                                        <div className="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-violet-200 text-white">
-                                            <TrendingUp size={24} className="md:w-7 md:h-7" strokeWidth={2.5} />
+                        <Card className="p-8 border-2 border-slate-100 bg-white rounded-3xl shadow-sm hover:shadow-md transition-all">
+                            <ul className="space-y-6">
+                                {[
+                                    "Warm up for 5-10 minutes before starting your workout",
+                                    "Stay hydrated throughout your session",
+                                    "Focus on proper form over heavy weights",
+                                    "Rest 60-90 seconds between sets",
+                                    "Track your progress in the My Progress section"
+                                ].map((tip, idx) => (
+                                    <li key={idx} className="flex items-start gap-4 group">
+                                        <div className="mt-1 w-5 h-5 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 group-hover:bg-indigo-600 transition-colors">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 group-hover:bg-white transition-colors" />
                                         </div>
-                                        <div className="text-right">
-                                            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Current Week</div>
-                                            <div className="text-xl md:text-2xl font-black text-slate-900">
-                                                Week {activePlan ? Math.ceil((new Date() - new Date(activePlan.createdAt)) / (1000 * 60 * 60 * 24 * 7)) || 1 : 1}
-                                            </div>
-                                        </div>
+                                        <p className="text-xs font-bold text-slate-600 leading-relaxed uppercase tracking-wide">
+                                            {tip}
+                                        </p>
+                                    </li>
+                                ))}
+                            </ul>
+
+                            <div className="mt-10 pt-8 border-t border-slate-100">
+                                <div className="flex items-center gap-4 p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                    <div className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                                        <Target size={20} />
                                     </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Pro Tip</p>
+                                        <p className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">Consistency beats intensity.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </Card>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
-                                    <div className="space-y-6 md:space-y-8">
-                                        <div>
-                                            <div className="flex justify-between text-xs font-bold uppercase tracking-wider mb-3">
-                                                <span className="text-slate-600">Protocol Progress</span>
-                                                <span className="text-violet-600">
-                                                    {activePlan ? Math.min(100, Math.ceil(((new Date() - new Date(activePlan.createdAt)) / (1000 * 60 * 60 * 24 * 7 * 12)) * 100)) : 0}%
-                                                </span>
-                                            </div>
-                                            <div className="h-3 bg-slate-100 rounded-full overflow-hidden p-[2px] border border-slate-200">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full relative overflow-hidden shadow-sm transition-all duration-1000"
-                                                    style={{ width: `${activePlan ? Math.min(100, Math.ceil(((new Date() - new Date(activePlan.createdAt)) / (1000 * 60 * 60 * 24 * 7 * 12)) * 100)) : 0}%` }}
+    return (
+        <div className="p-4 md:p-8 bg-[#FBFBFE] min-h-screen font-sans">
+            <div className="max-w-7xl mx-auto">
+
+                {/* Header with Switcher and Actions */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                    <div className="flex items-center gap-2 p-1.5 bg-white border border-gray-100 rounded-2xl w-fit shadow-sm">
+                        <button
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold bg-[#F3F4F6] text-[#1A1A1A] transition-all shadow-sm"
+                        >
+                            <Dumbbell size={16} />
+                            Workout Plan
+                        </button>
+                        <button
+                            onClick={() => navigate('/diet-plans')}
+                            className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-gray-400 hover:bg-gray-50 transition-all"
+                        >
+                            <UtensilsCrossed size={16} />
+                            Diet Plan
+                        </button>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <div className="relative group hidden md:block">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Search..."
+                                className="w-64 h-11 pl-10 pr-4 bg-white border border-gray-100 rounded-xl outline-none focus:border-indigo-200 transition-all text-sm font-medium"
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 px-1.5 py-0.5 bg-gray-50 border border-gray-100 rounded text-[10px] text-gray-400 font-bold">
+                                ⌘ K
+                            </div>
+                        </div>
+                        <button className="p-2.5 bg-white border border-gray-100 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm">
+                            <Moon size={18} />
+                        </button>
+                        <button className="p-2.5 bg-white border border-gray-100 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm relative">
+                            <Bell size={18} />
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        </button>
+                        <div className="w-10 h-10 rounded-xl bg-[#F97316] flex items-center justify-center text-white font-black text-xs shadow-lg shadow-orange-100 cursor-pointer hover:scale-105 transition-all">
+                            DT
+                        </div>
+                    </div>
+                </div>
+
+                {/* Plan Info Card */}
+                <div className="saas-card !p-8 !mb-8 !rounded-[32px] bg-white border-gray-100 shadow-sm space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-50 pb-6">
+                        <div>
+                            <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight">Plan Builder</h2>
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Design customized workout sequences</p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleSaveAsTemplate}
+                                className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-100 text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-50 transition-all shadow-sm"
+                            >
+                                <BookmarkPlus size={16} />
+                                Template
+                            </button>
+                            <button
+                                className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-[0.15em] shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all"
+                            >
+                                <User size={16} />
+                                Assign
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Plan Name <span className="text-red-400">*</span></label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Muscle Gain - Phase 1"
+                                value={planName}
+                                onChange={(e) => setPlanName(e.target.value)}
+                                className="w-full h-12 px-4 bg-[#F9FAFB] border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all shadow-sm"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Description</label>
+                            <input
+                                type="text"
+                                placeholder="Brief protocol overview..."
+                                value={description}
+                                onChange={(e) => setDescription(e.target.value)}
+                                className="w-full h-12 px-4 bg-[#F9FAFB] border border-gray-100 rounded-2xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all shadow-sm"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Workout Builder Section */}
+                <div className="saas-card !p-0 !mb-0 !rounded-[32px] bg-white border-gray-100 shadow-sm overflow-hidden">
+                    {/* Day Selector Tabs */}
+                    <div className="flex overflow-x-auto border-b border-gray-50 bg-[#FCFCFE]">
+                        {DAY_LABELS.map((day) => (
+                            <button
+                                key={day.key}
+                                onClick={() => setActiveDay(day.key)}
+                                className={`flex-shrink-0 px-8 py-5 text-[11px] font-black uppercase tracking-widest transition-all border-b-2 whitespace-nowrap ${activeDay === day.key
+                                    ? 'text-indigo-600 border-indigo-600 bg-white'
+                                    : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-white/60'
+                                    }`}
+                            >
+                                {day.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="p-8">
+                        {/* Day Header Info */}
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                    <Dumbbell size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">
+                                        {DAY_LABELS.find(d => d.key === activeDay).label}
+                                    </h3>
+                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] mt-0.5">
+                                        {DAY_LABELS.find(d => d.key === activeDay).focus}
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => addExercise(activeDay)}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-indigo-50 text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-100 transition-all"
+                            >
+                                <Plus size={16} strokeWidth={3} />
+                                Add Exercise
+                            </button>
+                        </div>
+
+                        {/* Exercise Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="border-b border-gray-50">
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 w-[25%] px-2">Exercise Name</th>
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center px-2">Sets</th>
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center px-2">Reps</th>
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 text-center px-2">Rest (s)</th>
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 px-2">Equipment</th>
+                                        <th className="pb-4 text-[10px] font-black uppercase tracking-widest text-gray-400 px-2">Notes</th>
+                                        <th className="pb-4 w-12 px-2"></th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-50">
+                                    {workoutExercises[activeDay].map((ex) => (
+                                        <tr key={ex.id}>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. Bench Press"
+                                                    value={ex.name}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'name', e.target.value)}
+                                                    className="w-full h-11 px-4 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all shadow-sm"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    value={ex.sets}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'sets', e.target.value)}
+                                                    className="w-16 h-11 px-2 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all text-center shadow-sm mx-auto"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    value={ex.reps}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'reps', e.target.value)}
+                                                    className="w-16 h-11 px-2 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all text-center shadow-sm mx-auto"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    value={ex.rest}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'rest', e.target.value)}
+                                                    className="w-16 h-11 px-2 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all text-center shadow-sm mx-auto"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Equipment"
+                                                    value={ex.equipment}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'equipment', e.target.value)}
+                                                    className="w-full h-11 px-4 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all shadow-sm"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Notes"
+                                                    value={ex.notes}
+                                                    onChange={(e) => updateExercise(activeDay, ex.id, 'notes', e.target.value)}
+                                                    className="w-full h-11 px-4 bg-[#F9FAFB] border border-gray-100 rounded-xl text-sm font-bold text-gray-900 outline-none focus:border-indigo-200 transition-all shadow-sm"
+                                                />
+                                            </td>
+                                            <td className="py-3 px-2 text-right">
+                                                <button
+                                                    onClick={() => removeExercise(activeDay, ex.id)}
+                                                    className="p-2.5 text-red-100 hover:text-red-500 transition-colors"
                                                 >
-                                                    <div className="absolute inset-0 bg-white/30 animate-[shimmer_2s_infinite]" />
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-4">
-                                            <div className="bg-slate-50/80 p-5 md:p-6 rounded-2xl flex items-center justify-between border border-slate-100">
-                                                <div>
-                                                    <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-1">Status</div>
-                                                    <div className="text-base md:text-lg font-black text-emerald-600 uppercase tracking-tight">Active Plan</div>
-                                                </div>
-                                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-emerald-500">
-                                                    <Activity size={20} className="animate-pulse" />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => navigate('/progress')}
-                                    className="relative z-10 w-full py-4 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-violet-500/30 hover:-translate-y-1 transition-all mt-6 md:mt-8 flex items-center justify-center gap-3 overflow-hidden group/btn"
-                                >
-                                    <span className="relative z-10 flex items-center gap-2">
-                                        Open Progress Lab <ChevronRight size={16} />
-                                    </span>
-                                    <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Right Content: Daily Protocol */}
-                    <div className="lg:col-span-8 space-y-6 md:space-y-8">
-                        {/* Day Selector */}
-                        <div className="flex overflow-x-auto gap-3 pb-2 no-scrollbar">
-                            {daysOfWeek.map((day) => {
-                                const hasProtocol = activePlan?.days?.[day];
-                                return (
-                                    <button
-                                        key={day}
-                                        onClick={() => setActiveDay(day)}
-                                        className={`flex-shrink-0 px-6 py-3.5 rounded-xl text-sm font-bold transition-all border ${activeDay === day
-                                            ? 'bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-200 border-transparent scale-105'
-                                            : hasProtocol
-                                                ? 'bg-white border-slate-200 text-slate-700 hover:border-violet-200 hover:bg-violet-50 hover:text-violet-700'
-                                                : 'bg-slate-50 border-transparent text-slate-300 cursor-not-allowed'
-                                            }`}
-                                    >
-                                        {day.toUpperCase()}
-                                    </button>
-                                );
-                            })}
-                        </div>
-
-                        {/* Workout Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                            {[
-                                { label: 'Total Volume', value: activePlan?.volume || 'N/A', icon: Activity, color: 'text-violet-600', bg: 'bg-violet-50', border: 'border-violet-100' },
-                                { label: 'Est. Duration', value: activePlan?.timePerSession || activePlan?.avgDuration || '60 min', icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50', border: 'border-orange-100' },
-                                { label: 'Intensity', value: activePlan?.intensity || 'High', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' }
-                            ].map((stat, i) => (
-                                <div key={i} className={`bg-white p-6 rounded-[24px] shadow-sm border ${stat.border} flex items-center gap-5 hover:shadow-lg transition-all hover:-translate-y-1`}>
-                                    <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center`}>
-                                        <stat.icon size={22} strokeWidth={2.5} />
-                                    </div>
-                                    <div>
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">{stat.label}</div>
-                                        <div className="text-xl font-black text-slate-900">{stat.value}</div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Exercise List */}
-                        <div className="bg-white rounded-[32px] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                            <div className="p-4 md:p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-violet-600 shadow-sm border border-slate-100">
-                                        <Calendar size={24} strokeWidth={2.5} />
-                                    </div>
-                                    <div>
-                                        <h2 className="text-lg font-black text-slate-900 tracking-tight">{activePlan ? `Day ${daysOfWeek.indexOf(activeDay) + 1}: ${activePlan.name}` : "Today's Protocol"}</h2>
-                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-0.5">Focus: {activePlan?.goal || 'Strength & Power'}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between md:justify-end gap-3 w-full md:w-auto">
-                                    <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white text-slate-600 rounded-xl text-xs font-bold border border-slate-200 hover:border-violet-500 hover:text-violet-600 transition-all shadow-sm flex-1 md:flex-none">
-                                        <Music size={14} /> Playlist
-                                    </button>
-                                    <button className="flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 hover:-translate-y-0.5 flex-1 md:flex-none">
-                                        <Timer size={14} /> Start Session
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="p-6">
-                                <div className="space-y-4">
-                                    {activePlan?.days?.[activeDay] ? (
-                                        activePlan.days[activeDay].map((exercise, idx) => (
-                                            <div key={exercise.id} className="group flex flex-col md:flex-row items-stretch md:items-center p-5 rounded-2xl bg-white border border-slate-100 hover:border-violet-200 hover:shadow-lg hover:shadow-violet-500/5 transition-all gap-6 relative overflow-hidden">
-                                                {/* Hover Highlight */}
-                                                <div className="absolute left-0 top-0 bottom-0 w-1 bg-violet-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-
-                                                <div className="flex items-center gap-5 md:w-1/3">
-                                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center shadow-inner text-slate-400 font-black text-lg group-hover:bg-violet-600 group-hover:text-white transition-all duration-300">
-                                                        {idx + 1}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-base font-bold text-slate-900 mb-1 group-hover:text-violet-700 transition-colors">{exercise.name}</h4>
-                                                        <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                            {exercise.notes ? (exercise.notes.length > 20 ? exercise.notes.substring(0, 20) + '...' : exercise.notes) : 'Standard Movement'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
-                                                    <div className="text-center md:text-left">
-                                                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Sets</div>
-                                                        <div className="text-sm font-bold text-slate-900 bg-slate-50 inline-block px-3 py-1 rounded-lg border border-slate-100">{exercise.sets}</div>
-                                                    </div>
-                                                    <div className="text-center md:text-left">
-                                                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Reps</div>
-                                                        <div className="text-sm font-bold text-slate-900 bg-slate-50 inline-block px-3 py-1 rounded-lg border border-slate-100">{exercise.reps}</div>
-                                                    </div>
-                                                    <div className="text-center md:text-left">
-                                                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">RPE</div>
-                                                        <div className="text-sm font-bold text-orange-600 flex items-center gap-1">
-                                                            <Flame size={12} fill="currentColor" /> {exercise.rpe}/10
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-center md:text-left">
-                                                        <div className="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1">Rest</div>
-                                                        <div className="text-sm font-bold text-violet-600">{exercise.rest}</div>
-                                                    </div>
-                                                </div>
-
-                                                <button className="hidden md:flex w-10 h-10 bg-slate-50 rounded-xl items-center justify-center text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all border border-transparent hover:border-violet-100">
-                                                    <Info size={18} />
+                                                    <Trash2 size={18} />
                                                 </button>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-20 bg-slate-50/50 rounded-[32px] border-2 border-dashed border-slate-200">
-                                            <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center text-slate-300 mx-auto mb-6 shadow-sm">
-                                                <Zap size={40} />
-                                            </div>
-                                            <h3 className="text-xl font-bold text-slate-900 mb-2">Rest & Recovery Day</h3>
-                                            <p className="text-slate-500 font-medium max-w-xs mx-auto text-sm leading-relaxed">
-                                                No specific protocol scheduled. Focus on active recovery and hydration.
-                                            </p>
-                                        </div>
-                                    )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+
+                            {workoutExercises[activeDay].length === 0 && (
+                                <div className="py-20 flex flex-col items-center justify-center text-gray-400 bg-gray-50/30 rounded-3xl border-2 border-dashed border-gray-100 mt-4">
+                                    <Dumbbell size={48} strokeWidth={1} className="mb-4 opacity-20" />
+                                    <p className="text-sm font-bold">No exercises added for this day.</p>
+                                    <button
+                                        onClick={() => addExercise(activeDay)}
+                                        className="mt-4 text-[10px] font-black uppercase tracking-widest text-indigo-600 hover:underline"
+                                    >
+                                        Add your first exercise
+                                    </button>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Creation/Edit Modal */}
-            <CreateWorkoutDrawer
-                isOpen={isCreateModalOpen}
-                onClose={() => setIsCreateModalOpen(false)}
-                onSave={handleSavePlan}
-                initialData={editingPlan}
-            />
-
-            {/* Assignment Modal */}
-            <AssignWorkoutDrawer
-                isOpen={assignModalOpen}
-                onClose={() => setAssignModalOpen(false)}
-                onAssign={handleAssignPlan}
-                planName={plans.find(p => p.id === selectedPlanId)?.name}
-            />
+            {/* Global Design Extras */}
+            <style>{`
+                .saas-card {
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+                .saas-card:hover {
+                    box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+                }
+                ::-webkit-scrollbar {
+                    height: 4px;
+                }
+                ::-webkit-scrollbar-thumb {
+                    background: #E5E7EB;
+                    border-radius: 10px;
+                }
+            `}</style>
         </div>
     );
 };

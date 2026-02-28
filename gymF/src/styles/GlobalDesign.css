@@ -458,6 +458,17 @@ body {
     /* Firefox */
 }
 
+/* Global Scroll Lock Utility */
+body.drawer-no-scroll,
+body.drawer-no-scroll .content-area,
+body.drawer-no-scroll .saas-container,
+body.drawer-no-scroll .main-container {
+    overflow: hidden !important;
+    position: relative;
+    touch-action: none;
+    /* Prevent touch scrolling on mobile */
+}
+
 /* --------------------------------------------------------------------------
    10. PRINT STYLES
    -------------------------------------------------------------------------- */

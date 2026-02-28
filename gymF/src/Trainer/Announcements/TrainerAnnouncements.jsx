@@ -1,116 +1,128 @@
-import React, { useState, useEffect } from 'react';
-import { announcementApi } from '../../api/announcementApi';
-import { Megaphone, AlertCircle, Info, Calendar, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+    Megaphone,
+    MessageSquare,
+    Layout,
+    Send,
+    Plus,
+    CheckCircle2,
+    History,
+    Users
+} from 'lucide-react';
+import Card from '../../components/ui/Card';
 
 const TrainerAnnouncements = () => {
-    const [announcements, setAnnouncements] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('Announcements');
 
-    useEffect(() => {
-        const fetchAnnouncements = async () => {
-            try {
-                const data = await announcementApi.getAllAnnouncements();
-                // Filter announcements relevant to trainers
-                const filtered = data.filter(
-                    item => item.targetRole === "trainer" || item.targetRole === "all" || !item.targetRole
-                );
-                setAnnouncements(filtered);
-            } catch (error) {
-                console.error("Failed to fetch announcements:", error);
-            } finally {
-                setLoading(false);
-            }
+    const StatItem = ({ title, value, subtitle, icon: Icon, color = 'primary' }) => {
+        const colorClasses = {
+            primary: { bg: 'bg-indigo-50', text: 'text-indigo-600', iconBg: 'group-hover:bg-indigo-600 group-hover:text-white' },
+            success: { bg: 'bg-emerald-50', text: 'text-emerald-600', iconBg: 'group-hover:bg-emerald-600 group-hover:text-white' },
+            warning: { bg: 'bg-amber-50', text: 'text-amber-600', iconBg: 'group-hover:bg-amber-600 group-hover:text-white' },
         };
-        fetchAnnouncements();
-    }, []);
+        const currentStyle = colorClasses[color] || colorClasses.primary;
 
-    const getPriorityStyle = (priority) => {
-        const config = {
-            high: { gradient: 'from-rose-500 to-red-600', bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-100', icon: AlertCircle, shadow: 'shadow-rose-500/20' },
-            medium: { gradient: 'from-amber-500 to-orange-600', bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-100', icon: Info, shadow: 'shadow-amber-500/20' },
-            low: { gradient: 'from-indigo-500 to-blue-600', bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-100', icon: Info, shadow: 'shadow-indigo-500/20' },
-        };
-        return config[priority] || config.medium;
+        return (
+            <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 border border-transparent hover:border-indigo-100 cursor-pointer p-4 sm:p-5 h-full">
+                <div className="flex justify-between items-start mb-2 relative z-10">
+                    <div>
+                        <div className="text-gray-500 font-black text-[10px] sm:text-xs uppercase tracking-widest mb-1">{title}</div>
+                        <div className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight">{value}</div>
+                    </div>
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-110 shadow-sm ${currentStyle.bg} ${currentStyle.text} ${currentStyle.iconBg}`}>
+                        {Icon && <Icon size={20} className="sm:w-[22px] sm:h-[22px] transition-colors duration-300" />}
+                    </div>
+                </div>
+                {subtitle && (
+                    <div className="flex items-center gap-1.5 sm:gap-2 mt-3">
+                        <span className={`text-[10px] sm:text-xs font-black uppercase tracking-tighter px-2 py-0.5 rounded-full ${currentStyle.bg} ${currentStyle.text} border border-transparent group-hover:border-current/10`}>
+                            {subtitle}
+                        </span>
+                    </div>
+                )}
+                <div className={`absolute -bottom-4 -right-4 w-20 h-20 rounded-full opacity-0 group-hover:opacity-10 transition-opacity duration-500 ${currentStyle.bg}`}></div>
+            </Card>
+        );
     };
 
-    if (loading) {
-        return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-            </div>
-        );
-    }
-
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50/20 p-6 md:p-10 font-sans">
+        <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {/* Header Section */}
-            <div className="max-w-7xl mx-auto mb-12">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                    <div className="relative">
-                        <div className="absolute -top-10 -left-10 w-40 h-40 bg-indigo-200 rounded-full blur-3xl opacity-20 pointer-events-none" />
-                        <h1 className="relative text-3xl md:text-5xl font-black text-slate-800 flex items-center gap-4">
-                            <Megaphone className="text-indigo-600" size={40} />
-                            Announcements
-                        </h1>
-                        <p className="text-slate-500 mt-3 text-lg font-medium max-w-xl">Stay updated with the latest gym news, events, and trainer-specific updates.</p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b-2 border-slate-100">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                        Communication Hub
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Broadcasting System</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                            Manage member engagement and updates
+                        </p>
                     </div>
+                </div>
+                <div className="flex items-center gap-3 flex-nowrap">
+                    <button className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm">
+                        <Layout size={16} /> Templates
+                    </button>
+                    <button className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm">
+                        <Send size={16} /> Broadcast
+                    </button>
+                    <button className="h-11 px-8 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                        <Plus size={16} strokeWidth={3} /> New Announcement
+                    </button>
                 </div>
             </div>
 
-            {/* Announcements Grid */}
-            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {announcements.length === 0 ? (
-                    <div className="col-span-full py-24 flex flex-col items-center justify-center text-center">
-                        <div className="w-24 h-24 bg-white/60 backdrop-blur-md rounded-[40px] shadow-sm flex items-center justify-center text-slate-200 mb-6 border border-white/50">
-                            <Megaphone size={48} className="opacity-20" />
-                        </div>
-                        <h3 className="text-xl font-black text-slate-800 tracking-tight">No Announcements for You</h3>
-                        <p className="text-slate-500 text-sm font-medium max-w-sm mx-auto mt-2">There are currently no announcements relevant to trainers. Check back later!</p>
-                    </div>
-                ) : (
-                    announcements.map((announcement) => {
-                        const style = getPriorityStyle(announcement.priority?.toLowerCase());
-                        const Icon = style.icon;
-                        return (
-                            <div
-                                key={announcement.id}
-                                className={`group relative bg-white/60 backdrop-blur-md rounded-[40px] border border-white/50 p-8 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden`}
-                            >
-                                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${style.gradient} opacity-[0.03] rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-700`} />
+            {/* Top Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatItem title="Total Announcements" value="0" subtitle="All time" icon={Megaphone} color="primary" />
+                <StatItem title="Active" value="0" subtitle="Currently visible" icon={CheckCircle2} color="success" />
+                <StatItem title="Messages Sent" value="0" subtitle="Platform outreach" icon={MessageSquare} color="warning" />
+                <StatItem title="Templates" value="14" subtitle="Saved drafts" icon={Layout} color="primary" />
+            </div>
 
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${style.gradient} flex items-center justify-center text-white shadow-xl ${style.shadow} group-hover:rotate-12 transition-transform`}>
-                                        <Icon size={28} />
-                                    </div>
-                                    <span className={`px-4 py-1.5 rounded-full ${style.bg} ${style.text} text-[10px] font-black uppercase tracking-widest border ${style.border}`}>
-                                        {announcement.priority}
-                                    </span>
-                                </div>
+            {/* Tabs Section */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 border-b-2 border-slate-50 pb-px overflow-x-auto">
+                    {['Announcements', 'Communication Logs'].map(tab => (
+                        <button
+                            key={tab}
+                            onClick={() => setActiveTab(tab)}
+                            className={`px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all relative whitespace-nowrap ${activeTab === tab
+                                ? 'text-indigo-600'
+                                : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                        >
+                            {tab}
+                            {activeTab === tab && (
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-indigo-600 rounded-t-full shadow-[0_-4px_12px_rgba(79,70,229,0.4)]" />
+                            )}
+                        </button>
+                    ))}
+                </div>
 
-                                <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors leading-tight">
-                                    {announcement.title}
-                                </h3>
-
-                                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
-                                    {announcement.message}
-                                </p>
-
-                                <div className="pt-6 border-t border-slate-50 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400">
-                                            <Users size={16} />
-                                        </div>
-                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{announcement.targetRole || 'all'}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 whitespace-nowrap">
-                                        <Calendar size={14} className="text-slate-300" />
-                                        {announcement.date}
-                                    </div>
-                                </div>
+                {/* Tab Content */}
+                <div className="min-h-[400px]">
+                    {activeTab === 'Announcements' && (
+                        <div className="flex flex-col items-center justify-center py-24 text-center">
+                            <div className="w-24 h-24 bg-white/60 backdrop-blur-md rounded-[40px] shadow-2xl shadow-indigo-100/20 flex items-center justify-center text-slate-200 mb-8 border border-white/50 group hover:scale-110 hover:rotate-12 transition-all duration-500">
+                                <Megaphone size={48} className="opacity-20 group-hover:opacity-40" />
                             </div>
-                        );
-                    })
-                )}
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">No announcements yet</h3>
+                            <p className="text-slate-500 mt-2 max-w-sm font-medium leading-relaxed">
+                                Create your first announcement to reach your members instantly.
+                            </p>
+                        </div>
+                    )}
+
+                    {activeTab === 'Communication Logs' && (
+                        <div className="flex flex-col items-center justify-center py-24 text-center opacity-40">
+                            <History size={48} className="text-slate-300 mb-4" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">No logs found</p>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

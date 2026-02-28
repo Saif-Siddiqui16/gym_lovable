@@ -148,7 +148,7 @@ const PTSessions = () => {
                 toast.success('Package updated successfully');
             } else {
                 await ptApi.createPackage(payload);
-                toast.success('Package created successfully');
+                toast.success('Package added successfully');
             }
 
             setIsSidebarOpen(false);
@@ -330,25 +330,37 @@ const PTSessions = () => {
 
             {/* Main Content Area */}
             <div className="bg-white rounded-[32px] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-                {/* Tabs */}
-                <div className="flex items-center px-6 pt-6 border-b border-slate-100 overflow-x-auto scrollbar-hide">
-                    {[
-                        { id: 'packages', label: 'Packages' },
-                        { id: 'active', label: 'Active Packages' },
-                        { id: 'sessions', label: 'Sessions' }
-                    ].map(tab => (
+                {/* Tabs & Actions */}
+                <div className="flex items-center justify-between px-6 border-b border-slate-100 bg-white">
+                    <div className="flex items-center overflow-x-auto scrollbar-hide">
+                        {[
+                            { id: 'packages', label: 'Packages' },
+                            { id: 'active', label: 'Active Packages' },
+                            { id: 'sessions', label: 'Sessions' }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-6 py-5 text-sm font-semibold transition-all relative ${activeTab === tab.id ? 'text-indigo-600' : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                            >
+                                {tab.label}
+                                {activeTab === tab.id && (
+                                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-600 to-violet-600 rounded-full" />
+                                )}
+                            </button>
+                        ))}
+                    </div>
+
+                    {activeTab !== 'packages' && (
                         <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`px-6 py-3 text-sm font-medium transition-all relative ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-500 hover:text-slate-700'
-                                }`}
+                            onClick={() => setIsSessionDrawerOpen(true)}
+                            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:shadow-xl hover:shadow-indigo-500/30 transition-all mr-6"
                         >
-                            {tab.label}
-                            {activeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full" />
-                            )}
+                            <Calendar size={18} strokeWidth={2.5} />
+                            Schedule Session
                         </button>
-                    ))}
+                    )}
                 </div>
 
                 {/* Filters Row */}
@@ -366,20 +378,22 @@ const PTSessions = () => {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         {activeTab === 'packages' && (
-                            <label className="flex items-center gap-2 cursor-pointer group">
-                                <div className={`w-10 h-5 rounded-full relative transition-colors ${showInactive ? 'bg-blue-600' : 'bg-slate-200'}`}>
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only"
-                                        checked={showInactive}
-                                        onChange={() => setShowInactive(!showInactive)}
-                                    />
-                                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${showInactive ? 'translate-x-5' : ''}`} />
-                                </div>
-                                <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors">Show Inactive</span>
-                            </label>
+                            <div className="flex items-center gap-4 mr-2">
+                                <label className="flex items-center gap-2 cursor-pointer group">
+                                    <div className={`w-8 h-4 rounded-full relative transition-colors ${showInactive ? 'bg-indigo-600' : 'bg-slate-200'}`}>
+                                        <input
+                                            type="checkbox"
+                                            className="sr-only"
+                                            checked={showInactive}
+                                            onChange={() => setShowInactive(!showInactive)}
+                                        />
+                                        <div className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full transition-transform ${showInactive ? 'translate-x-4' : ''}`} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors">Show Inactive</span>
+                                </label>
+                            </div>
                         )}
                         <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                             <Filter size={20} />
@@ -540,27 +554,7 @@ const PTSessions = () => {
                 </div>
             </div>
 
-            {/* Create Actions FAB */}
-            <div className="fixed bottom-8 right-8 flex flex-col items-end gap-3 z-50">
-                {activeTab === 'sessions' && (
-                    <button
-                        onClick={() => setIsSessionDrawerOpen(true)}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-xl hover:shadow-blue-500/30 transition-all flex items-center gap-2 group font-bold"
-                    >
-                        <Clock size={20} className="group-hover:scale-110 transition-transform" />
-                        <span>Log Session</span>
-                    </button>
-                )}
-                {activeTab === 'packages' && (
-                    <button
-                        onClick={() => { resetForm(); setIsSidebarOpen(true); }}
-                        className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl shadow-xl hover:shadow-blue-500/30 transition-all flex items-center gap-2 group font-bold"
-                    >
-                        <Plus size={20} className="group-hover:rotate-90 transition-transform" />
-                        <span>Create Package</span>
-                    </button>
-                )}
-            </div>
+            {/* No FAB content - button moved to tabs area */}
 
             {/* Side Panel Drawer for Creating/Editing Package */}
             {isSidebarOpen && (
@@ -570,7 +564,7 @@ const PTSessions = () => {
                         {/* Drawer Header */}
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-800">{editingPackage ? 'Edit PT Package' : 'Create PT Package'}</h2>
+                                <h2 className="text-lg font-bold text-slate-800">{editingPackage ? 'Edit PT Package' : 'Add PT Package'}</h2>
                                 <p className="text-xs text-slate-500">Define a new personal training package</p>
                             </div>
                             <button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
@@ -688,131 +682,102 @@ const PTSessions = () => {
                             <button
                                 onClick={handleCreatePackage}
                                 disabled={isSubmitting}
-                                className="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 transition-all"
+                                className="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 transition-all"
                             >
-                                {isSubmitting ? 'Processing...' : (editingPackage ? 'Update Package' : 'Create Package')}
+                                {isSubmitting ? 'Processing...' : (editingPackage ? 'Update Package' : 'Add Package')}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* Side Panel Drawer for Logging Session */}
+            {/* Side Panel Drawer for Scheduling Session */}
             {isSessionDrawerOpen && (
                 <div className="fixed inset-0 z-[100] overflow-hidden">
                     <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setIsSessionDrawerOpen(false)} />
                     <div className="absolute inset-y-0 right-0 max-w-md w-full bg-white shadow-2xl flex flex-col transform transition-transform animate-in slide-in-from-right duration-300">
                         <div className="p-6 border-b border-slate-100 flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-800">Log PT Session</h2>
-                                <p className="text-xs text-slate-500">Log a completed training session</p>
+                                <h2 className="text-lg font-bold text-slate-800">Schedule PT Session</h2>
+                                <p className="text-xs text-slate-500">Book a personal training session</p>
                             </div>
                             <button onClick={() => setIsSessionDrawerOpen(false)} className="p-2 hover:bg-slate-100 rounded-lg text-slate-400 transition-colors">
                                 <X size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleLogSession} className="flex-1 overflow-y-auto p-6 space-y-4">
+                        <form onSubmit={handleLogSession} className="flex-1 overflow-y-auto p-6 space-y-6">
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Member *</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Member Package *</label>
                                 <select
                                     required
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
-                                    value={sessionData.memberId}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all bg-white"
+                                    value={sessionData.ptAccountId}
                                     onChange={(e) => {
-                                        const mid = e.target.value;
-                                        const memberAccounts = activeAccounts.filter(acc => acc.memberId === parseInt(mid));
+                                        const aid = e.target.value;
+                                        const account = activeAccounts.find(acc => acc.id === parseInt(aid));
                                         setSessionData({
                                             ...sessionData,
-                                            memberId: mid,
-                                            ptAccountId: memberAccounts.length > 0 ? memberAccounts[0].id : ''
+                                            ptAccountId: aid,
+                                            memberId: account ? account.memberId : '',
+                                            trainerId: sessionData.trainerId || (account?.trainerId || trainers[0]?.id || '')
                                         });
                                     }}
                                 >
-                                    <option value="">Select Member</option>
-                                    {members.map(m => (
-                                        <option key={m.id} value={m.id}>{m.name} ({m.memberId})</option>
+                                    <option value="">Select member package</option>
+                                    {activeAccounts.map(acc => (
+                                        <option key={acc.id} value={acc.id}>
+                                            {acc.member?.name} - {acc.package?.name} ({acc.remainingSessions} Left)
+                                        </option>
                                     ))}
                                 </select>
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Trainer *</label>
-                                <select
-                                    required
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
-                                    value={sessionData.trainerId}
-                                    onChange={(e) => setSessionData({ ...sessionData, trainerId: e.target.value })}
-                                >
-                                    <option value="">Select Trainer</option>
-                                    {trainers.map(t => (
-                                        <option key={t.id} value={t.id}>{t.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {sessionData.memberId && (
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Package</label>
-                                    <select
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
-                                        value={sessionData.ptAccountId}
-                                        onChange={(e) => setSessionData({ ...sessionData, ptAccountId: e.target.value })}
-                                    >
-                                        <option value="">Walk-in / No Package</option>
-                                        {activeAccounts.filter(acc => acc.memberId === parseInt(sessionData.memberId)).map(acc => (
-                                            <option key={acc.id} value={acc.id}>{acc.package?.name} ({acc.remainingSessions} left)</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Date & Time *</label>
+                                <div className="grid grid-cols-2 gap-4">
                                     <input
                                         type="date"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
+                                        required
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                                         value={sessionData.date}
                                         onChange={(e) => setSessionData({ ...sessionData, date: e.target.value })}
                                     />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Time</label>
                                     <input
                                         type="time"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
+                                        required
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                                         value={sessionData.time}
                                         onChange={(e) => setSessionData({ ...sessionData, time: e.target.value })}
                                     />
                                 </div>
+                                <p className="text-[10px] text-slate-400 mt-1 italic pl-1">dd-mm-yyyy --:--</p>
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Duration (min)</label>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Duration (minutes)</label>
                                 <input
                                     type="number"
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium"
                                     value={sessionData.duration}
                                     onChange={(e) => setSessionData({ ...sessionData, duration: e.target.value })}
                                 />
                             </div>
-
-                            <div className="space-y-1">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Notes</label>
-                                <textarea
-                                    rows={3}
-                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 outline-none focus:border-blue-500 resize-none"
-                                    value={sessionData.notes}
-                                    onChange={(e) => setSessionData({ ...sessionData, notes: e.target.value })}
-                                />
-                            </div>
                         </form>
 
-                        <div className="p-6 border-t border-slate-100 bg-slate-50/50 flex gap-4">
-                            <button onClick={() => setIsSessionDrawerOpen(false)} className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 hover:bg-white transition-all">Cancel</button>
-                            <button onClick={handleLogSession} disabled={isSubmitting} className="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50 transition-all">
-                                {isSubmitting ? 'Processing...' : 'Log Session'}
+                        <div className="p-6 border-t border-slate-100 bg-slate-50/10 flex gap-4">
+                            <button
+                                onClick={() => setIsSessionDrawerOpen(false)}
+                                className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-100 font-bold text-slate-500 hover:bg-slate-50 transition-all text-sm"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleLogSession}
+                                disabled={isSubmitting}
+                                className="flex-[2] px-4 py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/30 disabled:opacity-50 transition-all text-sm shadow-md"
+                            >
+                                {isSubmitting ? 'Processing...' : 'Schedule'}
                             </button>
                         </div>
                     </div>

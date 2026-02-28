@@ -13,13 +13,51 @@ const RightDrawer = ({
     const [isAnimating, setIsAnimating] = useState(false);
 
     useEffect(() => {
-        if (isOpen) {
+        const lockScroll = () => {
+            // Add utility class for CSS-based locking
+            document.body.classList.add('drawer-no-scroll');
+
+            // Lock body & document
             document.body.style.overflow = 'hidden';
+            document.documentElement.style.overflow = 'hidden';
+
+            // Lock all potential scrollable containers in the layout
+            const wrappers = document.querySelectorAll('.content-area, .content-wrapper, .saas-container, .main-container');
+            wrappers.forEach(el => {
+                const currentOverflow = window.getComputedStyle(el).overflowY;
+                if (currentOverflow === 'auto' || currentOverflow === 'scroll') {
+                    el.setAttribute('data-prev-overflow', el.style.overflow || 'auto');
+                    el.style.overflow = 'hidden';
+                    el.style.paddingRight = '6px'; // Prevent layout shift from scrollbar disappearing
+                }
+            });
+        };
+
+        const unlockScroll = () => {
+            // Remove utility class
+            document.body.classList.remove('drawer-no-scroll');
+
+            document.body.style.overflow = '';
+            document.documentElement.style.overflow = '';
+
+            const wrappers = document.querySelectorAll('.content-area, .content-wrapper, .saas-container, .main-container');
+            wrappers.forEach(el => {
+                const prev = el.getAttribute('data-prev-overflow');
+                if (prev) {
+                    el.style.overflow = prev === 'auto' ? '' : prev;
+                    el.style.paddingRight = '';
+                    el.removeAttribute('data-prev-overflow');
+                }
+            });
+        };
+
+        if (isOpen) {
+            lockScroll();
             setIsAnimating(true);
         } else {
             const timer = setTimeout(() => {
                 setIsAnimating(false);
-                document.body.style.overflow = 'unset';
+                unlockScroll();
             }, 300);
             return () => clearTimeout(timer);
         }

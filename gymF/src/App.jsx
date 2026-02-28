@@ -125,8 +125,11 @@ import Referrals from './modules/crm/pages/Referrals';
 // Module: Member
 import MemberBookings from './Member/Bookings/MemberBookings';
 import MemberCheckIn from './Member/CheckIn/MemberCheckIn';
+import MyAttendance from './Member/Attendance/MyAttendance';
 import MyMembership from './Member/Membership/MyMembership';
 import MemberPayments from './Member/Payments/MemberPayments';
+import MemberRequests from './Member/Requests/MemberRequests';
+import MemberAnnouncements from './Member/Dashboard/MemberAnnouncements';
 import MemberProfile from './Member/Profile/MyProfile';
 import MemberWallet from './Member/Wallet/MemberWallet';
 
@@ -212,7 +215,7 @@ export default function App() {
 
         {/* Protect routes: If no role, always redirect to /login */}
         <Route element={currentRole ? <MainLayout role={currentRole} /> : <Navigate to="/login" replace />}>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardDispatcher role={currentRole} />} />
 
           {/* MODULE: TRAINER (Always registered to avoid Page Not Found issues) */}
@@ -271,8 +274,8 @@ export default function App() {
           )}
 
           {/* MODULE: REFERRALS */}
-          {(currentRole === ROLES.SUPER_ADMIN || currentRole === ROLES.MANAGER || currentRole === ROLES.BRANCH_ADMIN || currentRole === ROLES.STAFF) && (
-            <Route path="/referrals" element={<Referrals />} />
+          {(currentRole === ROLES.SUPER_ADMIN || currentRole === ROLES.MANAGER || currentRole === ROLES.BRANCH_ADMIN || currentRole === ROLES.STAFF || currentRole === ROLES.MEMBER) && (
+            <Route path="/referrals" element={<Referrals role={currentRole} />} />
           )}
 
           {/* MODULE: SETTINGS (Isolated for Gym Admin/Manager) */}
@@ -407,13 +410,13 @@ export default function App() {
               <Route path="/branchadmin/reports/lead-conversion" element={<LeadConversionReport />} />
               <Route path="/branchadmin/reports/expenses" element={<ExpenseReport />} />
               <Route path="/branchadmin/reports/performance" element={<BranchPerformanceReport />} />
-              <Route path="/branchadmin/branch-management/branches" element={<BranchList />} />
               <Route path="/branchadmin/trainer-requests" element={<TrainerRequests role={currentRole} />} />
 
               {/* Reused Settings Routes */}
 
               <Route element={<SettingsLayout role={currentRole} />}>
-                <Route path="/branchadmin/settings/general" element={<GeneralSettings />} />
+                <Route path="/branchadmin/settings/general" element={<OrganizationSettings role={currentRole} />} />
+                <Route path="/branchadmin/settings/branches" element={<BranchList />} />
                 <Route path="/branchadmin/settings/hardware" element={<HardwareSettings />} />
                 <Route path="/branchadmin/settings/communication" element={<Notifications />} />
                 <Route path="/branchadmin/settings/payments" element={<PaymentGateway />} />
@@ -468,9 +471,12 @@ export default function App() {
             <>
               <Route path="/member/bookings" element={<MemberBookings />} />
               <Route path="/member/check-in" element={<MemberCheckIn />} />
+              <Route path="/member/attendance" element={<MyAttendance />} />
               <Route path="/member/store" element={<StorePage />} />
-              <Route path="/member/membership" element={<MyMembership />} />
+              <Route path="/member/benefits" element={<MyMembership role={currentRole} />} />
               <Route path="/member/payments" element={<MemberPayments />} />
+              <Route path="/member/requests" element={<MemberRequests />} />
+              <Route path="/member/announcements" element={<MemberAnnouncements />} />
               <Route path="/member/profile/me" element={<MemberProfile />} />
               <Route path="/member/wallet" element={<MemberWallet />} />
               <Route path="/member/feedback" element={<FeedbackSystem role={currentRole} />} />

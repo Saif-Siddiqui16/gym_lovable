@@ -1,253 +1,261 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+    LayoutDashboard,
+    Calendar,
+    Clock,
+    CreditCard,
+    TrendingUp,
+    ShoppingCart,
+    UserPlus,
+    Shield,
+    User,
+    Lock,
+    ChevronRight,
+    Search,
+    IndianRupee,
+    Activity,
+    Users
+} from 'lucide-react';
 import Card from '../../../components/ui/Card';
-import StatsCard from '../components/StatsCard';
-import DashboardGrid from '../components/DashboardGrid';
-import BenefitWalletWidget from '../components/BenefitWalletWidget';
-import { DASHBOARD_DATA } from '../data/mockDashboardData';
-import { Trophy, ArrowRight, Calendar, Clock, Zap, Target, ShoppingBag, Sparkles, ChevronRight, Activity, CheckCircle, TrendingUp } from 'lucide-react';
-import apiClient from '../../../api/apiClient';
-
-const CircularProgress = ({ progress, size = 60, strokeWidth = 6 }) => {
-    const radius = (size - strokeWidth) / 2;
-    const circumference = radius * 2 * Math.PI;
-    const offset = circumference - (progress / 100) * circumference;
-
-    return (
-        <div className="relative inline-flex items-center justify-center p-1 bg-white rounded-full shadow-inner" style={{ width: size + 8, height: size + 8 }}>
-            <svg className="transform -rotate-90" width={size} height={size}>
-                <circle
-                    className="text-slate-100"
-                    strokeWidth={strokeWidth}
-                    stroke="currentColor"
-                    fill="transparent"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                />
-                <circle
-                    className="text-violet-600 transition-all duration-1000 ease-out"
-                    strokeWidth={strokeWidth}
-                    strokeDasharray={circumference}
-                    strokeDashoffset={offset}
-                    strokeLinecap="round"
-                    stroke="currentColor"
-                    fill="transparent"
-                    r={radius}
-                    cx={size / 2}
-                    cy={size / 2}
-                    style={{ filter: 'drop-shadow(0 0 4px rgba(124, 58, 237, 0.3))' }}
-                />
-            </svg>
-            <span className="absolute text-[10px] font-black text-slate-900 tracking-tighter">{Math.round(progress)}%</span>
-        </div>
-    );
-};
-
-const INITIAL_MEMBER_DATA = {
-    stats: [
-        { id: 1, title: 'My Plan', value: '...', icon: CheckCircle, color: 'primary' },
-        { id: 2, title: 'Next Class', value: '...', icon: Calendar, color: 'success' },
-        { id: 3, title: 'Attendance', value: '0%', icon: TrendingUp, color: 'success' },
-    ],
-    planSummary: {
-        workoutsCompleted: 0,
-        totalWorkouts: 0,
-        nextGoal: '...',
-        membershipStatus: '...',
-        expiryDate: '...',
-        daysRemaining: 0
-    },
-    announcements: [],
-    benefitWallet: { benefits: [] }
-};
 
 const MemberDashboard = () => {
-    const [data, setData] = useState(INITIAL_MEMBER_DATA);
-    const [loading, setLoading] = useState(true);
+    const today = "Saturday, February 28, 2026";
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            try {
-                const response = await apiClient.get('/dashboard/member');
-                const apiData = response.data;
-                setData(prev => ({
-                    ...prev,
-                    stats: [
-                        { ...prev.stats[0], value: apiData.planName },
-                        { ...prev.stats[1], value: apiData.nextClass },
-                        { ...prev.stats[2], value: apiData.attendanceRate }
-                    ],
-                    planSummary: apiData.planSummary,
-                    announcements: apiData.announcements,
-                    benefitWallet: apiData.benefitWallet
-                }));
-            } catch (error) {
-                console.error('Failed to fetch member dashboard:', error);
-            } finally {
-                setLoading(false);
-            }
+    const StatCard = ({ title, value, subtitle, icon: Icon, color = 'primary' }) => {
+        const colorClasses = {
+            primary: { bg: 'bg-indigo-50', text: 'text-indigo-600', iconBg: 'group-hover:bg-indigo-600 group-hover:text-white' },
+            success: { bg: 'bg-emerald-50', text: 'text-emerald-600', iconBg: 'group-hover:bg-emerald-600 group-hover:text-white' },
+            warning: { bg: 'bg-amber-50', text: 'text-amber-600', iconBg: 'group-hover:bg-amber-600 group-hover:text-white' },
+            danger: { bg: 'bg-rose-50', text: 'text-rose-600', iconBg: 'group-hover:bg-rose-600 group-hover:text-white' },
         };
-        fetchDashboardData();
-    }, []);
+        const currentStyle = colorClasses[color] || colorClasses.primary;
 
-    if (loading) {
         return (
-            <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium animate-pulse uppercase tracking-[0.2em] text-[10px]">Retrieving Your Performance Data...</p>
+            <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-indigo-500/10 border border-transparent hover:border-indigo-100 cursor-pointer p-5 h-full">
+                <div className="flex justify-between items-start mb-2 relative z-10">
+                    <div>
+                        <div className="text-slate-400 font-black text-[10px] uppercase tracking-widest mb-1">{title}</div>
+                        <div className="text-2xl font-black text-slate-900 tracking-tight">{value}</div>
+                    </div>
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-300 transform group-hover:scale-110 shadow-sm ${currentStyle.bg} ${currentStyle.text} ${currentStyle.iconBg}`}>
+                        {Icon && <Icon size={20} />}
+                    </div>
                 </div>
-            </div>
+                {subtitle && (
+                    <div className="flex items-center gap-1.5 mt-3">
+                        <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${currentStyle.bg} ${currentStyle.text} border border-transparent group-hover:border-current/10`}>
+                            {subtitle}
+                        </span>
+                    </div>
+                )}
+            </Card>
         );
-    }
+    };
 
-    const today = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    const QuickAction = ({ icon: Icon, label, color = 'bg-slate-50' }) => (
+        <button className={`w-full p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group ${color} text-left`}>
+            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                <Icon size={18} />
+            </div>
+            <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none block">{label}</span>
+        </button>
+    );
 
     return (
-        <div className="fade-in space-y-6 max-w-7xl mx-auto pb-12 px-4 md:px-6">
-            {/* Premium Header */}
-            <div className="relative mb-8">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-3xl opacity-5 animate-pulse"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl shadow-xl border border-slate-100 p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-lg shadow-violet-200 transition-all duration-300 hover:scale-110 hover:rotate-6">
-                            <Zap size={28} strokeWidth={2.5} />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-black text-slate-900 tracking-tight italic uppercase">System Access / <span className="text-violet-600">Member</span></h1>
-                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest flex items-center gap-2">
-                                <Activity size={12} className="text-violet-500" />
-                                Operational Intelligence Overview
+        <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b-2 border-slate-100">
+                <div className="flex items-center gap-5">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                        <User size={32} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                            Welcome, <span className="text-indigo-600">Demo!</span>
+                        </h1>
+                        <div className="flex items-center gap-3">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Member ID: MEM001</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                                Main Branch Access
                             </p>
                         </div>
                     </div>
-                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl shadow-sm">
-                        <Calendar size={16} className="text-violet-600" />
-                        <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{today}</span>
-                    </div>
+                </div>
+                <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border-2 border-slate-100 shadow-sm">
+                    <Calendar size={18} className="text-indigo-600" />
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">{today}</span>
                 </div>
             </div>
 
-            {/* Row 1: Core Metrics (3 Cols) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* My Benefits (220px) */}
-                <BenefitWalletWidget walletData={data.benefitWallet} />
-
-                {/* Progress Snapshot (220px) */}
-                <Card className="p-6 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-slate-50/50 to-white h-[220px] flex flex-col justify-between overflow-hidden group">
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <h3 className="text-slate-900 text-[11px] font-black uppercase tracking-[0.2em] leading-none mb-1 text-emerald-600">Progress Snapshot</h3>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Active Week</p>
-                        </div>
-                        <CircularProgress progress={(data.planSummary.workoutsCompleted / data.planSummary.totalWorkouts) * 100} size={50} />
-                    </div>
-
-                    <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Weekly Goal</p>
-                        <div className="text-2xl font-black text-slate-900 leading-none flex items-baseline gap-1">
-                            <span className="text-emerald-600">{data.planSummary.workoutsCompleted}</span>
-                            <span className="text-slate-300 text-sm font-bold">/ {data.planSummary.totalWorkouts}</span>
-                            <span className="text-[10px] text-slate-400 uppercase ml-2 tracking-widest">Sessions</span>
-                        </div>
-                    </div>
-
-                    <button className="text-[10px] font-black text-emerald-600 uppercase tracking-widest hover:translate-x-2 transition-transform inline-flex items-center gap-1.5 mt-auto">
-                        GO TO PERFORMANCE LAB <ChevronRight size={14} strokeWidth={3} />
-                    </button>
-                </Card>
-
-                {/* Quick Info (Membership) (220px) */}
-                <Card className="p-6 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-slate-50/50 to-white h-[220px] flex flex-col justify-between overflow-hidden group">
-                    <div>
-                        <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-50">
-                            <h3 className="text-slate-900 text-[11px] font-black uppercase tracking-[0.2em] text-fuchsia-600">Membership Status</h3>
-                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase shadow-sm ${data.planSummary.membershipStatus === 'Active' ? 'bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-700' : 'bg-gradient-to-r from-rose-50 to-rose-100 text-rose-700'}`}>
-                                {data.planSummary.membershipStatus}
-                            </span>
-                        </div>
-                        <div className="space-y-4">
-                            <div>
-                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">Active Tier</p>
-                                <p className="text-sm font-black text-slate-900 leading-none uppercase italic">{data.stats[0].value}</p>
-                            </div>
-                            <div>
-                                <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1.5">System Status</p>
-                                <p className="text-sm font-black text-fuchsia-600 leading-none">{data.planSummary.daysRemaining} Days Remaining</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="pt-2 border-t border-slate-50">
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight truncate italic">Subscription Expires: {data.planSummary.expiryDate}</p>
-                    </div>
-                </Card>
+            {/* Core Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard
+                    title="Active Membership"
+                    value="Membership Status"
+                    subtitle="Premium Gold Plan • 30 days"
+                    icon={Shield}
+                    color="primary"
+                />
+                <StatCard
+                    title="PT Sessions"
+                    value="5"
+                    subtitle="Remaining Sessions"
+                    icon={Clock}
+                    color="success"
+                />
+                <StatCard
+                    title="This Month Visits"
+                    value="2"
+                    subtitle="Visit Frequency"
+                    icon={Activity}
+                    color="warning"
+                />
+                <StatCard
+                    title="Pending Dues"
+                    value="₹NaN"
+                    subtitle="1 Active Invoice"
+                    icon={IndianRupee}
+                    color="danger"
+                />
             </div>
 
-            {/* Row 2: Secondary Metrics (3 Cols) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Weekly Goal Card */}
-                <Card className="p-5 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-violet-50/50 to-white flex items-center gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6">
-                        <Trophy size={20} strokeWidth={2.5} />
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Left Column: Quick Actions & Details */}
+                <div className="lg:col-span-8 space-y-6">
+                    {/* Quick Actions Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <QuickAction icon={Calendar} label="Book & Schedule" />
+                        <QuickAction icon={TrendingUp} label="View Progress" />
+                        <QuickAction icon={ShoppingCart} label="Shop Products" />
+                        <QuickAction icon={UserPlus} label="Refer & Earn" />
                     </div>
-                    <div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Weekly Target</h4>
-                        <div className="text-base font-black text-slate-900 leading-none">{data.planSummary.workoutsCompleted} / {data.planSummary.totalWorkouts} sessions</div>
-                    </div>
-                </Card>
 
-                {/* Last Order Card */}
-                <Card className="p-5 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-fuchsia-50/50 to-white flex items-center gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-500 to-pink-600 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6">
-                        <ShoppingBag size={20} strokeWidth={2.5} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Supply Node</h4>
-                        <div className="flex items-center justify-between gap-2 overflow-hidden">
-                            <span className="text-base font-black text-slate-900 truncate shrink uppercase italic">{data.announcements[0]?.title.split(' ')[0]} ...</span>
-                            <span className="px-2 py-1 rounded-lg bg-gradient-to-r from-emerald-50 to-emerald-100 text-[9px] font-black text-emerald-700 uppercase shadow-sm whitespace-nowrap">SHIPPED</span>
-                        </div>
-                    </div>
-                </Card>
-
-                {/* Focus Card */}
-                <Card className="p-5 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-amber-50/50 to-white flex items-center gap-4 group">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg transition-transform group-hover:scale-110 group-hover:rotate-6">
-                        <Target size={20} strokeWidth={2.5} />
-                    </div>
-                    <div className="min-w-0">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Primary Focus</h4>
-                        <div className="text-base font-black text-slate-900 truncate uppercase italic">{data.planSummary.nextGoal}</div>
-                    </div>
-                </Card>
-            </div>
-
-
-            {/* Row 3: Announcements (Full Width) */}
-            <div className="space-y-4">
-                <div className="flex items-center justify-between px-2">
-                    <h2 className="text-[11px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-2">
-                        <div className="w-5 h-[2px] bg-amber-500"></div>
-                        Operational Broadcasts
-                    </h2>
-                </div>
-                <div className="grid grid-cols-1 gap-4">
-                    {data.announcements.map((ann, idx) => (
-                        <Card key={idx} className="p-5 border border-slate-100 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-white to-slate-50/50 flex items-center justify-between gap-4 group">
-                            <div className="flex items-center gap-5">
-                                <div className="p-3 bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl text-amber-600 shadow-sm transition-transform group-hover:scale-110 group-hover:rotate-3">
-                                    <Sparkles size={20} strokeWidth={2.5} />
-                                </div>
-                                <div>
-                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 leading-none mb-1.5">{ann.date}</h4>
-                                    <p className="text-base font-black text-slate-900 leading-tight uppercase italic">{ann.title}</p>
+                    {/* Membership Details & Entitlements */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Membership Details */}
+                        <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl flex flex-col justify-between">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-indigo-600">Membership Details</h3>
+                                <Shield size={16} className="text-indigo-200" />
+                            </div>
+                            <div className="space-y-4">
+                                {[
+                                    { label: 'Plan', value: 'Premium Gold Plan' },
+                                    { label: 'Status', value: 'Active', color: 'text-emerald-600' },
+                                    { label: 'Start Date', value: '28 Feb 2026' },
+                                    { label: 'End Date', value: '30 Mar 2026' },
+                                ].map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
+                                        <span className={`text-[11px] font-black uppercase ${item.color || 'text-slate-900'}`}>{item.value}</span>
+                                    </div>
+                                ))}
+                                <div className="pt-4 border-t border-slate-50">
+                                    <div className="flex justify-between items-center bg-indigo-50/50 p-4 rounded-xl border border-indigo-50">
+                                        <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Days Remaining</span>
+                                        <span className="text-xs font-black text-indigo-700 uppercase">30 days</span>
+                                    </div>
                                 </div>
                             </div>
-                            <button className="p-3 text-slate-300 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all">
-                                <ChevronRight size={22} strokeWidth={4} />
+                        </Card>
+
+                        {/* Entitlements */}
+                        <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl flex flex-col h-full">
+                            <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-fuchsia-600">My Entitlements</h3>
+                                <LayoutDashboard size={16} className="text-fuchsia-200" />
+                            </div>
+                            <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
+                                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-200 mb-3">
+                                    <Search size={24} />
+                                </div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">No benefits configured</p>
+                            </div>
+                            <button className="w-full h-11 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2">
+                                Upgrade Plan <ChevronRight size={14} strokeWidth={3} />
                             </button>
                         </Card>
-                    ))}
+                    </div>
+
+                    {/* Attendance History */}
+                    <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl relative overflow-hidden">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-xs font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
+                                <div className="w-5 h-[2px] bg-indigo-600"></div> Recent Attendance
+                            </h2>
+                            <button
+                                onClick={() => navigate('/member/attendance')}
+                                className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:translate-x-1 transition-transform inline-flex items-center gap-1"
+                            >
+                                VIEW ALL <ChevronRight size={14} strokeWidth={3} />
+                            </button>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {['28 Feb 2026 — 17:34', '27 Feb 2026 — 17:34'].map((date, idx) => (
+                                <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-100 transition-all flex items-center gap-3 group">
+                                    <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                                        <Calendar size={16} />
+                                    </div>
+                                    <span className="text-[11px] font-black text-slate-700 uppercase">{date}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Right Column: Upcoming & Context */}
+                <div className="lg:col-span-4 space-y-6">
+                    {/* Upcoming Classes */}
+                    <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl h-full">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">Upcoming Classes</h3>
+                            <button className="text-[10px] font-black text-emerald-600">VIEW MORE</button>
+                        </div>
+                        <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-50 flex flex-col gap-4">
+                            <div className="flex items-center justify-between">
+                                <span className="px-2.5 py-1 bg-white text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Booked</span>
+                                <Clock size={16} className="text-indigo-200" />
+                            </div>
+                            <div>
+                                <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase mb-0.5">Morning Yoga</h4>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sat, 28 Feb • 18:34</p>
+                            </div>
+                        </div>
+                    </Card>
+
+                    {/* My Trainer */}
+                    <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl">
+                        <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-amber-600">My Trainer</h3>
+                            <Users size={16} className="text-amber-200" />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                                <User size={28} />
+                            </div>
+                            <div>
+                                <h4 className="text-md font-black text-slate-900 uppercase leading-tight mb-0.5">Trainer</h4>
+                                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">PT Package Trainer</p>
+                            </div>
+                        </div>
+                        <button className="w-full h-11 mt-6 border-2 border-slate-50 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-amber-100 hover:text-amber-600 hover:bg-amber-50 transition-all">MESSAGE</button>
+                    </Card>
+
+                    {/* My Locker */}
+                    <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl relative overflow-hidden">
+                        <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-rose-50 rounded-full blur-2xl opacity-60"></div>
+                        <div className="relative z-10 flex flex-col gap-5">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">My Locker</h3>
+                                <Lock size={16} className="text-slate-100" />
+                            </div>
+                            <p className="text-sm font-black text-slate-900 uppercase">No locker assigned</p>
+                            <button className="w-full h-11 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all">Request Locker</button>
+                        </div>
+                    </Card>
                 </div>
             </div>
         </div>

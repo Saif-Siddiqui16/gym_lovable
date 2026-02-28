@@ -3,9 +3,11 @@ import { Menu, User, LogOut, UserCircle, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ROLES } from '../config/roles';
 import { useBranchContext } from '../context/BranchContext';
+import { useAuth } from '../context/AuthContext';
 
 const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
     const { branches, selectedBranch, setSelectedBranch } = useBranchContext();
+    const { logout } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -25,7 +27,7 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
     }, []);
 
     const handleLogout = () => {
-        navigate('/login');
+        logout();
         setDropdownOpen(false);
     };
 

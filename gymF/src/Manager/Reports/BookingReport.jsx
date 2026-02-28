@@ -122,7 +122,7 @@ const BookingReport = () => {
         const rows = bookings.map(b =>
             `<tr><td>${b.id}</td><td>${b.memberName}</td><td>${b.classType}</td><td>${b.trainerName}</td><td>${b.date} ${b.time}</td><td>${b.status}</td></tr>`
         ).join('');
-        const html = `<html><head><title>Booking Report</title><style>body{font-family:sans-serif;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#6d28d9;color:white}tr:nth-child(even){background:#f9f5ff}</style></head><body><h2>Booking Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>ID</th><th>Member</th><th>Class</th><th>Trainer</th><th>Date/Time</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+        const html = `<html><head><title>Booking Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#6d28d9;color:white}tr:nth-child(even){background:#f9f5ff}</style></head><body><h2>Booking Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>ID</th><th>Member</th><th>Class</th><th>Trainer</th><th>Date/Time</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
         const w = window.open('', '_blank');
         w.document.write(html);
         w.document.close();

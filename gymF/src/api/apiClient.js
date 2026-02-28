@@ -13,16 +13,17 @@ apiClient.interceptors.response.use(
     (error) => {
         // Handle 401 Unauthorized errors globally
         if (error.response?.status === 401) {
-            console.warn('Unauthorized access detected. Redirecting to login...');
+            console.warn('Unauthorized access detected.');
 
-            // Clear local auth storage
+            // DISABLED: Automatic logout on 401 to prevent flickering in demo mode
+            /*
             localStorage.removeItem('userRole');
             localStorage.removeItem('userData');
 
-            // Redirect to login if not already there
             if (window.location.pathname !== '/login') {
                 window.location.href = '/login';
             }
+            */
         }
         return Promise.reject(error);
     }

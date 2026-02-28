@@ -1,277 +1,281 @@
-import React, { useState, useEffect } from 'react';
-import { getTrainerEarnings } from '../../api/trainer/trainerApi';
+import React, { useState } from 'react';
 import {
     Banknote,
     TrendingUp,
-    DollarSign,
-    Download,
-    ChevronDown,
-    ChevronUp,
     Calendar,
     Users,
-    CheckCircle2,
+    FileText,
+    Info,
+    ChevronRight,
+    Search,
+    Download,
     Clock,
-    AlertCircle,
-    Dumbbell
+    X,
+    Printer
 } from 'lucide-react';
 import StatsCard from '../../modules/dashboard/components/StatsCard';
 import DashboardGrid from '../../modules/dashboard/components/DashboardGrid';
-import MobileCard from '../../components/common/MobileCard';
+import Card from '../../components/ui/Card';
 
-// Simulated Logged-In User ID (In a real app, this comes from context/auth)
-const CURRENT_TRAINER_ID = 'T-101';
+// Component for the printable document (hidden on screen, visible during print)
+const PrintablePayslip = () => {
+    return (
+        <div className="hidden print:block printable-payslip-content p-16">
+            <div className="text-center mb-10">
+                <h1 className="text-3xl font-black text-[#484fa2] mb-1 tracking-tight">Main Branch</h1>
+                <p className="text-slate-500 font-bold text-sm">Pay Period: February 2026</p>
+            </div>
+
+            <div className="w-full h-px bg-[#484fa2]/30 mb-10" />
+
+            <div className="grid grid-cols-2 gap-x-12 gap-y-4 mb-12">
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Employee:</span>
+                    <span className="text-slate-700 font-bold">Demo Trainer</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Code:</span>
+                    <span className="text-slate-700 font-bold">mock-tra</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Department:</span>
+                    <span className="text-slate-700 font-bold">Training</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Position:</span>
+                    <span className="text-slate-700 font-bold">Personal Trainer</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Days Present:</span>
+                    <span className="text-slate-700 font-bold">0 / 26</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                    <span className="font-black text-[#484fa2]">Base Salary:</span>
+                    <span className="text-slate-700 font-bold">₹0</span>
+                </div>
+            </div>
+
+            <table className="w-full mb-12 border-collapse">
+                <thead>
+                    <tr className="border-b-2 border-slate-100">
+                        <th className="py-4 text-left font-black text-[#484fa2] uppercase tracking-wider text-xs">Component</th>
+                        <th className="py-4 text-right font-black text-[#484fa2] uppercase tracking-wider text-xs">Amount (₹)</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                    <tr>
+                        <td className="py-4 text-sm font-bold text-slate-600">Pro-rated Base Pay</td>
+                        <td className="py-4 text-right text-sm font-black text-slate-900">0</td>
+                    </tr>
+                    <tr>
+                        <td className="py-4 text-sm font-bold text-slate-600">PT Session Commission</td>
+                        <td className="py-4 text-right text-sm font-black text-slate-900">0</td>
+                    </tr>
+                    <tr className="bg-slate-50/50">
+                        <td className="py-4 text-sm font-black text-slate-900">Gross Pay</td>
+                        <td className="py-4 text-right text-sm font-black text-slate-900">0</td>
+                    </tr>
+                    <tr>
+                        <td className="py-4 text-sm font-bold text-red-500">PF Deduction (12%)</td>
+                        <td className="py-4 text-right text-sm font-black text-red-500">-0</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr className="border-t-2 border-[#484fa2]">
+                        <td className="py-5 text-lg font-black text-[#484fa2]">Net Pay</td>
+                        <td className="py-5 text-right text-xl font-black text-slate-900 tracking-tight">₹0</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div className="text-center mt-20 pt-8 border-t border-slate-50">
+                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                    Generated on 28/2/2026 • This is a computer-generated payslip
+                </p>
+            </div>
+        </div>
+    );
+};
 
 const TrainerEarnings = () => {
-    const [expandedMonth, setExpandedMonth] = useState(null);
-    const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+    const [activeMonth, setActiveMonth] = useState('Feb 2026');
+    const [loading, setLoading] = useState(false);
 
-    const [earningsData, setEarningsData] = useState(null);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchEarnings = async () => {
-            try {
-                const data = await getTrainerEarnings();
-                setEarningsData(data);
-            } catch (error) {
-                console.error("Failed to load earnings:", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchEarnings();
-    }, []);
+    const months = ['Feb 2026', 'Jan 2026', 'Dec 2025'];
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center py-20 min-h-screen bg-slate-50">
-            <div className="w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
+            <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 text-slate-500 font-medium tracking-tight">Loading your earnings...</p>
         </div>
     );
-    if (!earningsData) return <div className="p-8 text-center text-gray-500 min-h-screen bg-slate-50">Access Denied or Failed to Load</div>;
 
-    const toggleDetails = (id) => {
-        setExpandedMonth(expandedMonth === id ? null : id);
-    };
-
-    const handleDownloadReport = () => {
-        alert("Downloading your earnings report... Your statement will be ready shortly.");
-        // Logic for generating PDF/CSV would go here
-    };
-
-    const getStatusStyle = (status) => {
-        switch (status) {
-            case 'Paid': return 'bg-emerald-100 text-emerald-700 border border-emerald-200';
-            case 'Pending': return 'bg-amber-100 text-amber-700 border border-amber-200';
-            case 'Processing': return 'bg-blue-100 text-blue-700 border border-blue-200';
-            default: return 'bg-gray-100 text-gray-700 border border-gray-200';
-        }
+    const handlePrint = () => {
+        window.print();
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-6 animate-fadeIn font-sans">
+        <div className="saas-container space-y-8 fade-in h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent relative">
 
-            {/* Header - Matching TrainerDashboard Style */}
-            <div className="mb-6 sm:mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl blur-2xl opacity-15 animate-pulse"></div>
-                <div className="relative bg-white/80 backdrop-blur-xl rounded-[32px] shadow-2xl border border-white/50 p-6 sm:p-8 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-violet-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50"></div>
+            {/* Printable Payslip Structure */}
+            <PrintablePayslip />
 
-                    <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-xl shadow-violet-200 transform hover:scale-105 transition-transform duration-300 group flex-shrink-0">
-                                <Banknote size={28} className="sm:w-9 sm:h-9 group-hover:rotate-12 transition-transform duration-300" strokeWidth={2} />
-                            </div>
-                            <div>
-                                <div className="flex flex-wrap items-center gap-3 mb-1">
-                                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-                                        My Earnings
-                                    </h1>
-                                    <span className="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-full border border-emerald-200">
-                                        Secure View
-                                    </span>
-                                </div>
-                                <p className="text-slate-500 font-medium text-sm sm:text-lg">Track your salary, commissions, and bonuses.</p>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={handleDownloadReport}
-                            className="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-slate-100 text-slate-600 rounded-xl font-bold hover:border-violet-200 hover:text-violet-600 hover:shadow-lg transition-all w-full sm:w-auto"
-                        >
-                            <Download size={18} />
-                            Download Report
-                        </button>
+            {/* Header Section */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b-2 border-slate-100 print:hidden">
+                <div>
+                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                        My Earnings
+                    </h1>
+                    <div className="flex items-center gap-3">
+                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Trainer Portal</span>
+                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                            Track your sessions and earnings
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* Stat Cards - Reusing Dashboard Components */}
-            <DashboardGrid>
-                <StatsCard
-                    title="Monthly Base Pay"
-                    value={`${earningsData.summary.currency}${earningsData.summary.baseSalary.toLocaleString()}`}
-                    icon={Banknote}
-                    color="primary" // Blue
-                />
-                <StatsCard
-                    title="Commission Rate"
-                    value={`${earningsData.summary.commissionRate}%`}
-                    icon={TrendingUp}
-                    color="success" // Emerald
-                    trend="+2%"
-                />
-                <StatsCard
-                    title={`Commission (${earningsData.summary.currentMonthName})`}
-                    value={`${earningsData.summary.currency}${earningsData.summary.currentMonthCommission.toLocaleString()}`}
-                    icon={Users}
-                    color="warning" // Amber
-                />
-                <StatsCard
-                    title={`Total Earnings (${earningsData.summary.currentMonthName})`}
-                    value={`${earningsData.summary.currency}${earningsData.summary.currentMonthTotal.toLocaleString()}`}
-                    icon={DollarSign}
-                    color="primary" // Blue
-                />
-            </DashboardGrid>
+            {/* Month Selector Tabs */}
+            <div className="flex items-center gap-2 p-1 bg-slate-100/50 rounded-2xl w-fit print:hidden">
+                {months.map((month) => (
+                    <button
+                        key={month}
+                        onClick={() => setActiveMonth(month)}
+                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeMonth === month
+                            ? 'bg-white text-indigo-600 shadow-xl shadow-indigo-500/10'
+                            : 'text-slate-400 hover:text-slate-600'
+                            }`}
+                    >
+                        {month}
+                    </button>
+                ))}
+            </div>
 
-            {/* Earnings Breakdown */}
-            <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl overflow-hidden p-4 sm:p-6 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                        <Calendar size={24} className="text-violet-600" /> Earnings History
-                    </h3>
-                    <div className="flex bg-slate-50 p-1 rounded-xl w-full sm:w-auto">
-                        {[...new Set(earningsData.history.map(item => item.year))].sort((a, b) => b - a).map(year => (
-                            <button
-                                key={year}
-                                onClick={() => setYearFilter(year)}
-                                className={`flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs font-bold transition-all ${yearFilter === year ? 'bg-white text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                            >
-                                {year}
-                            </button>
-                        ))}
+            {/* Stats Cards */}
+            <div className="print:hidden">
+                <DashboardGrid>
+                    <StatsCard
+                        title="Completed Sessions (0)"
+                        value="February 2026"
+                        icon={Calendar}
+                        color="primary"
+                        isEarningsLayout={true}
+                    />
+                    <StatsCard
+                        title="Session Rate (₹500)"
+                        value="Per session"
+                        icon={Banknote}
+                        color="success"
+                        isEarningsLayout={true}
+                    />
+                    <StatsCard
+                        title="Estimated Earnings (₹0)"
+                        value="From sessions"
+                        icon={TrendingUp}
+                        color="info"
+                        isEarningsLayout={true}
+                    />
+                    <StatsCard
+                        title="Commissions (₹0)"
+                        value="Package sales"
+                        icon={Users}
+                        color="warning"
+                        isEarningsLayout={true}
+                    />
+                </DashboardGrid>
+            </div>
+
+            {/* Total Section & Payslip */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start print:hidden">
+                <Card className="lg:col-span-2 !p-8 space-y-8 border-2 border-slate-100 shadow-2xl shadow-slate-100/20">
+                    <div className="flex items-center justify-between text-left">
+                        <div className="space-y-1 pl-4">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">
+                                Total Estimated Earnings — February 2026
+                            </h3>
+                            <p className="text-5xl font-black text-slate-900 tracking-tighter italic">₹0</p>
+                        </div>
+                    </div>
+                    <div className="pt-8 border-t-2 border-slate-50 text-left pl-4">
+                        <div className="space-y-4">
+                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Breakdown</h4>
+                            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100 font-bold text-sm text-slate-600 leading-relaxed text-left flex items-center">
+                                <span>Base: <span className="text-slate-900">₹0</span> +
+                                    Sessions: <span className="text-slate-900">₹0</span> +
+                                    Commission: <span className="text-slate-900">₹0</span> −
+                                    PF: <span className="text-red-500 font-black">₹0</span></span>
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
+                <Card className="flex flex-col items-center text-center p-8 border-2 border-indigo-100 shadow-2xl shadow-indigo-100/20 bg-gradient-to-br from-white to-indigo-50/30">
+                    <div className="w-16 h-16 bg-white rounded-3xl flex items-center justify-center text-indigo-600 shadow-lg border border-indigo-50 mb-6 transform hover:scale-110 transition-transform">
+                        <FileText size={32} />
+                    </div>
+                    <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest mb-2">Monthly Statement</h3>
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-8 px-4">Detailed breakdown of your monthly payouts</p>
+                    <button
+                        onClick={handlePrint}
+                        className="w-full h-12 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all"
+                    >
+                        Download Payslip
+                    </button>
+                </Card>
+            </div>
+
+            {/* Completed Sessions Section */}
+            <div className="space-y-6 print:hidden">
+                <div className="flex items-center gap-3 px-1 text-left pl-4">
+                    <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                        <Clock size={16} />
+                    </div>
+                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Completed Sessions — February 2026</h2>
+                </div>
+
+                <Card className="py-24 flex flex-col items-center justify-center text-slate-400 bg-white border-2 border-dashed border-slate-100 rounded-[2rem]">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4 transition-transform hover:scale-110">
+                        <Calendar size={32} strokeWidth={1} className="opacity-20" />
+                    </div>
+                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-300 px-6 text-center">No session records found for the selected period</p>
+                </Card>
+            </div>
+
+            {/* Information Card */}
+            <div className="p-8 bg-gradient-to-br from-slate-900 to-indigo-900 rounded-[2rem] text-white relative overflow-hidden shadow-2xl shadow-indigo-900/20 text-left print:hidden">
+                <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl opacity-50" />
+                <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl" />
+                <div className="relative z-10 flex flex-col md:flex-row items-start gap-6">
+                    <div className="w-12 h-12 bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl flex items-center justify-center text-white shadow-inner flex-shrink-0">
+                        <Info size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black tracking-tight mb-2">Earnings Calculation</h3>
+                        <p className="text-xs text-white/70 font-bold leading-relaxed max-w-4xl uppercase tracking-wider">
+                            Earnings shown are estimates based on completed sessions and base salary. Final payment may vary based on commission structure, deductions, and company policies. Download your payslip for detailed breakdown.
+                        </p>
                     </div>
                 </div>
-
-                {/* Desktop Table (Hidden on Mobile) */}
-                <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-50">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Month</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Bonus</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Total</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                <th className="px-6 py-4"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {earningsData.history.filter(record => record.year === yearFilter).map((record) => (
-                                <React.Fragment key={record.id}>
-                                    <tr className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="px-6 py-5 text-sm font-bold text-slate-900">{record.month}</td>
-                                        <td className="px-6 py-5 text-sm font-medium text-slate-500">₹{record.baseSalary.toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-sm font-bold text-emerald-600">+₹{record.commission.toLocaleString()}</td>
-                                        <td className="px-6 py-5 text-sm font-medium text-slate-500">{record.bonus > 0 ? `+₹${record.bonus.toLocaleString()}` : '-'}</td>
-                                        <td className="px-6 py-5 text-sm font-black text-slate-900">₹{record.total.toLocaleString()}</td>
-                                        <td className="px-6 py-5">
-                                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${getStatusStyle(record.status)}`}>
-                                                {record.status}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5 text-right">
-                                            <button
-                                                onClick={() => toggleDetails(record.id)}
-                                                className="p-2 rounded-xl text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all"
-                                            >
-                                                {expandedMonth === record.id ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    {/* Expandable Commission Details */}
-                                    {expandedMonth === record.id && (
-                                        <tr className="bg-slate-50/30 animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <td colSpan="7" className="px-6 py-6">
-                                                <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-                                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Commission Breakdown • {record.month}</h4>
-                                                    {record.details.length > 0 ? (
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                                            {record.details.map((detail) => (
-                                                                <div key={detail.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100 hover:border-violet-200 transition-colors">
-                                                                    <div className="flex items-center gap-3">
-                                                                        <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-violet-600 font-bold text-xs">
-                                                                            {detail.member.charAt(0)}
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-xs font-bold text-slate-900">{detail.member}</p>
-                                                                            <p className="text-[10px] text-slate-500">{detail.type}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div className="text-right">
-                                                                        <span className="text-xs font-black text-emerald-600">+₹{detail.amount.toLocaleString()}</span>
-                                                                        <p className="text-[9px] text-slate-400">{detail.date}</p>
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-sm text-slate-400 italic">No detailed commission data available.</p>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Mobile Card View */}
-                <div className="md:hidden space-y-4">
-                    {earningsData.history.filter(record => record.year === yearFilter).map((record) => (
-                        <div key={record.id}>
-                            <MobileCard
-                                title={record.month}
-                                subtitle={`Base: ₹${record.baseSalary.toLocaleString()}`}
-                                status={record.status}
-                                statusColor={record.status === 'Paid' ? 'emerald' : 'amber'}
-                                badge={`₹${record.total.toLocaleString()}`}
-                                badgeColor="violet"
-                                icon={Banknote}
-                                actions={[
-                                    {
-                                        label: expandedMonth === record.id ? 'Hide Details' : 'View Breakdown',
-                                        onClick: () => toggleDetails(record.id),
-                                        variant: 'secondary'
-                                    }
-                                ]}
-                            />
-                            {expandedMonth === record.id && (
-                                <div className="mt-2 ml-4 pl-4 border-l-2 border-slate-100 space-y-2 pb-4">
-                                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Commission Details</h4>
-                                    {record.details.length > 0 ? (
-                                        record.details.map((detail) => (
-                                            <div key={detail.id} className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
-                                                <div>
-                                                    <p className="text-xs font-bold text-slate-900">{detail.member}</p>
-                                                    <p className="text-[10px] text-slate-500">{detail.type}</p>
-                                                </div>
-                                                <span className="text-xs font-black text-emerald-600">+₹{detail.amount.toLocaleString()}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-xs text-slate-400 italic">No details available.</p>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
             </div>
+
+            {/* Typography & Custom Print standard mapping */}
+            {/* Custom Print styles */}
+            <style>{`
+                @media print {
+                    body {
+                        background: white !important;
+                    }
+                    .saas-container {
+                        overflow: visible !important;
+                        height: auto !important;
+                        padding: 0 !important;
+                    }
+                    .print\\:hidden {
+                        display: none !important;
+                    }
+                }
+            `}</style>
         </div>
     );
 };

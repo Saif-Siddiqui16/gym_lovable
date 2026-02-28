@@ -48,7 +48,7 @@ const ReceiptModal = ({ isOpen, onClose, payment }) => {
                 <title>Receipt - ${payment.id || 'Print'}</title>
                 <style>
                     body {
-                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+                        font-family: inherit;
                         color: #1e293b;
                         margin: 0;
                         padding: 40px;

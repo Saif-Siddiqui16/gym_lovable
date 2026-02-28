@@ -12,7 +12,14 @@ import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const { login, role: currentRole } = useAuth();
+
+    // Redirect if already logged in
+    React.useEffect(() => {
+        if (currentRole) {
+            navigate('/dashboard');
+        }
+    }, [currentRole, navigate]);
     const [selectedRole, setSelectedRole] = useState(ROLES.BRANCH_ADMIN);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -23,20 +30,17 @@ const Login = () => {
         return '/dashboard';
     };
 
-    const handleLogin = async (e) => {
+    const handleLogin = (e) => {
         e.preventDefault();
-        setLoading(true);
-        setError('');
-
-        try {
-            const data = await loginUser(email, password, selectedRole);
-            login(data);
-            navigate(getRoleDashboard(data.role));
-        } catch (err) {
-            setError(typeof err === 'string' ? err : 'Login failed. Please check your credentials.');
-        } finally {
-            setLoading(false);
-        }
+        const mockData = {
+            id: '1',
+            name: 'Demo User',
+            email: email,
+            role: selectedRole,
+            token: 'demo-token'
+        };
+        login(mockData);
+        navigate(getRoleDashboard(selectedRole));
     };
 
     const handleSignup = (e) => {

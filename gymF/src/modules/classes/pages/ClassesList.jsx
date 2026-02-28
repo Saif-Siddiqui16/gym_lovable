@@ -32,7 +32,7 @@ const ClassesList = () => {
     const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
-        type: 'Yoga',
+        type: '',
         capacity: 20,
         date: '',
         time: '',
@@ -93,7 +93,7 @@ const ClassesList = () => {
     const resetForm = () => {
         setFormData({
             name: '',
-            type: 'Yoga',
+            type: '',
             capacity: 20,
             date: '',
             time: '',
@@ -222,7 +222,15 @@ const ClassesList = () => {
 
                 {/* Main Content Area */}
                 <div className="p-6">
-                    {loading ? (
+                    {contentTab === 'Attendance' ? (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
+                                <CheckCircle2 size={28} className="text-blue-300" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 mb-1">Select a class from the schedule to view attendance</p>
+                            <p className="text-xs text-slate-400">Switch to the Schedule tab and choose a class to manage its attendance.</p>
+                        </div>
+                    ) : loading ? (
                         <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
                             <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
                             <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Loading classes...</p>
@@ -296,10 +304,19 @@ const ClassesList = () => {
                             </table>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
-                            <Search size={48} className="text-slate-200 mb-4" />
-                            <p className="text-sm font-black text-slate-900 uppercase tracking-widest">No classes found</p>
-                            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or search terms</p>
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
+                                <Calendar size={28} className="text-slate-300" />
+                            </div>
+                            <p className="text-sm font-bold text-slate-700 mb-1">No upcoming classes scheduled.</p>
+                            <p className="text-xs text-slate-400 mb-6">Get started by scheduling your first group class.</p>
+                            <button
+                                onClick={() => setShowPanel(true)}
+                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                            >
+                                <Plus size={16} />
+                                Schedule a Class
+                            </button>
                         </div>
                     )}
                 </div>
@@ -349,8 +366,9 @@ const ClassesList = () => {
                                             <select
                                                 value={formData.type}
                                                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium"
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium text-slate-700"
                                             >
+                                                <option value="">Select type</option>
                                                 {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                             </select>
                                             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -373,22 +391,21 @@ const ClassesList = () => {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Date & Time *</label>
-                                        <div className="flex items-center gap-2">
-                                            <input
-                                                type="date"
-                                                required
-                                                value={formData.date}
-                                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium mb-1"
-                                            />
-                                            <input
-                                                type="time"
-                                                required
-                                                value={formData.time}
-                                                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                            />
-                                        </div>
+                                        <input
+                                            type="date"
+                                            required
+                                            value={formData.date}
+                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                            className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                        />
+                                        <input
+                                            type="time"
+                                            required
+                                            value={formData.time}
+                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                            className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                        />
+                                        <p className="text-[10px] text-slate-400 italic pl-1">dd-mm-yyyy --:--</p>
                                     </div>
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Duration (minutes)</label>

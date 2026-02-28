@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Users, CheckCircle, FileText, Banknote, Edit2, Trash2, MoreHorizontal } from 'lucide-react';
+import { Plus, Search, Users, CheckCircle, FileText, Banknote, Edit2, Trash2, MoreHorizontal, Clock, Briefcase } from 'lucide-react';
 import { fetchStaffAPI } from '../../../api/admin/adminApi';
 
 const Payroll = () => {
@@ -57,10 +57,12 @@ const Payroll = () => {
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
-                        <h1 className="text-3xl font-black text-slate-800 flex items-center gap-3">
-                            Human Resources
+                        <h1 className="text-3xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent">
+                            {activeTab === 'Attendance' ? 'Staff Attendance' : 'Human Resources'}
                         </h1>
-                        <p className="text-slate-500 mt-2 font-medium">Manage employees, contracts, attendance & payroll</p>
+                        <p className="text-slate-500 mt-2 font-medium">
+                            {activeTab === 'Attendance' ? 'View all staff attendance' : 'Manage employees, contracts, attendance & payroll'}
+                        </p>
                     </div>
                     <button
                         onClick={() => navigate('/hr/staff/create')}
@@ -75,42 +77,76 @@ const Payroll = () => {
             {/* Stats Cards Exact text */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
-                            <Users size={24} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Employees</p>
-                            <h3 className="text-2xl font-black text-slate-800">{staffList.length}</h3>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
-                            <CheckCircle size={24} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active</p>
-                            <h3 className="text-2xl font-black text-slate-800">{activeCount}</h3>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
-                            <FileText size={24} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Contracts</p>
-                            <h3 className="text-2xl font-black text-slate-800">{mockActiveContracts}</h3>
-                        </div>
-                    </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
-                        <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
-                            <Banknote size={24} />
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Monthly Payroll</p>
-                            <h3 className="text-2xl font-black text-slate-800">₹{mockMonthlyPayroll.toLocaleString()}</h3>
-                        </div>
-                    </div>
+                    {activeTab === 'Attendance' ? (
+                        <>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                                    <Users size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Currently Working</p>
+                                    <h3 className="text-2xl font-black text-slate-800">0</h3>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
+                                    <CheckCircle size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Today’s Check-ins</p>
+                                    <h3 className="text-2xl font-black text-slate-800">0</h3>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <Clock size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Completed Shifts</p>
+                                    <h3 className="text-2xl font-black text-slate-800">0</h3>
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
+                                    <Users size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Employees</p>
+                                    <h3 className="text-2xl font-black text-slate-800">{staffList.length || 0}</h3>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
+                                    <CheckCircle size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active</p>
+                                    <h3 className="text-2xl font-black text-slate-800">{staffList.filter(s => s.status === 'Active').length || 0}</h3>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center">
+                                    <FileText size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Active Contracts</p>
+                                    <h3 className="text-2xl font-black text-slate-800">{mockActiveContracts}</h3>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                                <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center">
+                                    <Banknote size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Monthly Payroll</p>
+                                    <h3 className="text-2xl font-black text-slate-800">₹{mockMonthlyPayroll.toLocaleString()}</h3>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -244,7 +280,7 @@ const Payroll = () => {
                                 />
                             </div>
                             <button className="flex items-center gap-2 h-10 px-6 bg-[#f97316] text-white rounded-lg font-bold text-sm tracking-wide hover:bg-[#ea580c] active:scale-95 transition-all shadow-sm">
-                                <span className="font-serif italic font-medium">$</span> Process All
+                                <span className="italic font-medium">₹</span> Process All
                             </button>
                         </div>
                     </div>
@@ -351,38 +387,75 @@ const Payroll = () => {
 
             {/* Attendance Tab UI */}
             {activeTab === 'Attendance' && (
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <h2 className="text-xl font-black text-slate-800">All Attendance</h2>
+                <div className="max-w-7xl mx-auto space-y-8">
+                    {/* Section 1: Currently On Duty */}
+                    <div>
+                        <div className="flex flex-col mb-6">
+                            <h2 className="text-xl font-black text-slate-800">Currently On Duty</h2>
+                            <p className="text-slate-500 text-sm font-medium mt-1">Staff currently checked in</p>
+                        </div>
+
+                        <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full min-w-[800px]">
+                                    <thead>
+                                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-in Time</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100/50">
+                                        <tr>
+                                            <td colSpan="4" className="py-24 text-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <Clock size={32} />
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-slate-800">No staff currently on duty</h3>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[800px]">
-                                <thead>
-                                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Employee</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Date</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check In</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check Out</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Total Hours</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100/50">
-                                    <tr>
-                                        <td colSpan="6" className="py-24 text-center">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <CheckCircle size={32} />
+                    {/* Section 2: Today’s Attendance Log */}
+                    <div>
+                        <div className="flex flex-col mb-6">
+                            <h2 className="text-xl font-black text-slate-800">Today’s Attendance Log</h2>
+                            <p className="text-slate-500 text-sm font-medium mt-1">All staff check-ins for today</p>
+                        </div>
+
+                        <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full min-w-[800px]">
+                                    <thead>
+                                        <tr className="bg-slate-50/50 border-b border-slate-100">
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-in</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-out</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration</th>
+                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100/50">
+                                        <tr>
+                                            <td colSpan="5" className="py-24 text-center">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <Briefcase size={32} />
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-slate-800">No attendance records for today</h3>
                                                 </div>
-                                                <h3 className="text-xl font-black text-slate-800">No attendance records found</h3>
-                                                <p className="text-slate-500 text-sm mt-2 font-medium">There are no attendance records to display.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

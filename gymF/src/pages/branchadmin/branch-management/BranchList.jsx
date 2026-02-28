@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit2, Users, MapPin, Search, ChevronRight, Building, Phone, Mail, Check, X, Shield, Filter, UserCheck, UserPlus, Eye, Trash2, Loader } from 'lucide-react';
+import { Plus, Edit2, MapPin, Search, Building2, Phone, Mail, Eye, Trash2, Loader, Clock, User, Globe, Navigation, Hash } from 'lucide-react';
 import { fetchBranches, createBranch, updateBranch, deleteBranch } from '../../../api/superadmin/branchApi';
 import { toast } from 'react-hot-toast';
 import RightDrawer from '../../../components/common/RightDrawer';
-import '../../../styles/GlobalDesign.css';
 
 const BranchList = () => {
     const navigate = useNavigate();
     const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
-    const [isAssignDrawerOpen, setIsAssignDrawerOpen] = useState(false);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
     const [selectedBranch, setSelectedBranch] = useState(null);
@@ -17,13 +15,21 @@ const BranchList = () => {
 
     const [branches, setBranches] = useState([]);
     const [loading, setLoading] = useState(true);
+
+    // Updated formData structure
     const [formData, setFormData] = useState({
-        name: '',
         branchName: '',
-        owner: '',
+        branchCode: '',
+        address: '',
+        city: '',
+        state: '',
+        postalCode: '',
+        country: 'India',
         phone: '',
         email: '',
-        location: '',
+        openingTime: '06:00',
+        closingTime: '22:00',
+        manager: 'No manager',
         status: 'Active'
     });
 
@@ -35,8 +41,6 @@ const BranchList = () => {
         try {
             setLoading(true);
             const data = await fetchBranches();
-            // Backend returns { gyms: [], total: ... } or just array depending on implementation. 
-            // Controller extract shows: res.json({ gyms: formattedGyms, ... })
             setBranches(data.gyms || []);
         } catch (error) {
             console.error('Failed to load branches:', error);
@@ -46,19 +50,6 @@ const BranchList = () => {
         }
     };
 
-    const staffList = [
-        { id: 101, name: 'Rahul V.', role: 'Trainer', status: 'Available' },
-        { id: 102, name: 'Pooja K.', role: 'Manager', status: 'Assigned' },
-        { id: 103, name: 'Vikram S.', role: 'Trainer', status: 'Available' },
-        { id: 104, name: 'Anita D.', role: 'Staff', status: 'Available' },
-    ];
-
-    const handleAssignStaff = (branch) => {
-        console.log("Assign Staff:", branch.gymName);
-        setSelectedBranch(branch);
-        setIsAssignDrawerOpen(true);
-    };
-
     const handleViewBranch = (branch) => {
         setSelectedBranch(branch);
         setIsViewDrawerOpen(true);
@@ -66,16 +57,23 @@ const BranchList = () => {
 
     const handleEditBranch = (branch) => {
         setSelectedBranch(branch);
+        // Map backend fields back to form for editing
+        // We initialize with empty values for fields that might not exist in backend
+        // to ensure we don't show "duplicate" data from a previous branch
         setFormData({
-            name: branch.gymName, // gymName maps to Name
-            branchName: branch.branchName || '',
-            owner: branch.owner || '',
+            branchName: branch.branchName || branch.gymName || '',
+            branchCode: branch.branchCode || `BR-${branch.id?.toString().padStart(3, '0')}`,
+            address: branch.address || branch.location || '',
+            city: branch.city || '',
+            state: branch.state || '',
+            postalCode: branch.postalCode || '',
+            country: branch.country || 'India',
             phone: branch.phone || '',
-            email: '', // Email usually not editable or not returned in list for security if sensitive, but here needed for update? 
-            // Actually updateGym updates Tenant. Email is in User. So we might not update email here easily without separate endpoint.
-            // For now, let's just populate what we can.
-            location: branch.location || '',
-            status: branch.status
+            email: branch.email || '',
+            openingTime: branch.openingTime || '06:00',
+            closingTime: branch.closingTime || '22:00',
+            manager: branch.owner || branch.manager || 'No manager',
+            status: branch.status || 'Active'
         });
         setIsEditDrawerOpen(true);
     };
@@ -108,29 +106,31 @@ const BranchList = () => {
                 return;
             }
 
-            // Map frontend form to backend expectations
-            // Backend expects: gymName, branchName, owner, phone, location, email
+            const combinedLocation = `${formData.address}${formData.city ? ', ' + formData.city : ''}${formData.state ? ', ' + formData.state : ''}${formData.postalCode ? ' - ' + formData.postalCode : ''}, ${formData.country}`;
+
             const payload = {
-                gymName: formData.branchName, // Using Branch Name as Gym Name for simplicity or both
+                gymName: formData.branchName,
                 branchName: formData.branchName,
-                owner: formData.owner,
+                branchCode: formData.branchCode,
+                owner: formData.manager === 'No manager' ? '' : formData.manager,
+                manager: formData.manager,
                 phone: formData.phone,
-                location: formData.location,
-                email: formData.email
+                location: combinedLocation,
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.postalCode,
+                country: formData.country,
+                email: formData.email,
+                openingTime: formData.openingTime,
+                closingTime: formData.closingTime,
+                status: formData.status
             };
 
             await createBranch(payload);
             toast.success('Branch created successfully');
             setIsAddDrawerOpen(false);
-            setFormData({
-                name: '',
-                branchName: '',
-                owner: '',
-                phone: '',
-                email: '',
-                location: '',
-                status: 'Active'
-            });
+            resetForm();
             loadBranches();
         } catch (error) {
             console.error('Failed to save branch:', error);
@@ -139,17 +139,47 @@ const BranchList = () => {
         }
     };
 
+    const resetForm = () => {
+        setFormData({
+            branchName: '',
+            branchCode: '',
+            address: '',
+            city: '',
+            state: '',
+            postalCode: '',
+            country: 'India',
+            phone: '',
+            email: '',
+            openingTime: '06:00',
+            closingTime: '22:00',
+            manager: 'No manager',
+            status: 'Active'
+        });
+    };
+
     const handleUpdateBranch = async () => {
         try {
+            const combinedLocation = `${formData.address}${formData.city ? ', ' + formData.city : ''}${formData.state ? ', ' + formData.state : ''}${formData.postalCode ? ' - ' + formData.postalCode : ''}, ${formData.country}`;
+
             const payload = {
-                name: formData.name,
-                branchName: formData.branchName, // Using name as branchName
-                owner: formData.owner,
+                name: formData.branchName,
+                gymName: formData.branchName,
+                branchName: formData.branchName,
+                branchCode: formData.branchCode,
+                owner: formData.manager === 'No manager' ? '' : formData.manager,
+                manager: formData.manager,
                 phone: formData.phone,
-                location: formData.location,
+                location: combinedLocation,
+                address: formData.address,
+                city: formData.city,
+                state: formData.state,
+                postalCode: formData.postalCode,
+                country: formData.country,
+                email: formData.email,
+                openingTime: formData.openingTime,
+                closingTime: formData.closingTime,
                 status: formData.status
             };
-
             await updateBranch(selectedBranch.id, payload);
             toast.success('Branch updated successfully');
             setIsEditDrawerOpen(false);
@@ -161,142 +191,168 @@ const BranchList = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-6 md:p-8">
-            {/* Page Header */}
-            <div className="mb-8 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-6">
-                                <Building size={28} />
+        <div className="saas-container font-black overflow-x-hidden">
+            {/* Premium Header */}
+            <div className="relative mb-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl blur-3xl opacity-10 animate-pulse"></div>
+                <div className="relative bg-white/80 backdrop-blur-md rounded-[32px] shadow-2xl shadow-violet-500/10 border border-white/50 p-6 sm:p-10">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-xl shadow-violet-500/40 transition-all duration-500 hover:scale-110 hover:rotate-6">
+                                <Building2 size={32} strokeWidth={3} />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                                <h1 className="text-2xl sm:text-3xl lg:text-4xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent tracking-tighter">
                                     Branch Management
                                 </h1>
-                                <p className="text-slate-600 text-sm mt-1">Configure and manage your gym locations and staff assignments</p>
+                                <p className="text-slate-400 text-[10px] sm:text-xs mt-1 uppercase tracking-widest opacity-80 leading-none font-bold">
+                                    Manage your gym locations Across the network
+                                </p>
                             </div>
                         </div>
                         <button
-                            onClick={() => setIsAddDrawerOpen(true)}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 hover:shadow-xl hover:shadow-violet-500/50 text-white rounded-xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            onClick={() => { resetForm(); setIsAddDrawerOpen(true); }}
+                            className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white rounded-2xl text-sm font-black shadow-2xl shadow-violet-500/25 hover:scale-[1.02] active:scale-95 transition-all w-full lg:w-auto"
                         >
-                            <Plus size={18} strokeWidth={3} />
-                            Add New Branch
+                            <Plus size={20} strokeWidth={3} />
+                            Add Branch
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Branch Table */}
-            <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-                <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="relative w-full md:w-80 group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" size={18} />
+            {/* All Branches Section */}
+            <div className="bg-white/80 backdrop-blur-md rounded-[32px] sm:rounded-[40px] shadow-2xl shadow-slate-200/60 border border-slate-100 overflow-hidden">
+                <div className="p-6 sm:p-10 border-b border-slate-100 flex flex-col xl:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group hover:text-violet-600 transition-colors">
+                            <MapPin size={24} strokeWidth={3} />
+                        </div>
+                        <div>
+                            <h3 className="text-lg sm:text-xl text-slate-800 tracking-tight font-black">All Branches</h3>
+                            <p className="text-[10px] text-slate-400 uppercase tracking-widest leading-none font-bold">Database Records</p>
+                        </div>
+                    </div>
+                    <div className="relative w-full xl:w-96 group">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-violet-500 transition-colors" size={20} strokeWidth={3} />
                         <input
                             type="text"
                             placeholder="Search by branch name or code..."
-                            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-violet-500/10 focus:border-violet-500 transition-all font-medium"
+                            className="w-full pl-14 pr-6 py-3.5 sm:py-4 bg-slate-50/50 border-2 border-slate-100 rounded-[20px] text-sm text-slate-800 focus:bg-white focus:border-violet-500 focus:ring-8 focus:ring-violet-500/5 transition-all outline-none font-bold"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
                     </div>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-slate-500 text-xs font-bold">
-                        <Filter size={14} />
-                        Filtered by Active
-                    </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                <div className="w-full">
+                    <table className="w-full text-left border-collapse table-auto">
                         <thead className="bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Branch Details</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Branch Code</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Manager</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center">Staff</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-slate-400 uppercase tracking-wider text-right">Actions</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Branch</th>
+                                <th className="px-4 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center hidden md:table-cell">Code</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">Manager</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">Location</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden xl:table-cell">Contact</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-8 text-slate-500">
-                                        <div className="flex justify-center items-center gap-2">
-                                            <Loader className="animate-spin" size={20} /> Loading branches...
+                                    <td colSpan="7" className="text-center py-20 text-slate-400 font-bold">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <Loader className="animate-spin text-violet-500" size={40} strokeWidth={3} />
+                                            <span className="text-[10px] uppercase tracking-widest opacity-50">Syncing locations...</span>
                                         </div>
                                     </td>
                                 </tr>
                             ) : branches.length === 0 ? (
                                 <tr>
-                                    <td colSpan="6" className="text-center py-8 text-slate-500">No branches found.</td>
+                                    <td colSpan="7" className="text-center py-20 text-slate-400 font-bold">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="w-20 h-20 bg-slate-50 rounded-[24px] flex items-center justify-center mb-2">
+                                                <Building2 size={40} className="opacity-20" />
+                                            </div>
+                                            <span className="text-lg text-slate-800">No branches found</span>
+                                            <span className="text-[10px] uppercase tracking-widest opacity-50">Add your first gym location to get started</span>
+                                        </div>
+                                    </td>
                                 </tr>
-                            ) : branches.map((branch) => (
-                                <tr key={branch.id} className="hover:bg-slate-50/30 transition-colors group">
-                                    <td className="px-6 py-4">
+                            ) : branches.filter(b => (b.gymName || b.branchName)?.toLowerCase().includes(searchTerm.toLowerCase())).map((branch) => (
+                                <tr key={branch.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
+                                        <div className="flex items-center gap-3 sm:gap-4">
+                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+                                                <MapPin size={20} strokeWidth={3} />
+                                            </div>
+                                            <div className="min-w-0">
+                                                <div className="text-sm text-slate-800 truncate font-bold">{branch.gymName || branch.branchName}</div>
+                                                <div className="text-[10px] text-slate-400 uppercase tracking-tighter truncate md:hidden">Code: BR-{branch.id.toString().padStart(3, '0')}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-4 sm:py-6 text-center hidden md:table-cell font-bold">
+                                        <span className="px-3 py-1.5 bg-slate-100 rounded-xl text-[10px] text-slate-500 tracking-wider">
+                                            BR-{branch.id?.toString().padStart(3, '0')}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden sm:table-cell font-bold">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                                                <MapPin size={20} />
+                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 border border-white flex-shrink-0">
+                                                {branch.owner?.[0] || 'M'}
                                             </div>
-                                            <div>
-                                                <div className="text-sm font-bold text-slate-800">{branch.gymName || branch.branchName}</div>
-                                                <div className="text-[10px] text-slate-400 font-medium truncate max-w-[150px]">{branch.location || 'No address'}</div>
+                                            <span className="text-sm text-slate-700 truncate">{branch.owner || 'Not Assigned'}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden lg:table-cell font-bold">
+                                        <div className="max-w-[200px]">
+                                            <div className="text-sm text-slate-600 truncate">{branch.location || 'N/A'}</div>
+                                            <div className="text-[10px] text-slate-400 uppercase tracking-tighter">Primary Address</div>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden xl:table-cell font-bold">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                <Phone size={12} className="text-slate-300" />
+                                                {branch.phone || 'N/A'}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                <Mail size={12} className="text-slate-300" />
+                                                <span className="truncate max-w-[150px]">{branch.email || 'N/A'}</span>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className="px-2 py-1 bg-slate-100 rounded text-[10px] font-black text-slate-500 tracking-wider font-mono uppercase">
-                                            BR-{branch.id.toString().padStart(3, '0')}
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6 font-bold">
+                                        <span className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${branch.status === 'Active' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
+                                            <div className={`h-1.5 w-1.5 rounded-full ${branch.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
+                                            <span className="hidden sm:inline">{branch.status}</span>
+                                            <span className="sm:hidden">{branch.status?.[0]}</span>
                                         </span>
                                     </td>
-                                    <td className="px-6 py-4 text-sm font-medium text-slate-600 italic">
-                                        {branch.owner || 'N/A'}
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-xs font-black">
-                                            <Users size={12} />
-                                            {branch.members || 0}
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <span className={`inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-full border ${branch.status === 'Active' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-slate-500 bg-slate-100 border-slate-200'}`}>
-                                            <div className={`h-1 w-1 rounded-full ${branch.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                                            {branch.status}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-3">
-                                            {/*
-                                            <button
-                                                onClick={() => handleAssignStaff(branch)}
-                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 text-violet-600 rounded-lg text-[10px] font-black uppercase tracking-tight hover:bg-violet-100 transition-all cursor-pointer"
-                                            >
-                                                <UserPlus size={14} />
-                                                Assign Staff
-                                            </button>
-                                            */}
+                                    <td className="px-4 sm:px-8 py-4 sm:py-6 text-right">
+                                        <div className="flex items-center justify-end gap-1 sm:gap-2">
                                             <button
                                                 onClick={() => handleViewBranch(branch)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all cursor-pointer"
+                                                className="p-2 sm:p-3 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
                                                 title="View Details"
                                             >
-                                                <Eye size={16} />
+                                                <Eye size={18} strokeWidth={3} />
                                             </button>
                                             <button
                                                 onClick={() => handleEditBranch(branch)}
-                                                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all cursor-pointer"
+                                                className="p-2 sm:p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                                                 title="Edit Branch"
                                             >
-                                                <Edit2 size={16} />
+                                                <Edit2 size={18} strokeWidth={3} />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteBranch(branch.id)}
-                                                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
+                                                className="p-2 sm:p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                                 title="Delete Branch"
                                             >
-                                                <Trash2 size={16} />
+                                                <Trash2 size={18} strokeWidth={3} />
                                             </button>
                                         </div>
                                     </td>
@@ -307,273 +363,439 @@ const BranchList = () => {
                 </div>
             </div>
 
-            {/* Add Branch Drawer */}
+            {/* ── ADD NEW BRANCH DRAWER ── */}
             <RightDrawer
                 isOpen={isAddDrawerOpen}
                 onClose={() => setIsAddDrawerOpen(false)}
                 title="Add New Branch"
-                subtitle="Fill in the details to create a new location"
-                footer={(
-                    <div className="flex gap-3 justify-end">
+                subtitle="Register a new gym location to the network"
+                maxWidth="max-w-2xl"
+                footer={
+                    <div className="flex gap-3 w-full justify-end">
                         <button
+                            type="button"
                             onClick={() => setIsAddDrawerOpen(false)}
-                            className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all active:scale-95"
+                            className="px-6 h-11 border-2 border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSaveBranch}
-                            className="px-8 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-500/30 hover:shadow-violet-500/50 transition-all hover:scale-105 active:scale-95"
+                            className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all font-black uppercase tracking-widest text-xs"
                         >
-                            Save Branch
+                            Create Branch
                         </button>
                     </div>
-                )}
+                }
             >
-                <div className="flex flex-col gap-6 p-6">
-                    <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Branch Name</label>
-                        <input name="branchName" value={formData.branchName} onChange={handleInputChange} type="text" className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium" placeholder="E.g. Southside Studio" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Manager Name</label>
-                            <input name="owner" value={formData.owner} onChange={handleInputChange} type="text" className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium" placeholder="John Doe" />
+                <div className="px-6 py-6 space-y-8 font-black">
+                    {/* Section 1: Basic Information */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                            Basic Information
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Name <span className="text-rose-500">*</span></label>
+                                <input
+                                    required
+                                    type="text"
+                                    name="branchName"
+                                    placeholder="e.g., Downtown Branch"
+                                    value={formData.branchName}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Code <span className="text-rose-500">*</span></label>
+                                <input
+                                    required
+                                    type="text"
+                                    name="branchCode"
+                                    placeholder="e.g., DT01"
+                                    value={formData.branchCode}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Status</label>
-                            <select name="status" value={formData.status} onChange={handleInputChange} className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium">
-                                <option value="Active">Active</option>
-                                <option value="Suspended">Suspended</option>
-                            </select>
+                    </div>
+
+                    {/* Section 2: Location Details */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                            Location Details
+                        </h3>
+                        <div className="space-y-4 text-left">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Address</label>
+                                <textarea
+                                    name="address"
+                                    rows={3}
+                                    placeholder="Street address"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all resize-none font-bold placeholder:font-bold"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">City</label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        placeholder="e.g., Mumbai"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">State</label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        placeholder="e.g., Maharashtra"
+                                        value={formData.state}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Postal Code</label>
+                                    <input
+                                        type="text"
+                                        name="postalCode"
+                                        placeholder="e.g., 400001"
+                                        value={formData.postalCode}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Country</label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        placeholder="India"
+                                        value={formData.country}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Contact Phone</label>
-                        <div className="relative">
-                            <Phone className="absolute left-4 top-3.5 text-slate-300" size={18} />
-                            <input name="phone" value={formData.phone} onChange={handleInputChange} type="tel" className="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium" placeholder="+91 00000 00000" />
+
+                    {/* Section 3: Contact & Operations */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">3</span>
+                            Contact & Operations
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Phone</label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    placeholder="+91 9876543210"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="branch@gym.com"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Opening Time</label>
+                                <input
+                                    type="time"
+                                    name="openingTime"
+                                    value={formData.openingTime}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Closing Time</label>
+                                <input
+                                    type="time"
+                                    name="closingTime"
+                                    value={formData.closingTime}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Assign Manager</label>
+                                <select
+                                    name="manager"
+                                    value={formData.manager}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
+                                >
+                                    <option value="No manager">No manager</option>
+                                    <option value="John Doe">John Doe</option>
+                                    <option value="Jane Smith">Jane Smith</option>
+                                </select>
+                            </div>
                         </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Email Address</label>
-                        <div className="relative">
-                            <Mail className="absolute left-4 top-3.5 text-slate-300" size={18} />
-                            <input name="email" value={formData.email} onChange={handleInputChange} type="email" className="w-full pl-11 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium" placeholder="branch@gym.com" />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="text-xs font-black text-slate-400 uppercase tracking-widest">Address</label>
-                        <textarea name="location" value={formData.location} onChange={handleInputChange} rows="3" className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm focus:border-violet-500 transition-all font-medium resize-none" placeholder="Full branch address..."></textarea>
                     </div>
                 </div>
             </RightDrawer>
 
-            {/* View Branch Drawer */}
+            {/* ── VIEW BRANCH DRAWER ── */}
             <RightDrawer
                 isOpen={isViewDrawerOpen}
                 onClose={() => setIsViewDrawerOpen(false)}
                 title="Branch Details"
-                subtitle={selectedBranch?.name}
-                footer={(
-                    <button
-                        onClick={() => setIsViewDrawerOpen(false)}
-                        className="w-full py-3 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
-                    >
-                        Close View
-                    </button>
-                )}
+                subtitle={selectedBranch?.memberId || 'Location Insight'}
+                maxWidth="max-w-lg"
+                footer={
+                    <div className="flex gap-3 w-full">
+                        <button onClick={() => { setIsViewDrawerOpen(false); setTimeout(() => handleEditBranch(selectedBranch), 200); }} className="flex-1 h-11 border-2 border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all font-black uppercase tracking-widest text-[10px]">Edit Branch</button>
+                        <button onClick={() => setIsViewDrawerOpen(false)} className="flex-1 h-11 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all font-black uppercase tracking-widest text-[10px]">Close</button>
+                    </div>
+                }
             >
                 {selectedBranch && (
-                    <div className="flex flex-col gap-8 p-6">
-                        <div className="bg-violet-50 rounded-2xl p-6 border border-violet-100 flex flex-col items-center text-center">
-                            <div className="w-16 h-16 bg-white rounded-2xl shadow-xl flex items-center justify-center text-violet-600 mb-4">
-                                <Building size={32} />
+                    <div className="px-6 py-6 space-y-6 font-black leading-tight text-left">
+                        {/* Avatar + Name */}
+                        <div className="flex items-center gap-4 pb-5 border-b border-slate-100">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center text-2xl font-black border-2 border-violet-200 flex-shrink-0">
+                                <Building2 size={24} strokeWidth={3} />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-800">{selectedBranch.gymName || selectedBranch.branchName}</h3>
-                            <span className="px-2 py-0.5 bg-violet-600 text-white rounded text-[10px] font-black uppercase tracking-widest mt-2">BR-{selectedBranch.id.toString().padStart(3, '0')}</span>
-                        </div>
-
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Branch Overview</h4>
-                            <div className="grid grid-cols-1 gap-3">
-                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-slate-500">Manager</span>
-                                    <span className="text-sm font-bold text-slate-800">{selectedBranch.owner}</span>
-                                </div>
-                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-slate-500">Total Staff</span>
-                                    <span className="text-sm font-bold text-slate-800">{selectedBranch.members || 0} Members</span>
-                                </div>
-                                <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between">
-                                    <span className="text-sm font-medium text-slate-500">Status</span>
-                                    <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg uppercase tracking-wider">{selectedBranch.status}</span>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 leading-tight">{selectedBranch.gymName || selectedBranch.branchName}</h3>
+                                <p className="text-xs font-mono text-violet-500 mt-0.5">ID: {selectedBranch.id}</p>
+                                <div className="mt-2">
+                                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedBranch.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-slate-50 text-slate-400 border border-slate-100'}`}>
+                                        {selectedBranch.status}
+                                    </span>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Location Details</h4>
-                            <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 space-y-4">
-                                <div className="flex gap-3">
-                                    <MapPin size={18} className="text-slate-300 mt-1" />
-                                    <div>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">Address</p>
-                                        <p className="text-sm font-bold text-slate-700">{selectedBranch.location}</p>
+                        {/* Details Grid */}
+                        <div>
+                            <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <span className="w-4 h-4 rounded-full bg-violet-100 flex items-center justify-center"><span className="w-1.5 h-1.5 rounded-full bg-violet-500"></span></span>
+                                Location Insight
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {[
+                                    ['Branch Name', selectedBranch.gymName || selectedBranch.branchName || 'N/A'],
+                                    ['Branch Code', selectedBranch.branchCode || `BR-${selectedBranch.id}`],
+                                    ['Primary Manager', selectedBranch.owner || selectedBranch.manager || 'Unassigned'],
+                                    ['Email', selectedBranch.email || 'N/A'],
+                                    ['Phone', selectedBranch.phone || 'N/A'],
+                                    ['Operational Address', selectedBranch.address || selectedBranch.location || 'N/A'],
+                                    ['City', selectedBranch.city || '—'],
+                                    ['State', selectedBranch.state || '—'],
+                                    ['Postal Code', selectedBranch.postalCode || '—'],
+                                    ['Country', selectedBranch.country || 'India'],
+                                    ['Opening Time', selectedBranch.openingTime || '06:00'],
+                                    ['Closing Time', selectedBranch.closingTime || '22:00'],
+                                ].map(([label, val]) => (
+                                    <div key={label} className={`group bg-slate-50 rounded-xl px-4 py-3 border border-slate-100 hover:border-violet-200 transition-colors ${label === 'Operational Address' ? 'sm:col-span-2' : ''}`}>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
+                                        <p className="text-sm font-bold text-slate-800 break-words">{val}</p>
                                     </div>
-                                </div>
+                                ))}
                             </div>
                         </div>
                     </div>
                 )}
             </RightDrawer>
 
-            {/* Edit Branch Drawer */}
+            {/* ── EDIT BRANCH DRAWER ── */}
             <RightDrawer
                 isOpen={isEditDrawerOpen}
                 onClose={() => setIsEditDrawerOpen(false)}
                 title="Edit Branch"
-                subtitle="Update location details"
-                footer={(
-                    <div className="flex gap-3 justify-end">
-                        <button onClick={() => setIsEditDrawerOpen(false)} className="px-6 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all">Cancel</button>
-                        <button
-                            onClick={handleUpdateBranch}
-                            className="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-lg hover:shadow-slate-200 transition-all hover:scale-105 active:scale-95"
-                        >
-                            Update Changes
-                        </button>
+                subtitle={`Updating location for ${selectedBranch?.gymName || ''}`}
+                maxWidth="max-w-2xl"
+                footer={
+                    <div className="flex gap-3 w-full justify-end">
+                        <button type="button" onClick={() => setIsEditDrawerOpen(false)} className="px-6 h-11 border-2 border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all font-black uppercase tracking-widest text-[10px]">Discard</button>
+                        <button onClick={handleUpdateBranch} className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all font-black uppercase tracking-widest text-[10px]">Save Changes</button>
                     </div>
-                )}
+                }
             >
-                {selectedBranch && (
-                    <div className="flex flex-col gap-6 p-6">
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Branch Name</label>
-                            <input
-                                name="name"
-                                type="text"
-                                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-violet-500 outline-none transition-all shadow-sm"
-                                value={formData.name}
-                                onChange={handleInputChange}
-                            />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Manager</label>
+                <div className="px-6 py-6 space-y-8 font-black">
+                    {/* Section 1: Core Information */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">1</span>
+                            Core Information
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Name</label>
                                 <input
-                                    name="owner"
                                     type="text"
-                                    className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-violet-500 outline-none transition-all shadow-sm"
-                                    value={formData.owner}
+                                    name="branchName"
+                                    placeholder="Enter branch name"
+                                    value={formData.branchName}
                                     onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Status</label>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Code</label>
+                                <input
+                                    type="text"
+                                    name="branchCode"
+                                    placeholder="e.g., BR01"
+                                    value={formData.branchCode}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Operational Address</label>
+                                <textarea
+                                    name="address"
+                                    rows={3}
+                                    placeholder="Address details"
+                                    value={formData.address}
+                                    onChange={handleInputChange}
+                                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all resize-none font-bold"
+                                />
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">City</label>
+                                    <input
+                                        type="text"
+                                        name="city"
+                                        placeholder="City"
+                                        value={formData.city}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">State</label>
+                                    <input
+                                        type="text"
+                                        name="state"
+                                        placeholder="State"
+                                        value={formData.state}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Postal Code</label>
+                                    <input
+                                        type="text"
+                                        name="postalCode"
+                                        placeholder="Postal Code"
+                                        value={formData.postalCode}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Country</label>
+                                    <input
+                                        type="text"
+                                        name="country"
+                                        placeholder="Country"
+                                        value={formData.country}
+                                        onChange={handleInputChange}
+                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Opening Time</label>
+                                <input
+                                    type="time"
+                                    name="openingTime"
+                                    value={formData.openingTime}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Closing Time</label>
+                                <input
+                                    type="time"
+                                    name="closingTime"
+                                    value={formData.closingTime}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Phone</label>
+                                <input
+                                    type="tel"
+                                    name="phone"
+                                    placeholder="Phone number"
+                                    value={formData.phone}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Email address"
+                                    value={formData.email}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Location Status</label>
                                 <select
                                     name="status"
-                                    className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-violet-500 outline-none transition-all shadow-sm"
                                     value={formData.status}
                                     onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
                                 >
                                     <option value="Active">Active</option>
                                     <option value="Suspended">Suspended</option>
                                 </select>
                             </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Assign Manager</label>
+                                <select
+                                    name="manager"
+                                    value={formData.manager}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
+                                >
+                                    <option value="No manager">No manager</option>
+                                    <option value="John Doe">John Doe</option>
+                                    <option value="Jane Smith">Jane Smith</option>
+                                </select>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-xs font-black text-slate-400 uppercase tracking-widest pl-1">Address</label>
-                            <textarea
-                                name="location"
-                                rows="3"
-                                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold focus:border-violet-500 outline-none transition-all shadow-sm resize-none"
-                                value={formData.location}
-                                onChange={handleInputChange}
-                            ></textarea>
-                        </div>
-                    </div>
-                )}
-            </RightDrawer>
-
-            {/* Assign Staff Drawer */}
-            <RightDrawer
-                isOpen={isAssignDrawerOpen}
-                onClose={() => setIsAssignDrawerOpen(false)}
-                title="Assign Staff"
-                subtitle={selectedBranch ? `Relocating staff to ${selectedBranch.name}` : "Manage branch staff"}
-                maxWidth="max-w-2xl"
-                footer={(
-                    <div className="flex gap-3 justify-end">
-                        <button
-                            onClick={() => setIsAssignDrawerOpen(false)}
-                            className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
-                        >
-                            Cancel
-                        </button>
-                        <button className="px-10 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-lg hover:shadow-slate-200 transition-all transform hover:scale-105 active:scale-95">
-                            Update Assignment
-                        </button>
-                    </div>
-                )}
-            >
-                <div className="flex flex-col gap-8 p-6">
-                    {/* Filter & Search */}
-                    <div className="flex gap-3">
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-4 top-3 text-slate-300 group-focus-within:text-violet-500" size={18} />
-                            <input type="text" className="w-full pl-11 pr-4 py-2.5 bg-slate-50 rounded-xl text-sm border-2 border-slate-100 focus:border-violet-500 outline-none transition-all" placeholder="Search staff by name or role..." />
-                        </div>
-                        <button className="p-2.5 border-2 border-slate-100 rounded-xl text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors">
-                            <Filter size={20} />
-                        </button>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-8">
-                        {/* Available Staff */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Users size={14} className="text-blue-500" /> Available Staff
-                                </h4>
-                                <span className="text-[10px] font-bold text-slate-300">Total: 3</span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                {staffList.map(staff => (
-                                    <div key={staff.id} className="p-3 bg-slate-50 border border-slate-100 rounded-xl flex items-center justify-between group hover:border-violet-200 transition-all">
-                                        <div>
-                                            <div className="text-sm font-bold text-slate-700">{staff.name}</div>
-                                            <div className="text-[10px] text-slate-400 font-medium">{staff.role}</div>
-                                        </div>
-                                        <button className="p-1.5 bg-white border border-slate-200 text-slate-300 rounded-lg hover:text-emerald-500 hover:border-emerald-500 transition-all">
-                                            <Plus size={14} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Assigned Staff */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <UserCheck size={14} className="text-emerald-500" /> Assigned Staff
-                                </h4>
-                                <span className="text-[10px] font-bold text-slate-300">Total: 2</span>
-                            </div>
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                                <div className="p-3 bg-emerald-50/30 border border-emerald-100 rounded-xl flex items-center justify-between group">
-                                    <div>
-                                        <div className="text-sm font-bold text-emerald-800">Amit Singh</div>
-                                        <div className="text-[10px] text-emerald-600 font-medium">Head Manager</div>
-                                    </div>
-                                    <button className="p-1.5 bg-white border border-emerald-100 text-rose-400 rounded-lg hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100">
-                                        <X size={14} />
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </RightDrawer>
         </div>
