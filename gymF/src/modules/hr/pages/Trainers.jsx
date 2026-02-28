@@ -1,0 +1,515 @@
+import React, { useState, useEffect } from 'react';
+import {
+    Users, Plus, Search, Filter, MoreHorizontal, Mail, Phone,
+    Award, Clock, DollarSign, TrendingUp, X, Check, Edit2, Trash2,
+    Shield
+} from 'lucide-react';
+import RightDrawer from '../../../components/common/RightDrawer';
+import { useBranchContext } from '../../../context/BranchContext';
+import * as managerApi from '../../../api/manager/managerApi';
+import { toast } from 'react-hot-toast';
+
+const Trainers = () => {
+    const { selectedBranch } = useBranchContext();
+    const [trainers, setTrainers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [editingTrainer, setEditingTrainer] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showInactive, setShowInactive] = useState(false);
+
+    // Stats
+    const [stats, setStats] = useState({
+        activeTrainers: 0,
+        generalClients: 0,
+        ptClients: 0,
+        monthlyRevenue: 0,
+        avgClientsPerTrainer: 0
+    });
+
+    // Form State
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        idType: '',
+        idNumber: '',
+        specialization: '',
+        certifications: '',
+        salaryType: 'Monthly',
+        baseSalary: '',
+        hourlyRate: '',
+        ptSharePercent: '',
+        bio: '',
+        status: 'Active'
+    });
+
+    useEffect(() => {
+        loadData();
+    }, [selectedBranch]);
+
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const branchId = selectedBranch === 'all' ? '' : selectedBranch;
+            const [allStaff, trainerStats] = await Promise.all([
+                managerApi.getAllStaff(),
+                managerApi.getTrainerStats(branchId)
+            ]);
+
+            // Filter trainers and handle branch scoping manually if needed
+            const trainerList = allStaff.filter(s => {
+                const isTrainer = s.role === 'TRAINER';
+                const branchMatch = !branchId || s.tenantId === parseInt(branchId);
+                return isTrainer && branchMatch;
+            });
+
+            setTrainers(trainerList);
+            setStats({
+                activeTrainers: trainerStats.activeTrainers || 0,
+                generalClients: trainerStats.generalClients || 0,
+                ptClients: trainerStats.ptClients || 0,
+                monthlyRevenue: trainerStats.monthlyRevenue || 0,
+                avgClientsPerTrainer: trainerStats.avgClientsPerTrainer || 0
+            });
+        } catch (error) {
+            console.error('Error loading trainers:', error);
+            toast.error('Failed to load trainers data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateOrUpdate = async (e) => {
+        e.preventDefault();
+        try {
+            const payload = {
+                ...formData,
+                role: 'TRAINER',
+                // Handle different salary fields based on type
+                baseSalary: formData.salaryType === 'Monthly' ? formData.baseSalary : null,
+                hourlyRate: formData.salaryType === 'Hourly' ? formData.hourlyRate : null
+            };
+
+            const branchId = selectedBranch === 'all' ? null : selectedBranch;
+
+            if (editingTrainer) {
+                // Update implementation
+                await managerApi.updateStaffAPI(editingTrainer.id, payload);
+                toast.success('Trainer updated successfully');
+            } else {
+                // Create logic - handle "All Branches"
+                if (selectedBranch === 'all') {
+                    // This is tricky for users. For now, create for the primary or handle in controller.
+                    // Assuming controller creates for one or multiples.
+                    await managerApi.createStaffAPI({ ...payload, branchId: 'all' });
+                } else {
+                    await managerApi.createStaffAPI({ ...payload, tenantId: branchId });
+                }
+                toast.success('Trainer added successfully');
+            }
+
+            setIsDrawerOpen(false);
+            resetForm();
+            loadData();
+        } catch (error) {
+            console.error('Error saving trainer:', error);
+            toast.error(error.response?.data?.message || 'Failed to save trainer');
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to remove this trainer?')) return;
+        try {
+            await managerApi.deleteStaffAPI(id);
+            toast.success('Trainer removed successfully');
+            loadData();
+        } catch (error) {
+            toast.error('Failed to remove trainer');
+        }
+    };
+
+    const resetForm = () => {
+        setFormData({
+            name: '',
+            email: '',
+            phone: '',
+            idType: '',
+            idNumber: '',
+            specialization: '',
+            certifications: '',
+            salaryType: 'Monthly',
+            baseSalary: '',
+            hourlyRate: '',
+            ptSharePercent: '',
+            bio: '',
+            status: 'Active'
+        });
+        setEditingTrainer(null);
+    };
+
+    const openEditDrawer = (trainer) => {
+        setEditingTrainer(trainer);
+        setFormData({
+            name: trainer.name || '',
+            email: trainer.email || '',
+            phone: trainer.phone || '',
+            idType: trainer.idType || '',
+            idNumber: trainer.idNumber || '',
+            specialization: trainer.specialization || '',
+            certifications: trainer.certifications || '',
+            salaryType: trainer.salaryType || 'Monthly',
+            baseSalary: trainer.baseSalary || '',
+            hourlyRate: trainer.hourlyRate || '',
+            ptSharePercent: trainer.ptSharePercent || '',
+            bio: trainer.bio || '',
+            status: trainer.status || 'Active'
+        });
+        setIsDrawerOpen(true);
+    };
+
+    const filteredTrainers = trainers.filter(t => {
+        const matchesSearch = t.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            t.email?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = showInactive ? true : t.status === 'Active';
+        return matchesSearch && matchesStatus;
+    });
+
+    const kpiCards = [
+        { label: 'Active Trainers', value: stats.activeTrainers, icon: Users, variant: 'blue' },
+        { label: 'General Clients', value: stats.generalClients, icon: Shield, variant: 'indigo' },
+        { label: 'PT Clients', value: stats.ptClients, icon: Award, variant: 'blue' },
+        { label: 'Monthly Revenue', value: `₹${stats.monthlyRevenue.toLocaleString()}`, icon: DollarSign, variant: 'indigo' },
+        { label: 'Avg Clients/Trainer', value: stats.avgClientsPerTrainer, icon: TrendingUp, variant: 'blue' }
+    ];
+
+    return (
+        <div className="min-h-screen bg-[#F8F9FA] p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto space-y-8">
+
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                            Trainers
+                        </h1>
+                        <p className="text-slate-500 text-sm mt-1">Manage trainers, certifications, and client assignments</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={() => setShowInactive(!showInactive)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border-2 ${showInactive ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200'}`}
+                        >
+                            {showInactive ? 'Show All' : 'Show Inactive'}
+                        </button>
+                        <button
+                            onClick={() => { resetForm(); setIsDrawerOpen(true); }}
+                            className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl shadow-lg hover:shadow-blue-500/30 transition-all flex items-center gap-2 font-bold text-sm"
+                        >
+                            <Plus size={18} /> Add Trainer
+                        </button>
+                    </div>
+                </div>
+
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {kpiCards.map((kpi, idx) => (
+                        <div key={idx} className="bg-white p-6 rounded-[24px] shadow-sm border border-slate-100 relative overflow-hidden group hover:shadow-xl transition-all duration-300">
+                            <div className={`absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity`}>
+                                <kpi.icon size={64} />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${kpi.variant === 'blue' ? 'bg-blue-50 text-blue-600' : 'bg-indigo-50 text-indigo-600'}`}>
+                                    <kpi.icon size={22} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{kpi.label}</p>
+                                    <p className="text-xl font-bold text-slate-900 mt-0.5">{kpi.value}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Main Content Area */}
+                <div className="bg-white rounded-[32px] shadow-sm border border-slate-100 overflow-hidden">
+                    {/* Search/Filter Bar */}
+                    <div className="p-6 border-b border-slate-50 flex flex-col md:flex-row gap-4 items-center justify-between bg-slate-50/30">
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Search by name or email..."
+                                className="w-full pl-12 pr-4 py-2.5 bg-white border-2 border-slate-100 rounded-xl text-sm focus:border-blue-500 transition-all outline-none"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Sort:</span>
+                            <select className="bg-transparent text-sm font-bold text-slate-600 outline-none">
+                                <option>Recent First</option>
+                                <option>A-Z</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Trainer List */}
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="bg-slate-50/50">
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer Details</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialization</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic">
+                                            Loading trainers...
+                                        </td>
+                                    </tr>
+                                ) : filteredTrainers.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic">
+                                            No trainers found.
+                                        </td>
+                                    </tr>
+                                ) : filteredTrainers.map((trainer) => (
+                                    <tr key={trainer.id} className="hover:bg-slate-50/50 transition-colors group">
+                                        <td className="px-8 py-5">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
+                                                    {trainer.name?.charAt(0)}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{trainer.name}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{trainer.salaryType} Plan</p>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">
+                                                {trainer.specialization || 'General Training'}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                    <Mail size={12} className="text-slate-400" /> {trainer.email}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                    <Phone size={12} className="text-slate-400" /> {trainer.phone}
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${trainer.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                <div className={`w-1 h-1 rounded-full mr-1.5 ${trainer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                {trainer.status}
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                <button onClick={() => openEditDrawer(trainer)} className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-sm border border-transparent hover:border-slate-100">
+                                                    <Edit2 size={16} />
+                                                </button>
+                                                <button onClick={() => handleDelete(trainer.id)} className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-rose-600 transition-all shadow-sm border border-transparent hover:border-slate-100">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* Trainer Drawer */}
+            <RightDrawer
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
+                title={editingTrainer ? "Edit Trainer Profile" : "Add Trainer Profile"}
+                subtitle="Create a new trainer or link to existing user"
+            >
+                <form onSubmit={handleCreateOrUpdate} className="p-6 space-y-8 pb-24">
+
+                    {/* Image Placeholder */}
+                    <div className="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
+                        <div className="w-24 h-24 rounded-full bg-slate-200 flex items-center justify-center text-slate-400 mb-2">
+                            <Users size={40} />
+                        </div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Click to upload photo</p>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="col-span-2">
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name *</label>
+                                <input
+                                    required
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                                    placeholder="John Doe"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Phone</label>
+                                <input
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                                    placeholder="+91 000 000 0000"
+                                    value={formData.phone}
+                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Email *</label>
+                                <input
+                                    required
+                                    type="email"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all text-sm font-medium"
+                                    placeholder="john@example.com"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">ID Type</label>
+                                <select
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none bg-white"
+                                    value={formData.idType}
+                                    onChange={(e) => setFormData({ ...formData, idType: e.target.value })}
+                                >
+                                    <option value="">Select ID Type</option>
+                                    <option>Aadhar Card</option>
+                                    <option>PAN Card</option>
+                                    <option>Driving License</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">ID Number</label>
+                                <input
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none"
+                                    placeholder="Enter ID number"
+                                    value={formData.idNumber}
+                                    onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Specialization</label>
+                            <input
+                                className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none"
+                                placeholder="Yoga, HIIT, Strength (comma separated)"
+                                value={formData.specialization}
+                                onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Certifications</label>
+                            <textarea
+                                className="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none min-h-[80px]"
+                                placeholder="ACE, NASM, CPR Certified"
+                                value={formData.certifications}
+                                onChange={(e) => setFormData({ ...formData, certifications: e.target.value })}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Salary Type</label>
+                                <select
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none bg-white"
+                                    value={formData.salaryType}
+                                    onChange={(e) => setFormData({ ...formData, salaryType: e.target.value })}
+                                >
+                                    <option>Monthly</option>
+                                    <option>Hourly</option>
+                                </select>
+                            </div>
+                            <div>
+                                {formData.salaryType === 'Monthly' ? (
+                                    <>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Base Salary</label>
+                                        <input
+                                            type="number"
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none"
+                                            placeholder="0"
+                                            value={formData.baseSalary}
+                                            onChange={(e) => setFormData({ ...formData, baseSalary: e.target.value })}
+                                        />
+                                    </>
+                                ) : (
+                                    <>
+                                        <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Hourly Rate ($)</label>
+                                        <input
+                                            type="number"
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none"
+                                            placeholder="0"
+                                            value={formData.hourlyRate}
+                                            onChange={(e) => setFormData({ ...formData, hourlyRate: e.target.value })}
+                                        />
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">PT Share Percentage (%)</label>
+                            <input
+                                type="number"
+                                className="w-full h-11 px-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none"
+                                placeholder="40"
+                                value={formData.ptSharePercent}
+                                onChange={(e) => setFormData({ ...formData, ptSharePercent: e.target.value })}
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1.5 font-bold">Trainer gets 40%, Gym gets 60% (Before GST)</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Bio</label>
+                            <textarea
+                                className="w-full p-4 rounded-xl border-2 border-slate-100 focus:border-blue-500 transition-all text-sm font-medium outline-none min-h-[100px]"
+                                placeholder="Say something about your experience..."
+                                value={formData.bio}
+                                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Form Actions */}
+                    <div className="fixed bottom-0 right-0 w-full max-w-md p-6 bg-white border-t border-slate-100 flex gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsDrawerOpen(false)}
+                            className="flex-1 h-12 rounded-2xl bg-slate-50 text-slate-500 font-bold uppercase tracking-widest text-xs hover:bg-slate-100 transition-all border border-slate-100"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-[2] h-12 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold uppercase tracking-widest text-xs shadow-xl shadow-blue-500/20 hover:shadow-blue-500/40 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Check size={18} strokeWidth={3} />
+                            {editingTrainer ? 'Update Trainer' : 'Create Trainer'}
+                        </button>
+                    </div>
+                </form>
+            </RightDrawer>
+        </div>
+    );
+};
+
+export default Trainers;
