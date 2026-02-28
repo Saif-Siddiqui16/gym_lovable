@@ -43,7 +43,7 @@ const equipmentRoutes = require('./routes/equipment.routes');
 const financeRoutes = require('./routes/finance.routes');
 const lockerRoutes = require('./routes/locker.routes');
 const inventoryRoutes = require('./routes/inventory.routes');
-const announcementRoutes = require('./routes/announcement.routes');
+const communicationRoutes = require('./routes/communication.routes');
 const rewardRoutes = require('./routes/reward.routes');
 const feedbackRoutes = require('./routes/feedback.routes');
 
@@ -53,7 +53,7 @@ app.use('/api/v1/equipment', equipmentRoutes);
 app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/lockers', lockerRoutes);
 app.use('/api/v1/inventory', inventoryRoutes);
-app.use('/api/v1/announcements', announcementRoutes);
+app.use('/api/v1/communication', communicationRoutes);
 app.use('/api/v1/rewards', rewardRoutes);
 app.use('/api/v1/feedback', feedbackRoutes);
 

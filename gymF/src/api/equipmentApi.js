@@ -1,6 +1,13 @@
 import apiClient from './apiClient';
 
 export const equipmentApi = {
+    getStats: async (filters = {}) => {
+        const response = await apiClient.get('/equipment/stats', {
+            params: filters
+        });
+        return response.data;
+    },
+
     getAllEquipment: async (filters = {}) => {
         const response = await apiClient.get('/equipment', {
             params: filters

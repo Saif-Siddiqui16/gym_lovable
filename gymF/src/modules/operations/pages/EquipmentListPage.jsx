@@ -1,306 +1,366 @@
 import React, { useState, useEffect } from 'react';
-import { EQUIPMENT_STATUSES } from '../data/equipmentData';
-import { equipmentApi } from '../../../api/equipmentApi';
-import toast from 'react-hot-toast';
 import {
-    Wrench,
-    Plus,
-    Package,
-    MapPin,
-    Calendar,
-    AlertTriangle,
-    MoreVertical,
     Search,
-    Filter,
-    ArrowRight
+    Plus,
+    Wrench,
+    Monitor,
+    AlertCircle,
+    CheckCircle2,
+    Info,
+    Calendar,
+    Archive,
+    Trash2,
+    Edit2,
+    MoreVertical,
+    History,
+    FileText,
+    TrendingUp,
+    Settings,
+    Banknote,
+    Clock
 } from 'lucide-react';
-import StatusBadge from '../../../components/common/StatusBadge';
+import { equipmentApi } from '../../../api/equipmentApi';
+import { useBranchContext } from '../../../context/BranchContext';
+import toast from 'react-hot-toast';
 import RightDrawer from '../../../components/common/RightDrawer';
-import ReportIssueModal from '../components/ReportIssueModal';
-import AddEquipmentModal from '../components/AddEquipmentModal';
+import AddEquipmentDrawer from './AddEquipmentDrawer';
 
 const EquipmentListPage = () => {
+    const { selectedBranch } = useBranchContext();
     const [equipment, setEquipment] = useState([]);
+    const [maintenanceLogs, setMaintenanceLogs] = useState([]);
+    const [stats, setStats] = useState({ total: 0, operational: 0, inMaintenance: 0, outOfOrder: 0, ytdCost: 0 });
     const [loading, setLoading] = useState(true);
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('Equipment');
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterCategory, setFilterCategory] = useState('All');
 
-    // UI States
-    const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
-    const [isReportDrawerOpen, setIsReportDrawerOpen] = useState(false);
-    const [selectedEquipment, setSelectedEquipment] = useState(null);
-
-    useEffect(() => {
-        fetchEquipment();
-    }, [searchTerm, filterCategory]);
-
-    const fetchEquipment = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const filters = {};
-            if (searchTerm) filters.search = searchTerm;
-            if (filterCategory !== 'All') filters.category = filterCategory;
-
-            const data = await equipmentApi.getAllEquipment(filters);
-            setEquipment(data);
+            const [equipmentData, statsData, logsData] = await Promise.all([
+                equipmentApi.getAllEquipment({ branchId: selectedBranch, search: searchTerm }),
+                equipmentApi.getStats({ branchId: selectedBranch }),
+                equipmentApi.getMaintenanceRequests({ branchId: selectedBranch })
+            ]);
+            setEquipment(equipmentData);
+            setStats(statsData);
+            setMaintenanceLogs(logsData);
         } catch (error) {
-            console.error("Failed to fetch equipment:", error);
-            toast.error("Failed to load equipment inventory");
+            console.error(error);
+            toast.error('Failed to load equipment data');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleStatusUpdate = async (id, newStatus) => {
+    useEffect(() => {
+        loadData();
+    }, [selectedBranch, searchTerm]);
+
+    const handleAddEquipment = async (data) => {
         try {
-            await equipmentApi.updateEquipment(id, { status: newStatus });
-            toast.success("Status updated");
-            fetchEquipment();
+            await equipmentApi.addEquipment({ ...data, tenantId: selectedBranch });
+            toast.success('Equipment added successfully');
+            loadData();
         } catch (error) {
-            toast.error("Failed to update status");
+            toast.error('Failed to add equipment');
         }
     };
 
-    const handleAddEquipment = async (newEquip) => {
-        try {
-            await equipmentApi.addEquipment(newEquip);
-            toast.success("Equipment added successfully");
-            setIsAddDrawerOpen(false);
-            fetchEquipment();
-        } catch (error) {
-            toast.error("Failed to add equipment");
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case 'Operational':
+                return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'In Maintenance':
+                return 'bg-amber-50 text-amber-600 border-amber-100';
+            case 'Out of Order':
+                return 'bg-rose-50 text-rose-600 border-rose-100';
+            case 'Completed':
+                return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+            case 'Pending':
+                return 'bg-amber-50 text-amber-600 border-amber-100';
+            default:
+                return 'bg-slate-50 text-slate-600 border-slate-100';
         }
-    };
-
-    const handleReportIssue = async (reportData) => {
-        try {
-            await equipmentApi.reportIssue(reportData);
-            toast.success("Issue reported successfully");
-            setIsReportDrawerOpen(false);
-            fetchEquipment();
-        } catch (error) {
-            toast.error("Failed to submit report");
-        }
-    };
-
-    const getStatusConfig = (status) => {
-        return EQUIPMENT_STATUSES.find(s => s.label === status) || EQUIPMENT_STATUSES[0];
     };
 
     return (
-        <div className="min-h-screen bg-[#F8FAFC] pb-20">
-            {/* Header Area */}
-            <div className="bg-white border-b border-slate-200 sticky top-0 z-20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-violet-200">
-                                <Package size={24} />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-slate-800 tracking-tight">Equipment Inventory</h1>
-                                <p className="text-slate-500 text-sm font-medium">Manage and track your gym facility assets</p>
-                            </div>
-                        </div>
+        <div className="bg-[#f8fafc] min-h-screen p-4 sm:p-8 custom-scrollbar">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+                <div>
+                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Equipment & Maintenance</h1>
+                    <p className="text-slate-500 text-sm font-medium">Track assets, maintenance history, and service logs</p>
+                </div>
+                <button
+                    onClick={() => setIsDrawerOpen(true)}
+                    className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0a1b2e] text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-slate-200 hover:bg-[#1a2b3e] transition-all"
+                >
+                    <Plus size={16} strokeWidth={3} /> Add Equipment
+                </button>
+            </div>
 
-                        <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setIsAddDrawerOpen(true)}
-                                className="flex items-center gap-2 bg-slate-900 text-white px-5 py-3 rounded-xl font-bold text-sm shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all"
-                            >
-                                <Plus size={18} strokeWidth={3} />
-                                Add Equipment
-                            </button>
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+                {/* Total Equipment */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-[#0a1b2e]/10 transition-all">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Total Equipment</p>
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-3xl font-black text-slate-900 leading-none">{stats.total}</h2>
+                        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-slate-400 group-hover:scale-110 transition-transform">
+                            <Monitor size={20} />
                         </div>
                     </div>
+                </div>
 
-                    {/* Filters Bar */}
-                    <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                            <input
-                                type="text"
-                                placeholder="Search by name or serial number..."
-                                className="w-full pl-11 pr-4 py-3 rounded-xl border-2 border-slate-50 bg-slate-50 focus:bg-white focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 outline-none transition-all font-medium text-slate-600"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
+                {/* Operational */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-emerald-100 transition-all border-l-4 border-l-emerald-500">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Operational</p>
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-3xl font-black text-emerald-600 leading-none">{stats.operational}</h2>
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500 group-hover:scale-110 transition-transform">
+                            <CheckCircle2 size={20} />
                         </div>
-                        <div className="flex gap-2">
-                            <select
-                                className="px-4 py-3 rounded-xl border-2 border-slate-50 bg-slate-50 font-bold text-sm text-slate-600 focus:border-violet-500 outline-none transition-all"
-                                value={filterCategory}
-                                onChange={(e) => setFilterCategory(e.target.value)}
-                            >
-                                <option value="All">All Categories</option>
-                                <option value="Cardio">Cardio</option>
-                                <option value="Strength">Strength</option>
-                                <option value="Free Weights">Free Weights</option>
-                            </select>
+                    </div>
+                </div>
+
+                {/* In Maintenance */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-amber-100 transition-all border-l-4 border-l-amber-500">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">In Maintenance</p>
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-3xl font-black text-amber-600 leading-none">{stats.inMaintenance}</h2>
+                        <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                            <Clock size={20} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Out of Order */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-rose-100 transition-all border-l-4 border-l-rose-500">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">Out of Order</p>
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-3xl font-black text-rose-600 leading-none">{stats.outOfOrder}</h2>
+                        <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500 group-hover:scale-110 transition-transform">
+                            <AlertCircle size={20} />
+                        </div>
+                    </div>
+                </div>
+
+                {/* YTD Maintenance Cost */}
+                <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col justify-between group hover:border-blue-100 transition-all">
+                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">YTD Maintenance Cost</p>
+                    <div className="flex justify-between items-end">
+                        <h2 className="text-2xl font-black text-slate-900 leading-none tracking-tight">₹{stats.ytdCost.toLocaleString()}</h2>
+                        <div className="w-10 h-10 bg-[#ff6b00]/5 rounded-xl flex items-center justify-center text-[#ff6b00] group-hover:scale-110 transition-transform">
+                            <Banknote size={20} />
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-                {loading ? (
-                    <div className="flex items-center justify-center p-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-violet-600"></div>
+            {/* Main Content Card */}
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
+                {/* Tabs & Search */}
+                <div className="p-8 border-b border-slate-50 flex flex-col lg:flex-row justify-between items-center gap-6">
+                    <div className="flex p-1 bg-slate-50 rounded-2xl w-full lg:w-auto">
+                        <button
+                            onClick={() => setActiveTab('Equipment')}
+                            className={`flex-1 lg:flex-none px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'Equipment' ? 'bg-white shadow-sm text-slate-900 border border-slate-100' : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                        >
+                            Equipment
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('MaintenanceLog')}
+                            className={`flex-1 lg:flex-none px-8 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'MaintenanceLog' ? 'bg-white shadow-sm text-slate-900 border border-slate-100' : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                        >
+                            Maintenance Log
+                        </button>
                     </div>
-                ) : (
-                    <>
-                        {/* Desktop View Table */}
-                        <div className="hidden lg:block bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                            <table className="w-full text-left">
-                                <thead>
-                                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Equipment / Brand</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Category & Location</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Warranty</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {equipment.map(item => (
-                                        <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 group-hover:scale-110 group-hover:bg-violet-100 group-hover:text-violet-600 transition-all">
-                                                        <Package size={20} />
-                                                    </div>
-                                                    <div>
-                                                        <p className="font-bold text-slate-800 text-sm">{item.name}</p>
-                                                        <p className="text-[10px] text-slate-400 font-bold tracking-wider">{item.serialNumber || 'NO SERIAL'}</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex flex-col gap-1">
-                                                    <span className="text-xs font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md w-fit">{item.category}</span>
-                                                    <span className="text-[10px] font-medium text-slate-400 flex items-center gap-1">
-                                                        <MapPin size={10} /> {item.location}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex flex-col">
-                                                    <p className="text-xs font-bold text-slate-700">
-                                                        {item.warrantyExpiry ? new Date(item.warrantyExpiry).toLocaleDateString() : 'N/A'}
-                                                    </p>
-                                                    <p className="text-[10px] text-slate-400 font-medium">Warranty Info</p>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <StatusBadge
-                                                    status={item.status}
-                                                    color={getStatusConfig(item.status).color}
-                                                />
-                                            </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <div className="flex items-center justify-end gap-2">
-                                                    <select
-                                                        className="text-[10px] font-black uppercase tracking-tight bg-slate-50 border-none rounded-lg px-2 py-1 outline-none cursor-pointer hover:bg-slate-100 transition-colors"
-                                                        value={item.status}
-                                                        onChange={(e) => handleStatusUpdate(item.id, e.target.value)}
-                                                    >
-                                                        {EQUIPMENT_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                                                    </select>
-                                                    <button
-                                                        onClick={() => {
-                                                            setSelectedEquipment(item);
-                                                            setIsReportDrawerOpen(true);
-                                                        }}
-                                                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                                        title="Report Issue"
-                                                    >
-                                                        <AlertTriangle size={18} />
-                                                    </button>
-                                                </div>
-                                            </td>
+
+                    <div className="relative group w-full lg:w-96">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-slate-900 transition-colors" size={18} />
+                        <input
+                            type="text"
+                            placeholder="Search equipment, serial number..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-slate-200 transition-all"
+                        />
+                    </div>
+                </div>
+
+                {/* Table Section */}
+                <div className="p-8">
+                    {activeTab === 'Equipment' ? (
+                        <>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-slate-900 italic tracking-tight underline decoration-[#ff6b00]/20 decoration-4 underline-offset-8">All Equipment</h3>
+                            </div>
+
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                            <th className="px-6 py-4">Equipment Info</th>
+                                            <th className="px-6 py-4">Serial Number</th>
+                                            <th className="px-6 py-4">Brand/Model</th>
+                                            <th className="px-6 py-4">Category</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Last Service</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
                                         </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {!loading && equipment.map((item) => (
+                                            <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="px-6 py-6">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                            <Wrench size={18} />
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-black text-slate-900">{item.name}</span>
+                                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.location}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{item.serialNumber || 'N/A'}</span>
+                                                </td>
+                                                <td className="px-6 py-6 font-bold text-xs text-slate-600">
+                                                    {item.brand} {item.model}
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                                        {item.category}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(item.status)}`}>
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'Operational' ? 'bg-emerald-500' :
+                                                                item.status === 'In Maintenance' ? 'bg-amber-500' : 'bg-rose-500'
+                                                            }`} />
+                                                        {item.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-700">
+                                                            {item.lastService ? new Date(item.lastService).toLocaleDateString() : 'No History'}
+                                                        </span>
+                                                        <span className="text-[10px] text-slate-400 font-bold uppercase">Next: {item.nextService ? new Date(item.nextService).toLocaleDateString() : 'N/A'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6 text-right">
+                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-slate-100">
+                                                            <Edit2 size={16} />
+                                                        </button>
+                                                        <button className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl shadow-sm transition-all border border-transparent hover:border-rose-100">
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-xl font-black text-slate-900 italic tracking-tight underline decoration-[#ff6b00]/20 decoration-4 underline-offset-8">Maintenance History</h3>
+                            </div>
+
+                            <div className="overflow-x-auto custom-scrollbar">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                            <th className="px-6 py-4">Equipment</th>
+                                            <th className="px-6 py-4">Issue Reported</th>
+                                            <th className="px-6 py-4">Date</th>
+                                            <th className="px-6 py-4">Priority</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4">Cost</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {!loading && maintenanceLogs.map((log) => (
+                                            <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
+                                                <td className="px-6 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-sm font-black text-slate-900">{log.equipment?.name}</span>
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{log.equipment?.serialNumber}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <div className="flex flex-col">
+                                                        <span className="text-xs font-bold text-slate-700">{log.issue}</span>
+                                                        <span className="text-[10px] text-slate-400 font-medium line-clamp-1">{log.description}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className="text-xs font-bold text-slate-600">{new Date(log.createdAt).toLocaleDateString()}</span>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${log.priority === 'High' || log.priority === 'Critical' ? 'bg-rose-50 text-rose-600' :
+                                                            log.priority === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                                                        }`}>
+                                                        {log.priority}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-6">
+                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(log.status)}`}>
+                                                        {log.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-6 font-bold text-xs text-slate-900">
+                                                    ₹{Number(log.cost).toLocaleString()}
+                                                </td>
+                                                <td className="px-6 py-6 text-right">
+                                                    <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-slate-100">
+                                                        <FileText size={16} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </>
+                    )}
+
+                    {loading && (
+                        <div className="h-[300px] flex items-center justify-center">
+                            <div className="w-10 h-10 border-4 border-slate-200 border-t-[#0a1b2e] rounded-full animate-spin"></div>
                         </div>
+                    )}
 
-                        {/* Mobile View Cards */}
-                        <div className="lg:hidden space-y-4">
-                            {equipment.map(item => (
-                                <div key={item.id} className="bg-white rounded-3xl p-5 shadow-sm border border-slate-100 space-y-4">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                                                <Package size={20} />
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-800">{item.name}</h3>
-                                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{item.serialNumber || 'NO SERIAL'}</p>
-                                            </div>
-                                        </div>
-                                        <StatusBadge
-                                            status={item.status}
-                                            color={getStatusConfig(item.status).color}
-                                        />
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 py-4 border-y border-slate-50">
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Location</p>
-                                            <p className="text-xs font-bold text-slate-600 mt-1 flex items-center gap-1">
-                                                <MapPin size={12} className="text-slate-300" /> {item.location}
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Warranty</p>
-                                            <p className="text-xs font-bold text-slate-600 mt-1 flex items-center gap-1">
-                                                <Calendar size={12} className="text-slate-300" /> {item.warrantyExpiry ? new Date(item.warrantyExpiry).toLocaleDateString() : 'N/A'}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex gap-2 pt-2">
-                                        <button
-                                            onClick={() => {
-                                                setSelectedEquipment(item);
-                                                setIsReportDrawerOpen(true);
-                                            }}
-                                            className="flex-1 bg-red-50 text-red-600 py-3 rounded-xl font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-2"
-                                        >
-                                            <AlertTriangle size={14} /> Report Issue
-                                        </button>
-                                        <button className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center">
-                                            <ArrowRight size={20} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
+                    {!loading && (activeTab === 'Equipment' ? equipment.length === 0 : maintenanceLogs.length === 0) && (
+                        <div className="h-[300px] flex flex-col items-center justify-center text-center px-8">
+                            <Archive size={64} className="text-slate-100 mb-6" />
+                            <h4 className="text-xl font-black text-slate-900 italic">No Data Found</h4>
+                            <p className="text-slate-400 text-sm font-medium mt-2">No records found for the selected branch.</p>
                         </div>
-                    </>
-                )}
+                    )}
+                </div>
             </div>
 
-            {/* Drawers */}
+            {/* Right Drawer */}
             <RightDrawer
-                isOpen={isAddDrawerOpen}
-                onClose={() => setIsAddDrawerOpen(false)}
+                isOpen={isDrawerOpen}
+                onClose={() => setIsDrawerOpen(false)}
                 title="Add New Equipment"
             >
-                <AddEquipmentModal
-                    onClose={() => setIsAddDrawerOpen(false)}
+                <AddEquipmentDrawer
+                    isOpen={isDrawerOpen}
+                    onClose={() => setIsDrawerOpen(false)}
                     onAdd={handleAddEquipment}
-                />
-            </RightDrawer>
-
-            <RightDrawer
-                isOpen={isReportDrawerOpen}
-                onClose={() => setIsReportDrawerOpen(false)}
-                title="Report Machine Issue"
-            >
-                <ReportIssueModal
-                    equipment={selectedEquipment}
-                    onClose={() => setIsReportDrawerOpen(false)}
-                    onSubmit={handleReportIssue}
                 />
             </RightDrawer>
         </div>

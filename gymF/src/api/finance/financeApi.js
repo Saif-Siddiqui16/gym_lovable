@@ -54,9 +54,9 @@ export const submitCashierPayment = async (paymentData) => {
     }
 };
 
-export const fetchTransactions = async () => {
+export const fetchTransactions = async (params) => {
     try {
-        const response = await apiClient.get('/finance/transactions');
+        const response = await apiClient.get('/finance/transactions', { params });
         return response.data;
     } catch (error) {
         throw error;

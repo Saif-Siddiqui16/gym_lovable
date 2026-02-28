@@ -42,7 +42,8 @@ import {
   RewardsProgram,
   FeedbackSystem,
   WhatsAppChat,
-  Devices
+  Devices,
+  LockerManagement
 } from './modules/operations';
 
 // Module: Superadmin
@@ -95,7 +96,7 @@ import StaffCheckIn from './Staff/AttendanceCheckIn/MemberCheckIn';
 import CheckOut from './Staff/AttendanceCheckIn/MemberCheckOut';
 import TodaysCheckIns from './Staff/AttendanceCheckIn/TodaysCheckIns';
 import StorePage from './Member/Store/StorePage';
-import LockerManagement from './Staff/Lockers/LockerManagement';
+import StaffLockerManagement from './Staff/Lockers/LockerManagement';
 import AssignLocker from './Staff/Lockers/AssignLocker';
 import ReleaseLocker from './Staff/Lockers/ReleaseLocker';
 import MyTasks from './Staff/Tasks/MyTasks';
@@ -295,8 +296,7 @@ export default function App() {
 
           {/* MODULE: OPERATIONS (Manager/Global) */}
           <Route path="/operations" element={<OperationsLayout />}>
-            <Route index element={(currentRole !== ROLES.MEMBER) ? <StaffSchedule /> : <Navigate to="/dashboard" replace />} />
-            <Route path="equipment" element={(currentRole !== ROLES.MEMBER) ? <EquipmentMaintenance /> : <Navigate to="/dashboard" replace />} />
+            <Route index element={<Navigate to="lockers" replace />} />
             <Route path="lockers" element={(currentRole !== ROLES.MEMBER) ? <LockerManagement /> : <Navigate to="/dashboard" replace />} />
             <Route path="inventory" element={(currentRole !== ROLES.MEMBER) ? <Inventory /> : <Navigate to="/dashboard" replace />} />
             <Route path="announcements" element={(currentRole !== ROLES.MEMBER) ? <Announcements /> : <Navigate to="/dashboard" replace />} />
@@ -328,6 +328,7 @@ export default function App() {
               <Route path="/finance/commissions" element={<Commissions />} />
               <Route path="/finance/cashier" element={<CashierMode />} />
               <Route path="/finance/transactions" element={<TransactionsPage />} />
+              <Route path="/finance/payments" element={<TransactionsPage />} />
               <Route path="/finance/petty-cash" element={<PettyCashPage />} />
               <Route path="/staff/payments/collect" element={<CashierMode />} />
               <Route path="/staff/payments/history" element={<TransactionsPage />} />
@@ -450,7 +451,7 @@ export default function App() {
               <Route path="/staff/attendance/check-in" element={<StaffCheckIn />} />
               <Route path="/staff/attendance/check-out" element={<CheckOut />} />
               <Route path="/staff/attendance/today" element={<TodaysCheckIns />} />
-              <Route path="/staff/lockers" element={<LockerManagement />} />
+              <Route path="/staff/lockers" element={<StaffLockerManagement />} />
               <Route path="/staff/lockers/assign" element={<AssignLocker />} />
               <Route path="/staff/lockers/release" element={<ReleaseLocker />} />
               <Route path="/staff/tasks/my-tasks" element={<MyTasks />} />
