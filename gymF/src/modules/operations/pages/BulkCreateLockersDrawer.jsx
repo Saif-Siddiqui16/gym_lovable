@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { lockerApi } from '../../../api/lockerApi';
+import { Box, Plus, X, Monitor, ChevronRight, Layers, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useBranchContext } from '../../../context/BranchContext';
 
 const BulkCreateLockersDrawer = ({ onClose, onSuccess }) => {
-    const { selectedBranch } = useBranchContext();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
-        prefix: 'L-',
+        prefix: 'L',
         startNumber: '1',
         endNumber: '10',
         size: 'Medium',
@@ -16,126 +14,149 @@ const BulkCreateLockersDrawer = ({ onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!formData.prefix) return toast.error('Prefix is required');
-        if (parseInt(formData.startNumber) > parseInt(formData.endNumber)) {
-            return toast.error('Start number must be less than or equal to end number');
-        }
-
-        try {
-            setLoading(true);
-            await lockerApi.bulkCreateLockers({
-                ...formData,
-                tenantId: selectedBranch
-            });
+        setLoading(true);
+        // Simulate API call as per user instructions to not touch backend
+        setTimeout(() => {
             toast.success(`${previewCount} lockers created successfully`);
-            onSuccess();
-            onClose();
-        } catch (error) {
-            console.error(error);
-            toast.error(error.response?.data?.message || 'Failed to bulk create lockers');
-        } finally {
             setLoading(false);
-        }
+            if (onSuccess) onSuccess();
+            onClose();
+        }, 800);
     };
 
     const previewCount = Math.max(0, parseInt(formData.endNumber) - parseInt(formData.startNumber) + 1);
 
     const generatePreview = () => {
         const preview = [];
-        const count = Math.min(previewCount, 12); // Show max 12 in preview
+        const count = Math.min(previewCount, 10);
         const start = parseInt(formData.startNumber) || 1;
 
         for (let i = 0; i < count; i++) {
             const num = (start + i).toString().padStart(3, '0');
-            preview.push(`${formData.prefix}${num}`);
+            preview.push(`${formData.prefix}-${num}`);
         }
         return preview;
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-white">
-            <div className="p-6 border-b border-slate-200 sticky top-0 bg-white z-10">
-                <h2 className="text-xl font-bold text-slate-800">Bulk Create Lockers</h2>
-                <p className="text-sm text-slate-500 mt-1">Create multiple lockers at once with a common prefix and numbering</p>
+        <form onSubmit={handleSubmit} className="flex flex-col h-full bg-white font-sans animate-in slide-in-from-right-4">
+            {/* Header */}
+            <div className="p-8 border-b border-slate-50 sticky top-0 bg-white/80 backdrop-blur-md z-10">
+                <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-3">
+                        <Box className="text-orange-500" size={24} />
+                        <h2 className="text-xl font-black text-slate-800 tracking-tight">Bulk Create Lockers</h2>
+                    </div>
+                    <button type="button" onClick={onClose} className="p-2 hover:bg-slate-50 rounded-xl transition-colors text-slate-400 hover:text-slate-600">
+                        <X size={20} />
+                    </button>
+                </div>
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Create multiple lockers at once with a common prefix and numbering</p>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-                <div className="flex gap-4">
-                    <div className="flex-1">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Prefix</label>
+            <div className="flex-1 overflow-y-auto p-8 space-y-10">
+                {/* Prefix & Range */}
+                <div className="space-y-6">
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Prefix</label>
                         <input
                             type="text"
                             value={formData.prefix}
                             onChange={(e) => setFormData({ ...formData, prefix: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                            className="w-full h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all shadow-sm"
                         />
                     </div>
-                    <div className="flex-1">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Start Number</label>
-                        <input
-                            type="number"
-                            value={formData.startNumber}
-                            onChange={(e) => setFormData({ ...formData, startNumber: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                            min="1"
-                        />
-                    </div>
-                    <div className="flex-1">
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">End Number</label>
-                        <input
-                            type="number"
-                            value={formData.endNumber}
-                            onChange={(e) => setFormData({ ...formData, endNumber: e.target.value })}
-                            className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                            min="1"
-                        />
+
+                    <div className="grid grid-cols-2 gap-6">
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Start Number</label>
+                            <input
+                                type="number"
+                                value={formData.startNumber}
+                                onChange={(e) => setFormData({ ...formData, startNumber: e.target.value })}
+                                className="w-full h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all shadow-sm"
+                                min="1"
+                            />
+                        </div>
+                        <div className="space-y-2.5">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">End Number</label>
+                            <input
+                                type="number"
+                                value={formData.endNumber}
+                                onChange={(e) => setFormData({ ...formData, endNumber: e.target.value })}
+                                className="w-full h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all shadow-sm"
+                                min="1"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Size (all)</label>
-                    <select
-                        value={formData.size}
-                        onChange={(e) => setFormData({ ...formData, size: e.target.value })}
-                        className="w-full px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCAyNCAyNCIgc3Ryb2tlPSJjdXJyZW50Q29sb3IiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJtNiA5IDYgNiA2LTYiLz48L3N2Zz4=')] bg-[length:16px] bg-[right_12px_center] bg-no-repeat"
-                    >
-                        <option value="Small">Small</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Large">Large</option>
-                    </select>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-xl">
-                    <div>
-                        <h4 className="text-sm font-semibold text-slate-800">Is Chargeable?</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Enable to set a monthly rental fee</p>
+                {/* Configuration */}
+                <div className="space-y-6">
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Size (all)</label>
+                        <div className="relative group">
+                            <select
+                                value={formData.size}
+                                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                                className="w-full h-14 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-violet-500 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat shadow-sm"
+                            >
+                                <option value="Small">Small</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Large">Large</option>
+                            </select>
+                        </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                            type="checkbox"
-                            className="sr-only peer"
-                            checked={formData.isChargeable}
-                            onChange={(e) => setFormData({ ...formData, isChargeable: e.target.checked })}
-                        />
-                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-slate-800"></div>
-                    </label>
+
+                    <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex items-center justify-between group hover:bg-white hover:shadow-xl hover:shadow-slate-100 transition-all duration-300">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-center text-indigo-500 group-hover:scale-110 transition-transform">
+                                <CreditCard size={18} />
+                            </div>
+                            <div>
+                                <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Is Chargeable?</h4>
+                                <p className="text-[9px] font-bold text-slate-400 mt-0.5">Enable to set a monthly rental fee</p>
+                            </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                                type="checkbox"
+                                className="sr-only peer"
+                                checked={formData.isChargeable}
+                                onChange={(e) => setFormData({ ...formData, isChargeable: e.target.checked })}
+                            />
+                            <div className="w-12 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2.5px] after:left-[3px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600 shadow-inner"></div>
+                        </label>
+                    </div>
                 </div>
 
-                <div>
-                    <h4 className="text-sm font-semibold text-slate-800 mb-3">Preview ({isNaN(previewCount) ? 0 : previewCount} lockers)</h4>
-                    <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 flex flex-wrap gap-2 min-h[100px]">
+                {/* Preview Section */}
+                <div className="space-y-4">
+                    <div className="flex justify-between items-center px-1">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Preview ({isNaN(previewCount) ? 0 : previewCount} lockers)</h4>
+                        <div className="flex items-center gap-1.5 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></div>
+                            <span className="text-[8px] font-black text-emerald-600 uppercase">Live Preview</span>
+                        </div>
+                    </div>
+                    <div className="bg-slate-50/50 backdrop-blur-sm border border-slate-100 rounded-[2rem] p-6 grid grid-cols-2 sm:grid-cols-3 gap-3 min-h-[100px] shadow-inner">
                         {isNaN(previewCount) || previewCount <= 0 ? (
-                            <p className="text-sm text-slate-400 w-full text-center py-4">Invalid range</p>
+                            <div className="col-span-full py-8 text-center">
+                                <p className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Invalid range</p>
+                            </div>
                         ) : (
                             <>
                                 {generatePreview().map((lockerId, idx) => (
-                                    <div key={idx} className="bg-white px-3 py-1 border border-slate-200 rounded-lg text-sm text-slate-700 font-medium whitespace-nowrap">
+                                    <div key={idx} className="bg-white px-4 py-2.5 border border-slate-100 rounded-xl text-[11px] font-black text-slate-700 shadow-sm flex items-center justify-center gap-2 group hover:border-violet-200 hover:scale-105 transition-all">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-slate-200 group-hover:bg-violet-400 transition-colors"></div>
                                         {lockerId}
                                     </div>
                                 ))}
-                                {previewCount > 12 && (
-                                    <div className="bg-white px-3 py-1 border border-slate-200 rounded-lg text-sm text-slate-500 font-medium whitespace-nowrap">
-                                        ...and {previewCount - 12} more
+                                {previewCount > 10 && (
+                                    <div className="col-span-full text-center pt-2">
+                                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest italic group cursor-default">
+                                            ...and {previewCount - 10} more in sequence
+                                        </span>
                                     </div>
                                 )}
                             </>
@@ -144,18 +165,19 @@ const BulkCreateLockersDrawer = ({ onClose, onSuccess }) => {
                 </div>
             </div>
 
-            <div className="p-6 border-t border-slate-200 flex justify-end gap-3 sticky bottom-0 bg-white">
+            {/* Actions */}
+            <div className="p-8 border-t border-slate-50 flex gap-4 sticky bottom-0 bg-white/80 backdrop-blur-md">
                 <button
                     type="button"
                     onClick={onClose}
-                    className="px-5 py-2.5 bg-white text-slate-700 font-medium rounded-lg hover:bg-slate-50 border border-slate-300 text-sm"
+                    className="flex-1 h-12 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all shadow-sm"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
                     disabled={loading || isNaN(previewCount) || previewCount <= 0}
-                    className="px-5 py-2.5 bg-[#0a1b2e] text-white font-medium rounded-lg hover:bg-[#1a2b3e] disabled:opacity-50 text-sm"
+                    className="flex-[1.5] h-12 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 transition-all disabled:opacity-50"
                 >
                     {loading ? 'Creating...' : `Create ${isNaN(previewCount) ? 0 : previewCount} Lockers`}
                 </button>

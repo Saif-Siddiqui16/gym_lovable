@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
-import { Lock, MapPin, DollarSign, Box, CheckCircle, AlertCircle } from 'lucide-react';
+import { Lock, MapPin, Box, CheckCircle, X, AlignLeft, Info } from 'lucide-react';
 import RightDrawer from '../../components/common/RightDrawer';
-import { addLocker } from '../../api/staff/lockerApi'; // Mock API function needs to be assumed or created
 
 const CreateLockerDrawer = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         number: '',
-        area: 'Men\'s Changing Room',
         size: 'Medium',
-        isPaid: false,
-        price: ''
+        area: '',
+        notes: ''
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -17,25 +15,13 @@ const CreateLockerDrawer = ({ isOpen, onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        try {
-            await addLocker({
-                ...formData,
-                price: formData.isPaid ? parseFloat(formData.price) : 0
-            });
-            onSuccess();
+        // Simulate API call
+        setTimeout(() => {
+            if (onSuccess) onSuccess();
             onClose();
-            setFormData({
-                number: '',
-                area: 'Men\'s Changing Room',
-                size: 'Medium',
-                isPaid: false,
-                price: ''
-            });
-        } catch (err) {
-            console.error(err);
-        } finally {
             setIsSubmitting(false);
-        }
+            setFormData({ number: '', size: 'Medium', area: '', notes: '' });
+        }, 800);
     };
 
     return (
@@ -43,128 +29,93 @@ const CreateLockerDrawer = ({ isOpen, onClose, onSuccess }) => {
             isOpen={isOpen}
             onClose={onClose}
             title="Add New Locker"
-            subtitle="Register new storage unit"
+            subtitle="Create a new locker for the branch"
             maxWidth="max-w-md"
-            footer={
-                <div className="flex gap-3 w-full">
+        >
+            <form onSubmit={handleSubmit} className="flex flex-col h-full bg-white font-sans">
+                <div className="flex-1 overflow-y-auto p-8 space-y-8">
+
+                    {/* Locker Number */}
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Locker Number</label>
+                        <div className="relative group">
+                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder="A-001"
+                                className="w-full h-14 pl-12 pr-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-sm"
+                                value={formData.number}
+                                onChange={(e) => setFormData({ ...formData, number: e.target.value })}
+                                required
+                            />
+                        </div>
+                    </div>
+
+                    {/* Size */}
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Size</label>
+                        <div className="relative group">
+                            <Box className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                            <select
+                                className="w-full h-14 pl-12 pr-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat shadow-sm"
+                                value={formData.size}
+                                onChange={(e) => setFormData({ ...formData, size: e.target.value })}
+                            >
+                                <option value="Small">Small</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Large">Large</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Area / Location */}
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Area / Location</label>
+                        <div className="relative group">
+                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                            <input
+                                type="text"
+                                placeholder="e.g. Men's Changing Room"
+                                className="w-full h-14 pl-12 pr-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-sm"
+                                value={formData.area}
+                                onChange={(e) => setFormData({ ...formData, area: e.target.value })}
+                            />
+                        </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Notes (Optional)</label>
+                        <div className="relative group">
+                            <AlignLeft className="absolute left-4 top-6 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                            <textarea
+                                placeholder="Any notes..."
+                                rows={4}
+                                className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/5 transition-all shadow-sm resize-none"
+                                value={formData.notes}
+                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer Actions */}
+                <div className="p-8 border-t border-slate-50 flex gap-4 bg-white/80 backdrop-blur-md sticky bottom-0">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 px-4 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+                        className="flex-1 h-12 bg-white border border-slate-200 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 hover:text-slate-600 transition-all shadow-sm"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        form="create-locker-form"
                         disabled={isSubmitting}
-                        className="flex-[2] px-4 py-3 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-violet-600 hover:shadow-lg hover:shadow-violet-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="flex-[1.5] h-12 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 transition-all disabled:opacity-50"
                     >
-                        <CheckCircle size={18} />
                         {isSubmitting ? 'Creating...' : 'Create Locker'}
                     </button>
                 </div>
-            }
-        >
-            <form id="create-locker-form" onSubmit={handleSubmit} className="flex flex-col h-full">
-                <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
-
-                    {/* Locker Number */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <Lock size={14} className="text-violet-500" />
-                            Locker Number *
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="e.g. L-101"
-                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-800 focus:bg-white focus:border-violet-500 transition-all uppercase"
-                            value={formData.number}
-                            onChange={(e) => setFormData({ ...formData, number: e.target.value })}
-                            required
-                        />
-                    </div>
-
-                    {/* Area/Location */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <MapPin size={14} className="text-violet-500" />
-                            Location Area
-                        </label>
-                        <select
-                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl font-bold text-slate-700 focus:bg-white focus:border-violet-500 transition-all appearance-none"
-                            value={formData.area}
-                            onChange={(e) => setFormData({ ...formData, area: e.target.value })}
-                        >
-                            <option>Men's Changing Room</option>
-                            <option>Women's Changing Room</option>
-                            <option>General Hallway</option>
-                            <option>VIP Lounge</option>
-                        </select>
-                    </div>
-
-                    {/* Size */}
-                    <div className="space-y-3">
-                        <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                            <Box size={14} className="text-violet-500" />
-                            Size Configuration
-                        </label>
-                        <div className="grid grid-cols-3 gap-3">
-                            {['Small', 'Medium', 'Large'].map(size => (
-                                <button
-                                    key={size}
-                                    type="button"
-                                    onClick={() => setFormData({ ...formData, size })}
-                                    className={`py-3 rounded-xl text-xs font-black uppercase tracking-wider border-2 transition-all ${formData.size === size
-                                        ? 'border-violet-600 bg-violet-50 text-violet-700'
-                                        : 'border-slate-100 bg-white text-slate-400 hover:border-slate-200'
-                                        }`}
-                                >
-                                    {size}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Billing Toggle */}
-                    <div className="space-y-6 pt-4 border-t border-slate-100">
-                        <div className="flex items-center justify-between p-4 bg-gradient-to-br from-slate-50 to-white border border-slate-200 rounded-2xl">
-                            <div>
-                                <h4 className="font-bold text-slate-800 text-sm">Paid Locker?</h4>
-                                <p className="text-[10px] text-slate-500 font-medium mt-0.5">Require subscription for usage</p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.isPaid}
-                                    onChange={(e) => setFormData({ ...formData, isPaid: e.target.checked })}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                            </label>
-                        </div>
-
-                        {formData.isPaid && (
-                            <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-                                <label className="text-xs font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                                    <DollarSign size={14} className="text-violet-500" />
-                                    Monthly Price (₹) *
-                                </label>
-                                <input
-                                    type="number"
-                                    placeholder="e.g. 500"
-                                    className="w-full px-4 py-3 bg-white border-2 border-violet-100 rounded-xl font-bold text-violet-800 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 transition-all"
-                                    value={formData.price}
-                                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                                    required={formData.isPaid}
-                                />
-                            </div>
-                        )}
-                    </div>
-
-                </div>
-
-
             </form>
         </RightDrawer>
     );

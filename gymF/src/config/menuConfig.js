@@ -443,65 +443,41 @@ export const menuConfig = {
     [ROLES.STAFF]: [
         { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         {
-            label: 'CRM & Sales',
-            icon: Search,
+            label: 'Member Management',
+            icon: Users,
             children: [
-                { label: 'Walk-in Inquiry', path: '/crm/inquiry', icon: UserPlus },
-                { label: 'Leads Pipeline', path: '/crm/pipeline', icon: GitBranch },
-                { label: 'Today Follow-ups', path: '/crm/followups', icon: Clock },
+                { label: 'Members', path: '/staff/members/list', icon: Users },
+                { label: 'Attendance', path: '/staff/attendance/today', icon: UserCheck },
+                { label: 'Leads', path: '/crm/pipeline', icon: GitBranch },
+                { label: 'Feedback', path: '/operations/feedback', icon: MessageSquare },
             ]
         },
         {
-            label: 'Memberships',
-            icon: CreditCard,
+            label: 'Operations',
+            icon: Activity,
             children: [
-                { label: 'Plans & Benefits', path: '/memberships', icon: CreditCard },
-                { label: 'Renewal Alerts', path: '/members/renewal-alerts', icon: AlertCircle },
+                { label: 'POS', path: '/finance/pos', icon: ShoppingCart },
+                { label: 'Invoices', path: '/finance/invoices', icon: FileText },
+                { label: 'Lockers', path: '/staff/lockers', icon: Lock },
+                { label: 'Tasks', path: '/staff/tasks/my-tasks', icon: ClipboardList },
             ]
         },
         {
-            label: 'Check-In',
-            icon: Clock,
+            label: 'Communication',
+            icon: MessageSquare,
             children: [
-                { label: 'Member Check-In', path: '/staff/attendance/check-in', icon: Clock },
-                { label: 'Check-Out', path: '/staff/attendance/check-out', icon: Clock },
-                { label: 'Today Check-Ins', path: '/staff/attendance/today', icon: Users },
-                { label: 'Member List', path: '/staff/members/list', icon: Users },
+                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+                { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },
             ]
         },
         {
-            label: 'Locker Assign',
-            icon: Lock,
-            children: [
-                { label: 'Assign Locker', path: '/staff/lockers/assign', icon: Lock },
-                { label: 'Release Locker', path: '/staff/lockers/release', icon: Lock },
-            ]
-        },
-        {
-            label: 'Tasks',
+            label: 'Work',
             icon: ClipboardList,
             children: [
-                { label: 'My Tasks', path: '/staff/tasks/my-tasks', icon: ClipboardList },
-                { label: 'Task Status', path: '/staff/tasks/status', icon: Clock },
+                { label: 'My Attendance', path: '/trainer/attendance', icon: Clock },
             ]
         },
-        {
-            label: 'Payments',
-            icon: CreditCard,
-            children: [
-                { label: 'New Receipt', path: '/finance/cashier', icon: Receipt },
-                { label: 'My Transactions', path: '/finance/transactions', icon: History },
-                { label: 'Log Expense', path: '/finance/petty-cash', icon: Banknote },
-            ]
-        },
-        {
-            label: 'Profile',
-            icon: User,
-            children: [
-                { label: 'My Profile', path: '/staff/profile/me', icon: User },
-                { label: 'Logout', path: '/login', icon: LogOut },
-            ]
-        },
+        { label: 'Logout', path: '/login', icon: LogOut },
     ],
 
     [ROLES.TRAINER]: [

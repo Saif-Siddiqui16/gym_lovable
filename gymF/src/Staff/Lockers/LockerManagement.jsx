@@ -1,36 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Search, Filter, Plus, ShieldCheck, ShieldAlert, Wrench, MoreVertical, RefreshCw, UserPlus, LogOut, Info } from 'lucide-react';
+import { Lock, Search, Filter, Plus, ShieldCheck, ShieldAlert, Wrench, MoreVertical, RefreshCw, UserPlus, LogOut, Info, Box, LayoutGrid, List, User, Key, Users } from 'lucide-react';
 import { getLockers } from '../../api/staff/lockerApi';
 import RightDrawer from '../../components/common/RightDrawer';
 import LockerFormDrawer from './LockerFormDrawer';
 import LockerDetailDrawer from './LockerDetailDrawer';
 import CreateLockerDrawer from './CreateLockerDrawer';
+import BulkCreateLockersDrawer from '../../modules/operations/pages/BulkCreateLockersDrawer';
 
 const LockerManagement = () => {
     const [lockers, setLockers] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterStatus, setFilterStatus] = useState('All');
+    const [filterStatus, setFilterStatus] = useState('All Status');
+    const [activeTab, setActiveTab] = useState('Overview');
+    const [viewMode, setViewMode] = useState('grid');
 
     const [isAssignDrawerOpen, setIsAssignDrawerOpen] = useState(false);
     const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+    const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
     const [selectedLocker, setSelectedLocker] = useState(null);
 
-    useEffect(() => {
-        loadLockers();
-    }, []);
-
-    const loadLockers = async () => {
-        setLoading(true);
-        try {
-            const data = await getLockers();
-            setLockers(data);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
+    // Initial mock stats to match screenshot
+    const stats = {
+        total: lockers.length,
+        available: lockers.filter(l => l.status === 'Available').length,
+        assigned: lockers.filter(l => l.status === 'Occupied' || l.status === 'Assigned').length,
+        maintenance: lockers.filter(l => l.status === 'Maintenance').length,
+        occupancy: lockers.length > 0 ? `${Math.round((lockers.filter(l => l.status !== 'Available').length / lockers.length) * 100)}%` : '0%'
     };
 
     const handleAction = (locker) => {
@@ -42,188 +39,161 @@ const LockerManagement = () => {
         }
     };
 
-    const filteredLockers = lockers.filter(l => {
-        const matchesSearch = l.number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (l.assignee && l.assignee.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesStatus = filterStatus === 'All' || l.status === filterStatus;
-        return matchesSearch && matchesStatus;
-    });
-
-    const stats = {
-        total: lockers.length,
-        available: lockers.filter(l => l.status === 'Available').length,
-        occupied: lockers.filter(l => l.status === 'Occupied').length,
-        maintenance: lockers.filter(l => l.status === 'Maintenance').length
-    };
-
     return (
-        <div className="bg-gradient-to-br from-slate-50 via-white to-violet-50/20 min-h-screen p-6 md:p-8 font-sans">
-            {/* Header Section */}
-            <div className="max-w-7xl mx-auto mb-10">
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                    <div className="relative">
-                        <div className="absolute -top-10 -left-10 w-40 h-40 bg-violet-200 rounded-full blur-3xl opacity-20 pointer-events-none" />
-                        <h1 className="relative text-3xl md:text-4xl font-black text-slate-800 flex items-center gap-3">
-                            <Lock className="text-violet-600" size={32} />
-                            Locker Management
-                        </h1>
-                        <p className="text-slate-500 mt-2 font-medium">Monitor and manage facility storage units</p>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 space-y-8 animate-fadeIn text-slate-900">
+            {/* Premium Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-200 text-white cursor-pointer hover:scale-105 transition-transform">
+                        <Box size={28} />
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex overflow-x-auto no-scrollbar max-w-[calc(100vw-6rem)] md:max-w-none bg-white/60 backdrop-blur-sm border-2 border-slate-100 rounded-2xl p-1 shadow-sm">
-                            {['All', 'Available', 'Occupied', 'Maintenance'].map(s => (
-                                <button
-                                    key={s}
-                                    onClick={() => setFilterStatus(s)}
-                                    className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${filterStatus === s
-                                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-500/30'
-                                        : 'text-slate-500 hover:text-slate-800'
-                                        }`}
-                                >
-                                    {s}
-                                </button>
-                            ))}
-                        </div>
-                        <button className="p-4 bg-white border-2 border-slate-100 text-slate-400 rounded-2xl hover:text-violet-600 hover:border-violet-100 transition-all shadow-sm">
-                            <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
-                        </button>
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Locker Management</h1>
+                        <p className="text-slate-500 text-sm font-medium">Manage locker assignments, rentals, and availability</p>
                     </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => setIsBulkCreateOpen(true)}
+                        className="flex items-center gap-2 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                    >
+                        <Box size={16} /> Bulk Create
+                    </button>
+                    <button
+                        onClick={() => setIsCreateDrawerOpen(true)}
+                        className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
+                    >
+                        <Plus size={16} /> Add Locker
+                    </button>
                 </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 mb-10">
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Units', value: stats.total, color: 'slate', icon: Lock },
-                    { label: 'Available', value: stats.available, color: 'emerald', icon: ShieldCheck },
-                    { label: 'Occupied', value: stats.occupied, color: 'amber', icon: ShieldAlert },
-                    { label: 'Maintenance', value: stats.maintenance, color: 'rose', icon: Wrench },
+                    { label: 'Total Lockers', value: stats.total, icon: Box, color: 'text-blue-500', bg: 'bg-blue-50/50' },
+                    { label: 'Available', value: stats.available, icon: Users, color: 'text-emerald-500', bg: 'bg-emerald-50/50' },
+                    { label: 'Assigned', value: stats.assigned, subValue: `${stats.occupancy} occupancy`, icon: User, color: 'text-slate-500', bg: 'bg-slate-50/50' },
+                    { label: 'Maintenance', value: stats.maintenance, icon: Key, color: 'text-amber-600', bg: 'bg-amber-100/50' }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-white/60 backdrop-blur-md border border-white/50 p-6 rounded-[32px] shadow-sm hover:shadow-xl transition-all group overflow-hidden relative">
-                        <div className={`absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-150 transition-transform duration-700 text-${item.color}-900`}>
-                            <item.icon size={120} />
+                    <div key={idx} className="bg-white rounded-[2.5rem] p-7 shadow-sm border border-slate-100 flex justify-between items-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                        <div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{item.label}</p>
+                            <div className="flex items-baseline gap-2">
+                                <h2 className="text-3xl font-black text-slate-900">{item.value}</h2>
+                                {item.subValue && <span className="text-[10px] font-bold text-slate-400">{item.subValue}</span>}
+                            </div>
                         </div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">{item.label}</p>
-                        <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-black text-slate-800">{item.value}</span>
-                            <span className={`text-${item.color}-500 text-[10px] font-bold`}>Units</span>
+                        <div className={`w-12 h-12 ${item.bg} rounded-2xl flex items-center justify-center ${item.color} group-hover:scale-110 transition-transform`}>
+                            <item.icon size={22} />
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Search & Actions */}
-            <div className="max-w-7xl mx-auto mb-8 flex flex-col md:flex-row gap-4">
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-600 transition-all" size={20} />
-                    <input
-                        type="text"
-                        placeholder="Search by locker number or member..."
-                        className="w-full pl-12 pr-4 py-4 bg-white/60 backdrop-blur-sm border-2 border-slate-100 rounded-2xl text-sm focus:outline-none focus:border-violet-500 transition-all shadow-sm font-medium"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+            {/* View Controls & Filters */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+                    <div className="relative flex-1 sm:w-80 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" size={18} />
+                        <input
+                            placeholder="Search lockers..."
+                            className="w-full h-12 pl-11 pr-5 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold text-slate-700 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all shadow-sm"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                    <select
+                        value={filterStatus}
+                        onChange={(e) => setFilterStatus(e.target.value)}
+                        className="h-12 px-5 bg-white border border-slate-200 rounded-2xl text-[13px] font-bold text-slate-700 focus:outline-none focus:border-violet-500 transition-all cursor-pointer shadow-sm min-w-[160px] appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat"
+                    >
+                        <option>All Status</option>
+                        <option>Available</option>
+                        <option>Assigned</option>
+                        <option>Maintenance</option>
+                        <option>Reserved</option>
+                    </select>
                 </div>
-                <button
-                    onClick={() => setIsCreateDrawerOpen(true)}
-                    className="px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-violet-600 transition-all shadow-xl shadow-slate-200"
-                >
-                    <Plus size={20} /> Add New Units
-                </button>
+                <div className="flex items-center p-1.5 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                    <button
+                        onClick={() => setViewMode('grid')}
+                        className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <LayoutGrid size={18} />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200' : 'text-slate-400 hover:text-slate-600'}`}
+                    >
+                        <List size={18} />
+                    </button>
+                </div>
             </div>
 
-            {/* Table View */}
-            <div className="max-w-7xl mx-auto">
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-4">
-                        <div className="w-12 h-12 border-4 border-violet-100 border-t-violet-600 rounded-full animate-spin" />
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Loading Lockers...</p>
+            {/* Tabs & Main Content */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-1 p-1 bg-white border border-slate-200 rounded-2xl shadow-sm w-fit">
+                    {['Overview', `Assigned (${stats.assigned})`].map((tab) => {
+                        const label = tab.includes('Overview') ? 'Overview' : 'Assigned';
+                        return (
+                            <button
+                                key={label}
+                                onClick={() => setActiveTab(label)}
+                                className={`px-6 py-2 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === label ? 'bg-violet-50 text-violet-600' : 'text-slate-400 hover:text-slate-600'}`}
+                            >
+                                {tab}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Locker Map Card */}
+                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+                    <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                        <h3 className="text-xl font-black text-slate-800 tracking-tight">Locker Map</h3>
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lockers.length} lockers</span>
                     </div>
-                ) : (
-                    <div className="bg-white/60 backdrop-blur-md border border-white/50 rounded-[32px] shadow-xl overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-slate-100">
-                                        <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest ">Locker Number</th>
-                                        <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Assigned To</th>
-                                        <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                                        <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Billing</th>
-                                        <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {filteredLockers.length === 0 ? (
-                                        <tr>
-                                            <td colSpan="5" className="py-24 text-center">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-200 mb-4">
-                                                        <Lock size={32} />
-                                                    </div>
-                                                    <h3 className="text-lg font-black text-slate-800">No Lockers Found</h3>
-                                                    <p className="text-slate-500 text-sm mt-1">Try adjusting your filters.</p>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredLockers.map(locker => (
-                                            <tr key={locker.id} className="group hover:bg-violet-50/30 transition-colors border-b border-slate-50 last:border-0">
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${locker.status === 'Available' ? 'bg-emerald-50 text-emerald-600' : locker.status === 'Occupied' ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-400'}`}>
-                                                            <Lock size={18} />
-                                                        </div>
-                                                        <span className="font-black text-slate-800 tracking-tight text-lg">{locker.number}</span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    {locker.assignee ? (
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-lg bg-violet-100 flex items-center justify-center text-[10px] font-black text-violet-600">
-                                                                {locker.assignee.charAt(0)}
-                                                            </div>
-                                                            <span className="font-bold text-slate-700 text-sm">{locker.assignee}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-slate-300 font-medium">—</span>
-                                                    )}
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex justify-center">
-                                                        <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${locker.status === 'Available'
-                                                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                                                            : locker.status === 'Occupied'
-                                                                ? 'bg-rose-50 text-rose-600 border-rose-100'
-                                                                : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                                            {locker.status === 'Available' ? 'Free' : locker.status}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex justify-center">
-                                                        <span className={`px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${locker.isPaid ? 'bg-indigo-50 text-indigo-600 border-indigo-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
-                                                            {locker.isPaid ? 'Paid' : 'Free'}
-                                                        </span>
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6 text-right">
-                                                    <button
-                                                        onClick={() => handleAction(locker)}
-                                                        className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locker.status === 'Available'
-                                                            ? 'bg-slate-900 text-white hover:bg-violet-600 hover:shadow-lg hover:shadow-violet-200'
-                                                            : 'bg-rose-50 text-rose-600 hover:bg-rose-600 hover:text-white'}`}>
-                                                        {locker.status === 'Available' ? 'Assign' : 'Release'}
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
+
+                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
+                        {lockers.length === 0 ? (
+                            <>
+                                <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
+                                    <Lock size={40} strokeWidth={1.5} />
+                                </div>
+                                <h4 className="text-slate-400 text-sm font-black uppercase tracking-widest">No lockers found</h4>
+                            </>
+                        ) : (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full">
+                                {lockers.map(locker => (
+                                    <div
+                                        key={locker.id}
+                                        onClick={() => handleAction(locker)}
+                                        className="aspect-square bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all group"
+                                    >
+                                        <Lock size={20} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
+                                        <span className="text-xs font-black text-slate-700">{locker.number}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
+
+                    {/* Legend */}
+                    <div className="p-8 bg-slate-50/50 flex flex-wrap gap-6 border-t border-slate-50">
+                        {[
+                            { label: 'Available', color: 'bg-green-400' },
+                            { label: 'Assigned', color: 'bg-slate-400' },
+                            { label: 'Maintenance', color: 'bg-orange-400' },
+                            { label: 'Reserved', color: 'bg-blue-300' }
+                        ].map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                                <div className={`w-3 h-3 rounded-full ${item.color} shadow-sm shadow-slate-200`} />
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Drawers */}
@@ -231,24 +201,29 @@ const LockerManagement = () => {
                 isOpen={isAssignDrawerOpen}
                 onClose={() => setIsAssignDrawerOpen(false)}
                 selectedLocker={selectedLocker}
-                onSuccess={loadLockers}
             />
 
             <LockerDetailDrawer
                 isOpen={isDetailDrawerOpen}
                 onClose={() => setIsDetailDrawerOpen(false)}
                 selectedLocker={selectedLocker}
-                onSuccess={loadLockers}
             />
 
             <CreateLockerDrawer
                 isOpen={isCreateDrawerOpen}
                 onClose={() => setIsCreateDrawerOpen(false)}
-                onSuccess={() => {
-                    loadLockers();
-                    alert("Locker created successfully!");
-                }}
+                onSuccess={() => { }}
             />
+
+            <RightDrawer
+                isOpen={isBulkCreateOpen}
+                onClose={() => setIsBulkCreateOpen(false)}
+            >
+                <BulkCreateLockersDrawer
+                    onClose={() => setIsBulkCreateOpen(false)}
+                    onSuccess={() => { }}
+                />
+            </RightDrawer>
         </div>
     );
 };

@@ -95,6 +95,7 @@ import StaffLog from './Manager/Attendance/TodayAttendance/StaffAttendanceLog';
 import StaffCheckIn from './Staff/AttendanceCheckIn/MemberCheckIn';
 import CheckOut from './Staff/AttendanceCheckIn/MemberCheckOut';
 import TodaysCheckIns from './Staff/AttendanceCheckIn/TodaysCheckIns';
+import StaffMemberList from './Staff/Members/StaffMemberList';
 import StorePage from './Member/Store/StorePage';
 import StaffLockerManagement from './Staff/Lockers/LockerManagement';
 import AssignLocker from './Staff/Lockers/AssignLocker';
@@ -459,7 +460,7 @@ export default function App() {
               <Route path="/staff/lockers/release" element={<ReleaseLocker />} />
               <Route path="/staff/tasks/my-tasks" element={<MyTasks />} />
               <Route path="/staff/tasks/status" element={<StaffTaskStatus />} />
-              <Route path="/staff/members/list" element={<MemberList />} />
+              <Route path="/staff/members/list" element={<StaffMemberList />} />
               <Route path="/staff/profile/me" element={<StaffProfile />} />
             </>
           )}

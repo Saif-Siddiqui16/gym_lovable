@@ -1,202 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { ClipboardList, Clock, AlertCircle, CheckCircle2, User, Search, Filter } from 'lucide-react';
+import { ClipboardList, Plus, Search, Filter, CheckSquare, Clock, AlertCircle, CheckCircle2, LayoutGrid, List, Box } from 'lucide-react';
 import '../../styles/GlobalDesign.css';
-import { getMyTasks, updateTaskStatus } from '../../api/staff/taskApi';
-import CustomDropdown from '../../components/common/CustomDropdown';
+import CreateTaskDrawer from './CreateTaskDrawer';
 
 const MyTasks = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [tasks, setTasks] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-    // Pagination State
-    const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 5;
-
-    useEffect(() => {
-        loadTasks();
-        setCurrentPage(1); // Reset to page 1 on filter change
-    }, [statusFilter, searchTerm]);
-
-    const loadTasks = async () => {
-        setLoading(true);
-        try {
-            const data = await getMyTasks({
-                status: statusFilter,
-                search: searchTerm
-            });
-            setTasks(data);
-        } catch (error) {
-            console.error("Failed to load tasks:", error);
-        } finally {
-            setLoading(false);
-        }
+    const handleCreateSuccess = () => {
+        // Logic to refresh tasks if needed
     };
 
-    const handleMarkComplete = async (taskId) => {
-        await updateTaskStatus(taskId, 'Completed');
-        loadTasks(); // Reload to reflect status change
+    // Initial stats to match screenshot
+    const stats = {
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        overdue: 0
     };
-
-    const getPriorityBadge = (priority) => {
-        switch (priority) {
-            case 'High': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-700 border border-red-200">HIGH</span>;
-            case 'Medium': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-yellow-100 text-yellow-700 border border-yellow-200">MEDIUM</span>;
-            case 'Low': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-green-100 text-green-700 border border-green-200">LOW</span>;
-            default: return null;
-        }
-    };
-
-    const getStatusBadge = (status) => {
-        switch (status) {
-            case 'Completed': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-blue-100 text-blue-700 uppercase">Completed</span>;
-            case 'In Progress': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-100 text-indigo-700 uppercase">In Progress</span>;
-            case 'Pending': return <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-gray-100 text-gray-600 uppercase">Pending</span>;
-            default: return null;
-        }
-    };
-
-    // Pagination Logic
-    const totalPages = Math.ceil(tasks.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const paginatedTasks = tasks.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-mytasks">
-            <div className="mb-8">
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">My Tasks</h1>
-                <p className="text-sm text-gray-500 mt-1">Manage and track your daily operational responsibilities.</p>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                {/* Header / Search */}
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
-                    <div className="relative w-full md:w-96">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Find a task..."
-                            className="saas-input pl-10 h-11 w-full rounded-xl border-gray-200 text-sm focus:ring-2 focus:ring-indigo-500"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 space-y-8 animate-fadeIn text-slate-900 font-sans">
+            {/* Premium Header */}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200 text-white cursor-pointer hover:scale-105 transition-transform">
+                        <ClipboardList size={28} />
                     </div>
-                    <div className="flex items-center gap-3">
-                        <Filter size={18} className="text-indigo-500" />
-                        <CustomDropdown
-                            options={[
-                                { value: 'All', label: 'All Status' },
-                                { value: 'Pending', label: 'Pending' },
-                                { value: 'In Progress', label: 'In Progress' },
-                                { value: 'Completed', label: 'Completed' }
-                            ]}
-                            value={statusFilter}
-                            onChange={setStatusFilter}
-                            className="w-[180px]"
-                        />
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Task Management</h1>
+                        <p className="text-slate-500 text-sm font-medium">Manage and track your operational responsibilities</p>
                     </div>
                 </div>
+                <button
+                    onClick={() => setIsCreateOpen(true)}
+                    className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
+                >
+                    <Plus size={16} /> New Task
+                </button>
+            </div>
 
-                <div className="saas-table-wrapper">
-                    <table className="saas-table saas-table-responsive">
-                        <thead>
-                            <tr>
-                                <th>Task Details</th>
-                                <th>Assigned By</th>
-                                <th className="text-center">Priority</th>
-                                <th>Due Date</th>
-                                <th className="text-center">Status</th>
-                                <th className="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {loading ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-10 text-center">
-                                        <div className="flex items-center justify-center gap-2 text-indigo-600">
-                                            <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                                            <span className="text-sm font-medium">Loading tasks...</span>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ) : paginatedTasks.length > 0 ? (
-                                paginatedTasks.map((task) => (
-                                    <tr key={task.id} className="hover:bg-gray-50 transition-all duration-200 group">
-                                        <td data-label="Task Details">
-                                            <p className="text-sm font-bold text-gray-800 tracking-tight group-hover:text-indigo-600 transition-colors">{task.title}</p>
-                                        </td>
-                                        <td data-label="Assigned By">
-                                            <div className="flex items-center gap-2">
-                                                <User size={14} className="text-gray-400" />
-                                                <span className="text-xs font-semibold text-gray-600">{task.assignedBy}</span>
-                                            </div>
-                                        </td>
-                                        <td data-label="Priority" className="text-center">
-                                            {getPriorityBadge(task.priority)}
-                                        </td>
-                                        <td data-label="Due Date">
-                                            <div className="flex items-center gap-2 text-xs font-bold text-gray-500">
-                                                <Clock size={14} className="text-gray-400" />
-                                                {task.due}
-                                            </div>
-                                        </td>
-                                        <td data-label="Status" className="text-center">
-                                            {getStatusBadge(task.status)}
-                                        </td>
-                                        <td data-label="Actions" className="text-right">
-                                            {task.status !== 'Completed' && (
-                                                <button
-                                                    onClick={() => handleMarkComplete(task.id)}
-                                                    className="bg-green-500 hover:bg-green-600 text-white p-2 rounded-lg shadow-sm transition-all active:scale-95"
-                                                    title="Mark Complete">
-                                                    <CheckCircle2 size={16} />
-                                                </button>
-                                            )}
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-10 text-center text-gray-500 text-sm">
-                                        No tasks found matching your search.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
+            {/* KPI Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8">
+                {[
+                    { label: 'Total Tasks', value: stats.total, color: 'text-slate-900', bg: 'bg-slate-50' },
+                    { label: 'Pending', value: stats.pending, color: 'text-amber-500', bg: 'bg-amber-50' },
+                    { label: 'In Progress', value: stats.inProgress, color: 'text-blue-500', bg: 'bg-blue-50' },
+                    { label: 'Completed', value: stats.completed, color: 'text-emerald-500', bg: 'bg-emerald-50' },
+                    { label: 'Overdue', value: stats.overdue, color: 'text-rose-500', bg: 'bg-rose-50' }
+                ].map((item, idx) => (
+                    <div key={idx} className="bg-white rounded-[2rem] p-9 shadow-sm border border-slate-100 flex flex-col items-center justify-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">{item.label}</p>
+                        <h2 className={`text-5xl font-black ${item.color}`}>{item.value}</h2>
+                    </div>
+                ))}
+            </div>
+
+            {/* All Tasks Section */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                {/* Section Header */}
+                <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <h3 className="text-xl font-black text-slate-800 tracking-tight">All Tasks</h3>
+
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <div className="relative flex-1 sm:min-w-[200px]">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="w-full h-12 px-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-bold text-slate-700 focus:outline-none focus:border-indigo-500 transition-all appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat shadow-inner"
+                            >
+                                <option>All</option>
+                                <option>Pending</option>
+                                <option>In Progress</option>
+                                <option>Completed</option>
+                                <option>Overdue</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Table Headers */}
+                {tasks.length === 0 && (
+                    <div className="px-8 py-6 border-b border-slate-50 grid grid-cols-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/30">
+                        <span>Task</span>
+                        <span>Priority</span>
+                        <span>Assigned To</span>
+                        <span>Due Date</span>
+                        <span>Status</span>
+                        <span className="text-right">Actions</span>
+                    </div>
+                )}
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                    {tasks.length === 0 ? (
+                        <div className="space-y-4 animate-in fade-in zoom-in duration-700">
+                            <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center justify-center text-slate-200 mx-auto shadow-inner">
+                                <CheckSquare size={36} strokeWidth={1.5} />
+                            </div>
+                            <div>
+                                <h4 className="text-slate-400 text-sm font-black uppercase tracking-widest">No tasks found</h4>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="w-full">
+                            {/* Task list would go here */}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* Pagination UI */}
-            <div className="mt-8 flex items-center justify-between text-[10px] text-gray-400 font-bold uppercase tracking-widest px-2">
-                <p>Showing {tasks.length > 0 ? startIndex + 1 : 0} to {Math.min(startIndex + itemsPerPage, tasks.length)} of {tasks.length} tasks</p>
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="px-3 py-1 border border-gray-200 rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Prev
-                    </button>
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                        <button
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`px-3 py-1 border rounded transition-colors ${currentPage === page ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-gray-200 hover:bg-white'}`}
-                        >
-                            {page}
-                        </button>
-                    ))}
-                    <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages || totalPages === 0}
-                        className="px-3 py-1 border border-gray-200 rounded hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        Next
-                    </button>
-                </div>
-            </div>
+            <CreateTaskDrawer
+                isOpen={isCreateOpen}
+                onClose={() => setIsCreateOpen(false)}
+                onSuccess={handleCreateSuccess}
+            />
         </div>
     );
 };

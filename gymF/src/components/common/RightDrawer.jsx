@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const RightDrawer = ({
@@ -65,8 +66,9 @@ const RightDrawer = ({
 
     if (!isOpen && !isAnimating) return null;
 
-    return (
-        <div className={`fixed inset-0 z-[60000] overflow-hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+    // Use Portal to ensure the drawer is rendered at the top level of the DOM
+    return createPortal(
+        <div className={`fixed inset-0 z-[999999] overflow-hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
@@ -78,13 +80,13 @@ const RightDrawer = ({
                     className={`relative w-screen ${maxWidth} h-full transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col bg-white border-l border-slate-100 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/50 shrink-0">
+                    <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white shrink-0 sticky top-0 z-[70] rounded-t-3xl">
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-bold bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">
+                            <h2 className="text-xl font-black text-slate-900 tracking-tight">
                                 {title}
                             </h2>
                             {subtitle && (
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">
                                     {subtitle}
                                 </p>
                             )}
@@ -111,7 +113,8 @@ const RightDrawer = ({
                     )}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 

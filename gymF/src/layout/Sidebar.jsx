@@ -171,7 +171,7 @@ const Sidebar = ({ role, collapsed, setCollapsed }) => {
                                     to={item.path}
                                     className={({ isActive }) => `sidebar-item ${isActive ? 'active' : ''} `}
                                     title={collapsed ? item.label : ''}
-                                    onClick={handleItemClick}
+                                    onClick={item.label === 'Logout' ? handleLogout : handleItemClick}
                                 >
                                     <item.icon size={20} />
                                     {!collapsed && <span>{item.label}</span>}

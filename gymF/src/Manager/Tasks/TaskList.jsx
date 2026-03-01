@@ -108,8 +108,8 @@ const TaskList = () => {
                             key={tab}
                             onClick={() => setActiveTab(tab)}
                             className={`px-8 py-4 text-xs font-black uppercase tracking-widest border-b-2 transition-all ${activeTab === tab
-                                    ? 'border-violet-600 text-violet-600'
-                                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                                ? 'border-violet-600 text-violet-600'
+                                : 'border-transparent text-slate-400 hover:text-slate-600'
                                 }`}
                         >
                             {tab}
