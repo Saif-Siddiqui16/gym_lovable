@@ -146,7 +146,13 @@ import {
   PaymentGateway,
   SecuritySettings,
   AuditLogs,
-  AmenitySettings
+  AmenitySettings,
+  ReferralSettings,
+  MessageTemplates,
+  PlanBenefitTemplates,
+  ExpenseSettings,
+  IntegrationsSettings,
+  WebsiteSettings
 } from './modules/settings';
 
 // Module: Finance
@@ -183,7 +189,6 @@ import BranchList from './pages/branchadmin/branch-management/BranchList';
 // Module: Settings Expansion
 import WebhookSettings from './modules/settings/pages/WebhookSettings';
 import ApiKeySettings from './modules/settings/pages/ApiKeySettings';
-import MessageTemplates from './modules/settings/pages/MessageTemplates';
 
 import { ROLES } from './config/roles';
 import './styles/GlobalDesign.css';
@@ -422,6 +427,13 @@ export default function App() {
                 <Route path="/branchadmin/settings/communication" element={<Notifications />} />
                 <Route path="/branchadmin/settings/payments" element={<PaymentGateway />} />
                 <Route path="/branchadmin/settings/invoice" element={<InvoiceSettings />} />
+                <Route path="/branchadmin/settings/referrals" element={<ReferralSettings />} />
+                <Route path="/branchadmin/settings/templates" element={<MessageTemplates />} />
+                <Route path="/branchadmin/settings/plan-benefit-templates" element={<PlanBenefitTemplates />} />
+                <Route path="/branchadmin/settings/expenses" element={<ExpenseSettings />} />
+                <Route path="/branchadmin/settings/security" element={<SecuritySettings role={currentRole} />} />
+                <Route path="/branchadmin/settings/website" element={<WebsiteSettings />} />
+                <Route path="/branchadmin/settings/integrations" element={<IntegrationsSettings />} />
               </Route>
               <Route path="/branchadmin/profile/me" element={<BranchAdminProfile />} />
             </>
