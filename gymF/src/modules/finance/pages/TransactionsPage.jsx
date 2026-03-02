@@ -207,8 +207,9 @@ const Payments = () => {
                     </button>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+                <div className="overflow-x-auto lg:overflow-visible">
+                    {/* Desktop Table View */}
+                    <table className="w-full hidden md:table">
                         <thead className="bg-slate-50/50">
                             <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                 <th className="px-8 py-5">Member</th>
@@ -253,7 +254,7 @@ const Payments = () => {
                                         </td>
                                         <td className="px-8 py-6">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${txn.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                    'bg-amber-50 text-amber-600 border-amber-100'
+                                                'bg-amber-50 text-amber-600 border-amber-100'
                                                 }`}>
                                                 {txn.status === 'Paid' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
                                                 {txn.status === 'Paid' ? 'Completed' : 'Pending'}
@@ -269,6 +270,57 @@ const Payments = () => {
                             })}
                         </tbody>
                     </table>
+
+                    {/* Mobile Stacked View */}
+                    <div className="md:hidden divide-y divide-slate-100">
+                        {!loading && data.transactions.map((txn, idx) => {
+                            const MethodIcon = getMethodIcon(txn.method);
+                            return (
+                                <div key={idx} className="p-4 space-y-4">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center text-violet-600 font-black text-xs">
+                                                {txn.member[0]}
+                                            </div>
+                                            <div>
+                                                <h4 className="text-sm font-black text-slate-900">{txn.member}</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{txn.id}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${txn.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                            'bg-amber-50 text-amber-600 border-amber-100'
+                                            }`}>
+                                            {txn.status === 'Paid' ? 'Paid' : 'Pending'}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Date & Time</p>
+                                            <div className="flex flex-col">
+                                                <span className="text-[11px] font-bold text-slate-700">{new Date(txn.date).toLocaleDateString()}</span>
+                                                <span className="text-[9px] text-slate-400 font-bold">{new Date(txn.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Amount & Method</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[11px] font-black text-slate-900">₹{txn.amount.toLocaleString()}</span>
+                                                <div className="flex items-center gap-1 text-slate-400">
+                                                    <MethodIcon size={12} />
+                                                    <span className="text-[9px] font-bold">{txn.method}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-end pt-2">
+                                        <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+                                            <Receipt size={14} /> Receipt
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
 
                     {loading && (
                         <div className="h-[300px] flex items-center justify-center opacity-30">

@@ -200,10 +200,10 @@ const EquipmentListPage = () => {
                                 <h3 className="text-xl font-black text-slate-900 italic tracking-tight underline decoration-[#ff6b00]/20 decoration-4 underline-offset-8">All Equipment</h3>
                             </div>
 
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive w-full">
                                     <thead>
-                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50">
                                             <th className="px-6 py-4">Equipment Info</th>
                                             <th className="px-6 py-4">Serial Number</th>
                                             <th className="px-6 py-4">Brand/Model</th>
@@ -216,46 +216,52 @@ const EquipmentListPage = () => {
                                     <tbody className="divide-y divide-slate-50">
                                         {!loading && equipment.map((item) => (
                                             <tr key={item.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                <td className="px-6 py-6">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all">
+                                                <td className="px-6 py-6" data-label="Equipment Info">
+                                                    <div className="flex items-center gap-4 justify-end sm:justify-start">
+                                                        <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
                                                             <Wrench size={18} />
                                                         </div>
-                                                        <div className="flex flex-col">
+                                                        <div className="flex flex-col text-right sm:text-left">
                                                             <span className="text-sm font-black text-slate-900">{item.name}</span>
                                                             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.location}</span>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{item.serialNumber || 'N/A'}</span>
+                                                <td className="px-6 py-6" data-label="Serial Number">
+                                                    <div className="text-right sm:text-left">
+                                                        <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{item.serialNumber || 'N/A'}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-6 font-bold text-xs text-slate-600">
+                                                <td className="px-6 py-6 text-right sm:text-left font-bold text-xs text-slate-600" data-label="Brand/Model">
                                                     {item.brand} {item.model}
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                                        {item.category}
-                                                    </span>
+                                                <td className="px-6 py-6" data-label="Category">
+                                                    <div className="text-right sm:text-left">
+                                                        <span className="inline-flex px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                                            {item.category}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(item.status)}`}>
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'Operational' ? 'bg-emerald-500' :
+                                                <td className="px-6 py-6" data-label="Status">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(item.status)}`}>
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${item.status === 'Operational' ? 'bg-emerald-500' :
                                                                 item.status === 'In Maintenance' ? 'bg-amber-500' : 'bg-rose-500'
-                                                            }`} />
-                                                        {item.status}
-                                                    </span>
+                                                                }`} />
+                                                            {item.status}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex flex-col">
+                                                <td className="px-6 py-6" data-label="Last Service">
+                                                    <div className="flex flex-col text-right sm:text-left">
                                                         <span className="text-xs font-bold text-slate-700">
                                                             {item.lastService ? new Date(item.lastService).toLocaleDateString() : 'No History'}
                                                         </span>
                                                         <span className="text-[10px] text-slate-400 font-bold uppercase">Next: {item.nextService ? new Date(item.nextService).toLocaleDateString() : 'N/A'}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-6 text-right">
-                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <td className="px-6 py-6 text-right" data-label="Actions">
+                                                    <div className="flex items-center justify-end gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                                                         <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-slate-100">
                                                             <Edit2 size={16} />
                                                         </button>
@@ -276,10 +282,10 @@ const EquipmentListPage = () => {
                                 <h3 className="text-xl font-black text-slate-900 italic tracking-tight underline decoration-[#ff6b00]/20 decoration-4 underline-offset-8">Maintenance History</h3>
                             </div>
 
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive w-full">
                                     <thead>
-                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                        <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 bg-slate-50/50">
                                             <th className="px-6 py-4">Equipment</th>
                                             <th className="px-6 py-4">Issue Reported</th>
                                             <th className="px-6 py-4">Date</th>
@@ -292,37 +298,43 @@ const EquipmentListPage = () => {
                                     <tbody className="divide-y divide-slate-50">
                                         {!loading && maintenanceLogs.map((log) => (
                                             <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
-                                                <td className="px-6 py-6">
-                                                    <div className="flex flex-col">
+                                                <td className="px-6 py-6" data-label="Equipment">
+                                                    <div className="flex flex-col text-right sm:text-left">
                                                         <span className="text-sm font-black text-slate-900">{log.equipment?.name}</span>
                                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{log.equipment?.serialNumber}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <div className="flex flex-col">
+                                                <td className="px-6 py-6" data-label="Issue Reported">
+                                                    <div className="flex flex-col text-right sm:text-left">
                                                         <span className="text-xs font-bold text-slate-700">{log.issue}</span>
                                                         <span className="text-[10px] text-slate-400 font-medium line-clamp-1">{log.description}</span>
                                                     </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <span className="text-xs font-bold text-slate-600">{new Date(log.createdAt).toLocaleDateString()}</span>
+                                                <td className="px-6 py-6" data-label="Date">
+                                                    <div className="text-right sm:text-left">
+                                                        <span className="text-xs font-bold text-slate-600">{new Date(log.createdAt).toLocaleDateString()}</span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-4">
-                                                    <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${log.priority === 'High' || log.priority === 'Critical' ? 'bg-rose-50 text-rose-600' :
+                                                <td className="px-6 py-4" data-label="Priority">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${log.priority === 'High' || log.priority === 'Critical' ? 'bg-rose-50 text-rose-600' :
                                                             log.priority === 'Medium' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
-                                                        }`}>
-                                                        {log.priority}
-                                                    </span>
+                                                            }`}>
+                                                            {log.priority}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-6">
-                                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(log.status)}`}>
-                                                        {log.status}
-                                                    </span>
+                                                <td className="px-6 py-6" data-label="Status">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(log.status)}`}>
+                                                            {log.status}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-6 font-bold text-xs text-slate-900">
+                                                <td className="px-6 py-6 text-right sm:text-left font-bold text-xs text-slate-900" data-label="Cost">
                                                     ₹{Number(log.cost).toLocaleString()}
                                                 </td>
-                                                <td className="px-6 py-6 text-right">
+                                                <td className="px-6 py-6 text-right" data-label="Action">
                                                     <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-white rounded-xl shadow-sm transition-all border border-transparent hover:border-slate-100">
                                                         <FileText size={16} />
                                                     </button>

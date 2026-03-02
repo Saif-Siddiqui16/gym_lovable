@@ -80,13 +80,13 @@ const RightDrawer = ({
                     className={`relative w-screen ${maxWidth} h-full transform transition-transform duration-300 ease-in-out shadow-2xl flex flex-col bg-white border-l border-slate-100 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
                 >
                     {/* Header */}
-                    <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-white shrink-0 sticky top-0 z-[70] rounded-t-3xl">
+                    <div className="drawer-header">
                         <div className="flex flex-col">
-                            <h2 className="text-xl font-black text-slate-900 tracking-tight">
+                            <h2 className="drawer-title">
                                 {title}
                             </h2>
                             {subtitle && (
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mt-1">
+                                <p className="drawer-subtitle">
                                     {subtitle}
                                 </p>
                             )}
@@ -101,13 +101,13 @@ const RightDrawer = ({
                     </div>
 
                     {/* Body */}
-                    <div className="flex-1 overflow-y-auto scrollbar-thin">
+                    <div className="drawer-body scrollbar-thin">
                         {children}
                     </div>
 
                     {/* Footer */}
                     {footer && (
-                        <div className="px-6 py-4 border-t border-slate-100 bg-white sticky bottom-0">
+                        <div className="drawer-footer">
                             {footer}
                         </div>
                     )}

@@ -113,102 +113,107 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
             subtitle="Create a new membership plan with benefits"
             maxWidth="max-w-2xl"
             footer={
-                <div className="flex gap-3">
-                    <Button type="button" variant="outline" onClick={onClose} className="flex-1 py-3 rounded-xl">Cancel</Button>
-                    <Button
+                <React.Fragment>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="drawer-btn drawer-btn-secondary flex-1"
+                    >
+                        Cancel
+                    </button>
+                    <button
                         type="submit"
                         form="membership-plan-form"
-                        variant="primary"
-                        className="flex-1 py-3 rounded-xl shadow-lg shadow-indigo-200"
+                        className="drawer-btn drawer-btn-primary flex-1"
                     >
                         Create Plan
-                    </Button>
-                </div>
+                    </button>
+                </React.Fragment>
             }
         >
-            <form id="membership-plan-form" onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form id="membership-plan-form" onSubmit={handleSubmit} className="space-y-6">
 
                 {/* 1. Plan Name */}
-                <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Plan Name *</label>
-                    <Input
+                <div className="drawer-form-group">
+                    <label className="drawer-label">Plan Name *</label>
+                    <input
+                        className="drawer-input"
                         value={formData.name}
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        placeholder="Monthly Basic, Annual Premium, etc."
-                        className="font-bold"
+                        placeholder="e.g. Monthly Basic"
                         required
                     />
                 </div>
 
                 {/* 2. Description */}
-                <div>
-                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Description</label>
+                <div className="drawer-form-group">
+                    <label className="drawer-label">Description</label>
                     <textarea
-                        className="w-full p-4 bg-gray-50 border-transparent rounded-xl text-sm font-medium focus:bg-white focus:ring-2 focus:ring-indigo-100 outline-none resize-none h-24 transition-all"
-                        placeholder="Plan description..."
+                        className="drawer-textarea"
+                        placeholder="Briefly describe what this plan includes..."
                         value={formData.description}
                         onChange={e => setFormData({ ...formData, description: e.target.value })}
                     />
                 </div>
 
                 {/* 3 & 4. Price & Discounted Price */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Price (₹) *</label>
-                        <Input
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="drawer-form-group mb-0">
+                        <label className="drawer-label">Base Price (₹) *</label>
+                        <input
                             type="number"
+                            className="drawer-input"
                             value={formData.price}
                             onChange={e => setFormData({ ...formData, price: e.target.value })}
-                            className="font-bold"
                             required
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Discounted Price (₹)</label>
-                        <Input
+                    <div className="drawer-form-group mb-0">
+                        <label className="drawer-label">Special Price (₹)</label>
+                        <input
                             type="number"
+                            className="drawer-input"
                             value={formData.discountedPrice}
                             onChange={e => setFormData({ ...formData, discountedPrice: e.target.value })}
                             placeholder="Optional"
-                            className="font-bold"
                         />
                     </div>
                 </div>
 
                 {/* 5, 6 & 7. Duration, Admission Fee, Max Freeze Days */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Duration (days) *</label>
-                        <Input
+                <div className="grid grid-cols-3 gap-4">
+                    <div className="drawer-form-group mb-0">
+                        <label className="drawer-label">Duration (Days) *</label>
+                        <input
                             type="number"
+                            className="drawer-input"
                             value={formData.duration}
                             onChange={e => setFormData({ ...formData, duration: e.target.value })}
-                            className="font-bold"
                             required
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Admission Fee (₹)</label>
-                        <Input
+                    <div className="drawer-form-group mb-0">
+                        <label className="drawer-label">Admission Fee (₹)</label>
+                        <input
                             type="number"
+                            className="drawer-input"
                             value={formData.admissionFee}
                             onChange={e => setFormData({ ...formData, admissionFee: e.target.value })}
-                            className="font-bold"
                         />
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Max Freeze Days</label>
-                        <Input
+                    <div className="drawer-form-group mb-0">
+                        <label className="drawer-label">Max Freeze</label>
+                        <input
                             type="number"
+                            className="drawer-input"
                             value={formData.maxFreezeDays}
                             onChange={e => setFormData({ ...formData, maxFreezeDays: e.target.value })}
-                            className="font-bold"
                         />
                     </div>
                 </div>
 
                 {/* Toggles */}
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-4 space-y-1">
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-1">
                     <Toggle
                         title="Allow membership transfer"
                         description="Transferable"
@@ -222,35 +227,33 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
                         onChange={(e) => setFormData({ ...formData, active: e.target.checked })}
                     />
                     <Toggle
-                        title="Show on member dashboard for self-purchase"
+                        title="Show on member dashboard"
                         description="Visible to Members"
                         checked={formData.visibleToMembers}
                         onChange={(e) => setFormData({ ...formData, visibleToMembers: e.target.checked })}
                     />
                     <Toggle
-                        title="Auto-assigns a physical locker on purchase. For session tracking, add the Locker benefit above."
-                        description="Includes Free Locker"
+                        title="Includes physical locker"
+                        description="Free Locker"
                         checked={formData.includesFreeLocker}
                         onChange={(e) => setFormData({ ...formData, includesFreeLocker: e.target.checked })}
                     />
                 </div>
 
                 {/* Plan Benefits */}
-                <div className="space-y-4 pt-4">
-                    <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <div className="flex items-center justify-between pb-2">
                         <div>
-                            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Plan Benefits</h3>
-                            <p className="text-xs text-slate-500 mt-1">Add benefits with quantity for the membership duration</p>
+                            <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Plan Benefits</h3>
+                            <p className="text-[10px] text-slate-500 font-bold uppercase mt-1 opacity-70">Assign limits for facilities</p>
                         </div>
-                        <Button
+                        <button
                             type="button"
-                            variant="outline"
-                            size="sm"
                             onClick={() => navigate('/settings/amenities')}
-                            className="text-xs h-8 px-3"
+                            className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline"
                         >
                             Manage Types
-                        </Button>
+                        </button>
                     </div>
 
                     <div className="space-y-3">
@@ -261,13 +264,13 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
                                     key={benefit.id}
                                     className={`p-4 rounded-xl border-2 transition-all ${isSelected
                                         ? 'border-indigo-500 bg-indigo-50/10'
-                                        : 'border-gray-100 bg-white hover:border-indigo-200'
+                                        : 'border-slate-100 bg-white'
                                         }`}
                                 >
                                     <div className="flex items-start gap-4">
                                         <div
                                             onClick={() => handleBenefitToggle(benefit.id)}
-                                            className={`mt-1 w-5 h-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'
+                                            className={`mt-1 w-5 h-5 rounded-md border-2 flex items-center justify-center cursor-pointer transition-colors ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'border-slate-300'
                                                 }`}
                                         >
                                             {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
@@ -276,30 +279,21 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
                                         <div className="flex-1">
                                             <div className="flex flex-col justify-between items-start gap-1">
                                                 <div>
-                                                    <h4 className="font-bold text-gray-900">{benefit.name}</h4>
-                                                    <p className="text-xs text-slate-500 mt-0.5">{benefit.description || 'Facility access'}</p>
+                                                    <h4 className="font-bold text-gray-900 text-sm">{benefit.name}</h4>
+                                                    <p className="text-[10px] text-slate-500 font-bold uppercase opacity-60 mt-0.5">{benefit.description || 'Facility access'}</p>
                                                 </div>
-                                                {benefit.gender && benefit.gender !== 'UNISEX' && (
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${benefit.gender === 'MALE' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
-                                                        {benefit.gender} ONLY
-                                                    </span>
-                                                )}
                                             </div>
 
                                             {isSelected && (
-                                                <div className="mt-3 flex items-center gap-3 animate-in fade-in slide-in-from-top-1">
-                                                    <div className="flex-1">
-                                                        <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                                                            Usage Limit (Total)
-                                                        </label>
-                                                        <input
-                                                            type="text"
-                                                            className="w-full h-9 px-3 bg-white border border-indigo-200 rounded-lg text-sm font-bold text-indigo-700 outline-none focus:ring-2 focus:ring-indigo-100"
-                                                            value={isSelected.limit}
-                                                            onChange={e => handleLimitChange(benefit.id, e.target.value)}
-                                                            placeholder="e.g. 5 or Unlimited"
-                                                        />
-                                                    </div>
+                                                <div className="mt-3 animate-in fade-in slide-in-from-top-1">
+                                                    <label className="drawer-label mb-1"> Usage Limit (Total) </label>
+                                                    <input
+                                                        type="text"
+                                                        className="drawer-input h-9 px-3"
+                                                        value={isSelected.limit}
+                                                        onChange={e => handleLimitChange(benefit.id, e.target.value)}
+                                                        placeholder="e.g. 5 or Unlimited"
+                                                    />
                                                 </div>
                                             )}
                                         </div>
@@ -308,9 +302,8 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
                             );
                         })}
                         {amenities.length === 0 && (
-                            <div className="text-center py-8 bg-gray-50 rounded-xl border-2 border-dashed border-gray-200">
-                                <p className="text-gray-900 font-bold text-sm mb-1">No benefit types created yet</p>
-                                <p className="text-gray-500 text-xs">Create Benefit Types in Settings</p>
+                            <div className="text-center py-8 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                                <p className="text-slate-600 font-bold text-xs uppercase tracking-widest">No benefits defined</p>
                             </div>
                         )}
                     </div>

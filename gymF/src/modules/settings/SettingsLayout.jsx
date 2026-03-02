@@ -34,38 +34,38 @@ const SettingsLayout = ({ role }) => {
     ];
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 font-black">
+        <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
             {/* Sidebar */}
-            <div className="w-full lg:w-80 bg-white/80 backdrop-blur-md border-r border-slate-100 flex-shrink-0 lg:p-8 lg:min-h-screen shadow-sm">
-                <div className="p-6 lg:p-0 mb-8 lg:mb-10">
-                    <div className="flex items-center gap-4 mb-2">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 transition-all duration-300 hover:scale-110 hover:rotate-6">
-                            <Settings size={24} strokeWidth={3} />
+            <div className="w-full lg:w-72 bg-white border-r border-slate-200 flex-shrink-0 lg:sticky lg:top-0 lg:h-screen overflow-y-auto no-scrollbar">
+                <div className="p-6 mb-2">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-110">
+                            <Settings size={20} />
                         </div>
                         <div>
-                            <h1 className="text-2xl text-slate-800 tracking-tight">Settings</h1>
-                            <p className="text-[10px] text-violet-500 uppercase tracking-widest">Master Control</p>
+                            <h1 className="text-xl font-semibold text-slate-800 tracking-tight">Settings</h1>
+                            <p className="text-[10px] text-primary font-bold uppercase tracking-widest">Management</p>
                         </div>
                     </div>
                 </div>
 
-                <nav className="p-4 lg:p-0 space-y-2">
+                <nav className="px-3 pb-6 space-y-1">
                     {menuItems.map((item) => {
                         const isActive = currentPath === item.path;
                         return (
                             <Link
                                 key={item.name}
                                 to={item.path}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl text-xs transition-all duration-300 group border-2 ${isActive
-                                    ? 'bg-white border-violet-100 text-violet-600 shadow-xl shadow-violet-500/5'
-                                    : 'bg-transparent border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${isActive
+                                    ? 'bg-primary/5 text-primary shadow-sm'
+                                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
                                     }`}
                             >
-                                <div className={`p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-violet-50 text-violet-600' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600'
+                                <div className={`transition-colors duration-200 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'
                                     }`}>
-                                    <item.icon size={18} strokeWidth={3} />
+                                    <item.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                                 </div>
-                                <span className="tracking-tight">{item.name}</span>
+                                <span className={`text-sm tracking-tight ${isActive ? 'font-semibold' : 'font-medium'}`}>{item.name}</span>
                             </Link>
                         );
                     })}
@@ -73,8 +73,8 @@ const SettingsLayout = ({ role }) => {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1">
-                <main className="min-h-full">
+            <div className="flex-1 min-w-0 bg-[#F8FAFC]">
+                <main className="p-4 lg:p-8 max-w-6xl">
                     <Outlet context={{ role }} />
                 </main>
             </div>

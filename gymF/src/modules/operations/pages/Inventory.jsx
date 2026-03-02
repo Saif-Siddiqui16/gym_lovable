@@ -226,8 +226,8 @@ const Inventory = () => {
             <div className="hidden md:block group relative bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:border-violet-200 transition-all duration-500 transform hover:-translate-y-1">
                 <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 to-purple-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
-                <div className="relative z-10 overflow-x-auto">
-                    <table className="w-full text-left text-sm">
+                <div className="relative z-10 saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full text-left text-sm">
                         <thead className="bg-slate-50/50 border-b border-slate-100">
                             <tr>
                                 <th className="px-6 py-4 font-black text-slate-400 uppercase tracking-wider text-xs hover:text-violet-600 transition-colors duration-300 cursor-pointer">Item Name</th>
@@ -241,31 +241,38 @@ const Inventory = () => {
                         <tbody className="divide-y divide-slate-50">
                             {filteredInventory.map((item) => (
                                 <tr key={item.id} className="group/row hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-purple-50/50 transition-all duration-300 cursor-pointer hover:shadow-md">
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center shadow-md transition-all duration-500 group-hover/row:scale-125 group-hover/row:bg-gradient-to-br group-hover/row:from-violet-500 group-hover/row:to-purple-600 group-hover/row:text-white group-hover/row:shadow-xl group-hover/row:rotate-6">
+                                    <td className="px-6 py-4" data-label="Item Name">
+                                        <div className="flex items-center gap-3 justify-end sm:justify-start">
+                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center shadow-md transition-all duration-500 group-hover/row:scale-125 group-hover/row:bg-gradient-to-br group-hover/row:from-violet-500 group-hover/row:to-purple-600 group-hover/row:text-white group-hover/row:shadow-xl group-hover/row:rotate-6 flex-shrink-0">
                                                 <Package size={18} strokeWidth={2.5} />
                                             </div>
-                                            <span className="font-bold text-slate-800 group-hover/row:text-violet-700 group-hover/row:translate-x-1 transition-all duration-300">
+                                            <span className="font-bold text-slate-800 group-hover/row:text-violet-700 transition-all duration-300">
                                                 {item.itemName}
                                             </span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 group-hover/row:bg-white group-hover/row:shadow-sm transition-all duration-300">
-                                            {item.category}
-                                        </span>
+                                    <td className="px-6 py-4" data-label="Category">
+                                        <div className="text-right sm:text-left">
+                                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 group-hover/row:bg-white group-hover/row:shadow-sm transition-all duration-300">
+                                                {item.category}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="font-black text-slate-700">{item.quantity} {item.unit}</div>
+                                    <td className="px-6 py-4" data-label="Quantity">
+                                        <div className="text-right sm:text-left font-black text-slate-700">{item.quantity} {item.unit}</div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="text-slate-500 font-semibold">{item.minThreshold}</div>
+                                    <td className="px-6 py-4" data-label="Min Stock">
+                                        <div className="text-right sm:text-left text-slate-500 font-semibold">{item.minThreshold}</div>
                                     </td>
-                                    <td className="px-6 py-4">{getStockBadge(item.status)}</td>
-                                    <td className="px-6 py-4 text-right">
+                                    <td className="px-6 py-4" data-label="Status">
+                                        <div className="flex justify-end sm:justify-start">
+                                            {getStockBadge(item.status)}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right" data-label="Actions">
                                         <button
-                                            onClick={async () => {
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
                                                 const qty = prompt('Add to stock:', '10');
                                                 if (qty) {
                                                     await inventoryApi.receiveStock({ itemId: item.id, quantity: qty });
@@ -277,7 +284,8 @@ const Inventory = () => {
                                             + Stock
                                         </button>
                                         <button
-                                            onClick={async () => {
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
                                                 if (confirm('Delete this item?')) {
                                                     await inventoryApi.deleteInventoryItem(item.id);
                                                     toast.success('Deleted');

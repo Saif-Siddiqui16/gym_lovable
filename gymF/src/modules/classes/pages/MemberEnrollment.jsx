@@ -105,7 +105,7 @@ const MemberEnrollment = () => {
                 <h2 className="text-3xl font-bold text-gray-900">Manage Enrollments</h2>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-6)' }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
                 {/* Available Members */}
                 <Card title="Available Members">
                     <div className="relative mb-6">

@@ -88,8 +88,8 @@ const FeedbackSystem = () => {
                     </div>
                 </div>
 
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+                <div className="saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full">
                         <thead className="bg-slate-50/50 border-b border-slate-100">
                             <tr>
                                 <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Member</th>
@@ -105,7 +105,7 @@ const FeedbackSystem = () => {
                         </thead>
                         <tbody>
                             <tr>
-                                <td colSpan="9" className="px-8 py-32 text-center">
+                                <td colSpan="9" className="px-8 py-32 text-center pointer-events-none">
                                     <div className="flex flex-col items-center gap-5">
                                         <div className="w-24 h-24 rounded-[2.5rem] bg-slate-50 flex items-center justify-center text-slate-200">
                                             <MessageSquare size={48} />

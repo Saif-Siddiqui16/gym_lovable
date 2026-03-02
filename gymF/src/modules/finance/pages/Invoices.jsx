@@ -200,8 +200,8 @@ const Invoices = () => {
                 </div>
 
                 {/* Table */}
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+                <div className="saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full">
                         <thead className="bg-slate-50/50">
                             <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                 <th className="px-8 py-5">Invoice Number</th>
@@ -215,36 +215,42 @@ const Invoices = () => {
                         <tbody className="divide-y divide-slate-50">
                             {!loading && data.invoices.map((inv, idx) => (
                                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-3">
+                                    <td className="px-8 py-6" data-label="Invoice Number">
+                                        <div className="flex items-center gap-3 justify-end sm:justify-start">
                                             <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center text-violet-600">
                                                 <FileText size={16} />
                                             </div>
                                             <span className="text-sm font-black text-slate-900">{inv.invoiceNumber}</span>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <div>
+                                    <td className="px-8 py-6" data-label="Client">
+                                        <div className="text-right sm:text-left">
                                             <p className="text-sm font-bold text-slate-900">{inv.member?.name || 'Walk-in Guest'}</p>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{inv.member?.memberId || 'GUEST'}</p>
                                         </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className="text-sm font-black text-slate-900">₹{Number(inv.amount).toLocaleString()}</span>
+                                    <td className="px-8 py-6" data-label="Amount">
+                                        <div className="text-right sm:text-left">
+                                            <span className="text-sm font-black text-slate-900">₹{Number(inv.amount).toLocaleString()}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className="text-xs font-bold text-slate-500">{new Date(inv.dueDate).toLocaleDateString()}</span>
+                                    <td className="px-8 py-6" data-label="Date">
+                                        <div className="text-right sm:text-left">
+                                            <span className="text-xs font-bold text-slate-500">{new Date(inv.dueDate).toLocaleDateString()}</span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6">
-                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                            inv.status === 'Overdue' ? 'bg-red-50 text-red-600 border-red-100' :
-                                                'bg-amber-50 text-amber-600 border-amber-100'
-                                            }`}>
-                                            {inv.status === 'Paid' ? <CheckCircle2 size={12} /> : inv.status === 'Overdue' ? <AlertCircle size={12} /> : <Clock size={12} />}
-                                            {inv.status}
-                                        </span>
+                                    <td className="px-8 py-6" data-label="Status">
+                                        <div className="flex justify-end sm:justify-start">
+                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${inv.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                inv.status === 'Overdue' ? 'bg-red-50 text-red-600 border-red-100' :
+                                                    'bg-amber-50 text-amber-600 border-amber-100'
+                                                }`}>
+                                                {inv.status === 'Paid' ? <CheckCircle2 size={12} /> : inv.status === 'Overdue' ? <AlertCircle size={12} /> : <Clock size={12} />}
+                                                {inv.status}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-8 py-6 text-right">
+                                    <td className="px-8 py-6 text-right" data-label="Actions">
                                         <div className="flex justify-end gap-2">
                                             <button className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all">
                                                 <Eye size={18} />

@@ -255,66 +255,70 @@ const Trainers = () => {
                     </div>
 
                     {/* Trainer List */}
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
+                    <div className="saas-table-wrapper border-0 rounded-none">
+                        <table className="saas-table saas-table-responsive">
                             <thead>
-                                <tr className="bg-slate-50/50">
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer Details</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialization</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</th>
-                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                    <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer Details</th>
+                                    <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Specialization</th>
+                                    <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Contact</th>
+                                    <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                    <th className="text-right py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic">
+                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic pointer-events-none" data-label="Status">
                                             Loading trainers...
                                         </td>
                                     </tr>
                                 ) : filteredTrainers.length === 0 ? (
                                     <tr>
-                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic">
+                                        <td colSpan="5" className="px-8 py-12 text-center text-slate-400 italic pointer-events-none" data-label="Status">
                                             No trainers found.
                                         </td>
                                     </tr>
                                 ) : filteredTrainers.map((trainer) => (
                                     <tr key={trainer.id} className="hover:bg-slate-50/50 transition-colors group">
-                                        <td className="px-8 py-5">
-                                            <div className="flex items-center gap-4">
+                                        <td className="py-4 px-6" data-label="Trainer Details">
+                                            <div className="flex items-center gap-4 justify-end sm:justify-start">
                                                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
                                                     {trainer.name?.charAt(0)}
                                                 </div>
-                                                <div>
+                                                <div className="text-right sm:text-left">
                                                     <p className="font-bold text-slate-900">{trainer.name}</p>
                                                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{trainer.salaryType} Plan</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5">
-                                            <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">
-                                                {trainer.specialization || 'General Training'}
-                                            </span>
+                                        <td className="py-4 px-6" data-label="Specialization">
+                                            <div className="flex justify-end sm:justify-start">
+                                                <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold">
+                                                    {trainer.specialization || 'General Training'}
+                                                </span>
+                                            </div>
                                         </td>
-                                        <td className="px-8 py-5">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                        <td className="py-4 px-6" data-label="Contact">
+                                            <div className="space-y-1 text-right sm:text-left">
+                                                <div className="flex items-center justify-end sm:justify-start gap-2 text-xs text-slate-600">
                                                     <Mail size={12} className="text-slate-400" /> {trainer.email}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs text-slate-600">
+                                                <div className="flex items-center justify-end sm:justify-start gap-2 text-xs text-slate-600">
                                                     <Phone size={12} className="text-slate-400" /> {trainer.phone}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5">
-                                            <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${trainer.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
-                                                <div className={`w-1 h-1 rounded-full mr-1.5 ${trainer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                                {trainer.status}
+                                        <td className="py-4 px-6" data-label="Status">
+                                            <div className="flex justify-end sm:justify-start">
+                                                <div className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${trainer.status === 'Active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                                                    <div className={`w-1 h-1 rounded-full mr-1.5 ${trainer.status === 'Active' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                                    {trainer.status}
+                                                </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                        <td className="py-4 px-6 text-right" data-label="Actions">
+                                            <div className="flex items-center justify-end gap-2 sm:opacity-0 group-hover:opacity-100 transition-all">
                                                 <button onClick={() => openEditDrawer(trainer)} className="p-2 hover:bg-white rounded-lg text-slate-400 hover:text-blue-600 transition-all shadow-sm border border-transparent hover:border-slate-100">
                                                     <Edit2 size={16} />
                                                 </button>
@@ -349,7 +353,7 @@ const Trainers = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="col-span-2">
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Full Name *</label>
                                 <input
@@ -382,7 +386,7 @@ const Trainers = () => {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">ID Type</label>
                                 <select
@@ -427,7 +431,7 @@ const Trainers = () => {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Salary Type</label>
                                 <select

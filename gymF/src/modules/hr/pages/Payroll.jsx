@@ -186,27 +186,27 @@ const Payroll = () => {
                     </div>
 
                     <div className="bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[800px]">
+                        <div className="saas-table-wrapper border-0 rounded-none">
+                            <table className="saas-table saas-table-responsive">
                                 <thead>
-                                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Employee</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Code</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Department</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Position</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Salary</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                                        <th className="px-8 py-5 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Actions</th>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Code</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Department</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Position</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Salary</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100/50">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="7" className="py-16 text-center text-sm font-bold text-slate-400">Loading...</td>
+                                            <td colSpan="7" className="py-16 text-center text-sm font-bold text-slate-400 pointer-events-none" data-label="Status">Loading...</td>
                                         </tr>
                                     ) : filteredStaff.length === 0 ? (
                                         <tr>
-                                            <td colSpan="7" className="py-24 text-center">
+                                            <td colSpan="7" className="py-24 text-center pointer-events-none" data-label="Status">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <h3 className="text-xl font-black text-slate-800">No employees found</h3>
                                                     <p className="text-slate-500 text-sm mt-2 font-medium">There are no employees matching the criteria.</p>
@@ -216,38 +216,42 @@ const Payroll = () => {
                                     ) : (
                                         filteredStaff.map((staff, idx) => (
                                             <tr key={staff.id || idx} className="group hover:bg-white transition-all duration-300">
-                                                <td className="px-8 py-6">
-                                                    <div className="flex items-center gap-4">
+                                                <td className="px-6 py-4" data-label="Employee">
+                                                    <div className="flex items-center gap-4 justify-end sm:justify-start">
                                                         <div className="w-12 h-12 rounded-[16px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
                                                             {staff.name ? staff.name.charAt(0) : '?'}
                                                         </div>
-                                                        <div>
-                                                            <div className="font-bold text-slate-800 text-sm whitespace-nowrap leading-tight">{staff.name}</div>
+                                                        <div className="text-right sm:text-left">
+                                                            <div className="font-bold text-slate-800 text-sm leading-tight">{staff.name}</div>
                                                             <div className="text-xs text-slate-500 font-medium mt-1">{staff.email}</div>
                                                         </div>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6 text-sm font-semibold text-slate-600">
+                                                <td className="px-6 py-4 text-sm font-semibold text-slate-600" data-label="Code">
                                                     EMP-{staff.id ? String(staff.id).padStart(3, '0') : String(idx + 1).padStart(3, '0')}
                                                 </td>
-                                                <td className="px-8 py-6 text-sm font-medium text-slate-600">
+                                                <td className="px-6 py-4 text-sm font-medium text-slate-600" data-label="Department">
                                                     {staff.department || 'Operations'}
                                                 </td>
-                                                <td className="px-8 py-6">
-                                                    <span className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100 whitespace-nowrap">
-                                                        {staff.role}
-                                                    </span>
-                                                </td>
-                                                <td className="px-8 py-6 text-sm font-bold text-slate-800">
-                                                    ₹{staff.baseSalary ? staff.baseSalary.toLocaleString() : '25,000'}
-                                                </td>
-                                                <td className="px-8 py-6">
-                                                    <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${staff.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                        <div className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                                                        <span className="text-[10px] font-black uppercase tracking-widest">{staff.status || 'Unknown'}</span>
+                                                <td className="px-6 py-4" data-label="Position">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <span className="px-3 py-1 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest border border-slate-100 whitespace-nowrap">
+                                                            {staff.role}
+                                                        </span>
                                                     </div>
                                                 </td>
-                                                <td className="px-8 py-6 text-right">
+                                                <td className="px-6 py-4 text-sm font-bold text-slate-800" data-label="Salary">
+                                                    ₹{staff.baseSalary ? staff.baseSalary.toLocaleString() : '25,000'}
+                                                </td>
+                                                <td className="px-6 py-4" data-label="Status">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${staff.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                                                            <div className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                                                            <span className="text-[10px] font-black uppercase tracking-widest">{staff.status || 'Unknown'}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-right" data-label="Actions">
                                                     <button className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">
                                                         <MoreHorizontal size={18} />
                                                     </button>
@@ -287,24 +291,23 @@ const Payroll = () => {
 
                     {/* Payroll Data Table */}
                     <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
-                        <div className="overflow-x-auto">
-                            <table className="w-full min-w-[800px]">
+                        <div className="saas-table-wrapper border-0 rounded-none">
+                            <table className="saas-table saas-table-responsive">
                                 <thead>
-                                    <tr className="border-b border-slate-100">
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">Employee</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">Days</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">Base Pay</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">PT Commission</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">Gross</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">PF (12%)</th>
-                                        <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 whitespace-nowrap">Net Pay</th>
-                                        <th className="px-6 py-4 text-right text-xs font-bold text-slate-500 whitespace-nowrap">Actions</th>
+                                    <tr className="border-b border-slate-100 bg-slate-50">
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Days</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Pay</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PT Commission</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Gross</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PF (12%)</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Pay</th>
+                                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100/50">
-                                    {/* Empty State for Payroll Details */}
                                     <tr>
-                                        <td colSpan="8" className="py-20 text-center">
+                                        <td colSpan="8" className="py-20 text-center pointer-events-none" data-label="Status">
                                             <div className="flex flex-col items-center justify-center">
                                                 <Banknote size={48} className="text-slate-300 mb-4 stroke-1" />
                                                 <p className="text-slate-400 font-medium text-sm">No active employees for payroll</p>
@@ -353,22 +356,22 @@ const Payroll = () => {
                     </div>
 
                     <div className="bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[800px]">
+                        <div className="saas-table-wrapper border-0 rounded-none">
+                            <table className="saas-table saas-table-responsive">
                                 <thead>
-                                    <tr className="bg-slate-50/50 border-b border-slate-100">
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Employee</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Type</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Start Date</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">End Date</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Base Salary</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Commission %</th>
-                                        <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Start Date</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">End Date</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission %</th>
+                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100/50">
                                     <tr>
-                                        <td colSpan="7" className="py-24 text-center">
+                                        <td colSpan="7" className="py-24 text-center pointer-events-none" data-label="Status">
                                             <div className="flex flex-col items-center justify-center">
                                                 <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
                                                     <FileText size={32} />
@@ -397,28 +400,30 @@ const Payroll = () => {
 
                         <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
                             <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full min-w-[800px]">
-                                    <thead>
-                                        <tr className="bg-slate-50/50 border-b border-slate-100">
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-in Time</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100/50">
-                                        <tr>
-                                            <td colSpan="4" className="py-24 text-center">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <Clock size={32} />
+                                <div className="saas-table-wrapper border-0 rounded-none">
+                                    <table className="saas-table saas-table-responsive">
+                                        <thead>
+                                            <tr className="bg-slate-50 border-b border-slate-100">
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in Time</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100/50">
+                                            <tr>
+                                                <td colSpan="4" className="py-24 text-center pointer-events-none" data-label="Status">
+                                                    <div className="flex flex-col items-center justify-center">
+                                                        <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                            <Clock size={32} />
+                                                        </div>
+                                                        <h3 className="text-xl font-black text-slate-800">No staff currently on duty</h3>
                                                     </div>
-                                                    <h3 className="text-xl font-black text-slate-800">No staff currently on duty</h3>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -431,20 +436,20 @@ const Payroll = () => {
                         </div>
 
                         <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
-                            <div className="overflow-x-auto custom-scrollbar">
-                                <table className="w-full min-w-[800px]">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive">
                                     <thead>
-                                        <tr className="bg-slate-50/50 border-b border-slate-100">
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-in</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Check-out</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Duration</th>
-                                            <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-out</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100/50">
                                         <tr>
-                                            <td colSpan="5" className="py-24 text-center">
+                                            <td colSpan="5" className="py-24 text-center pointer-events-none" data-label="Status">
                                                 <div className="flex flex-col items-center justify-center">
                                                     <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
                                                         <Briefcase size={32} />

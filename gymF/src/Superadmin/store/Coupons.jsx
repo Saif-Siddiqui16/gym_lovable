@@ -146,10 +146,10 @@ const Coupons = () => {
                 </div>
 
                 {/* Table Section */}
-                <div className="p-0 overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
+                <div className="saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full">
+                        <thead className="bg-slate-50/50">
+                            <tr className="border-b border-slate-100">
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Coupon</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Discount</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Performance</th>
@@ -170,20 +170,20 @@ const Coupons = () => {
                                 </tr>
                             ) : coupons.length > 0 ? (
                                 coupons.map((c) => (
-                                    <tr key={c.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform duration-300 border border-slate-100 shadow-sm">
+                                    <tr key={c.id} className="group hover:bg-slate-50/50 transition-all duration-300 cursor-pointer">
+                                        <td className="px-8 py-6" data-label="Coupon">
+                                            <div className="flex items-center gap-4 justify-end sm:justify-start">
+                                                <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform duration-300 border border-slate-100 shadow-sm flex-shrink-0">
                                                     <Ticket size={24} />
                                                 </div>
-                                                <div>
-                                                    <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{c.code}</p>
+                                                <div className="text-right sm:text-left">
+                                                    <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase">{c.code}</p>
                                                     <p className="text-xs text-slate-400 font-bold truncate max-w-[180px] mt-0.5">{c.description || 'No description provided'}</p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div>
+                                        <td className="px-8 py-6" data-label="Discount">
+                                            <div className="text-right sm:text-left">
                                                 <p className="text-sm font-black text-slate-900">
                                                     {c.type === 'Percentage' ? `${c.value}% OFF` : `₹${c.value} OFF`}
                                                 </p>
@@ -192,8 +192,8 @@ const Coupons = () => {
                                                 </p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1.5 flex flex-col">
+                                        <td className="px-8 py-6" data-label="Performance">
+                                            <div className="space-y-1.5 flex flex-col items-end sm:items-start">
                                                 <div className="flex justify-between w-32">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usage</span>
                                                     <span className="text-[10px] font-black text-slate-900">{c.usedCount} / {c.maxUses === 0 ? '∞' : c.maxUses}</span>
@@ -206,49 +206,51 @@ const Coupons = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                        <td className="px-8 py-6" data-label="Validity">
+                                            <div className="space-y-1 text-right sm:text-left">
+                                                <div className="flex items-center gap-2 justify-end sm:justify-start text-xs font-bold text-slate-600">
                                                     <Timer size={14} className="text-slate-300" />
                                                     {new Date(c.startDate).toLocaleDateString()}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                                     TO {c.endDate ? new Date(c.endDate).toLocaleDateString() : 'UNTIL CANCELLED'}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6 text-center">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm ${c.status === 'Active'
+                                        <td className="px-8 py-6 text-center" data-label="Status">
+                                            <div className="flex justify-end sm:justify-center">
+                                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm ${c.status === 'Active'
                                                     ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                                                     : c.status === 'Expired'
                                                         ? 'bg-red-50 text-red-600 border border-red-100'
                                                         : 'bg-slate-50 text-slate-500 border border-slate-100'
-                                                }`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${c.status === 'Active' ? 'bg-emerald-500 animate-pulse' :
+                                                    }`}>
+                                                    <div className={`w-1.5 h-1.5 rounded-full ${c.status === 'Active' ? 'bg-emerald-500 animate-pulse' :
                                                         c.status === 'Expired' ? 'bg-red-500' : 'bg-slate-400'
-                                                    }`} />
-                                                {c.status}
-                                            </span>
+                                                        }`} />
+                                                    {c.status}
+                                                </span>
+                                            </div>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+                                        <td className="px-8 py-6 text-right" data-label="Actions">
+                                            <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                                                 <button
-                                                    onClick={() => handleEdit(c)}
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
                                                     className="p-3 bg-white text-slate-400 hover:text-indigo-600 border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-indigo-50 transition-all"
                                                     title="Edit Coupon"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(c.id)}
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }}
                                                     className="p-3 bg-white text-slate-400 hover:text-red-600 border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-red-50 transition-all"
                                                     title="Delete Coupon"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
-                                            <div className="group-hover:hidden transition-all text-slate-300 pr-2">
-                                                <MoreVertical size={20} />
+                                            <div className="sm:group-hover:hidden transition-all text-slate-300">
+                                                <MoreVertical size={20} className="ml-auto" />
                                             </div>
                                         </td>
                                     </tr>

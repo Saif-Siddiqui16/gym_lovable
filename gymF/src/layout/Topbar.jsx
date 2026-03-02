@@ -80,26 +80,28 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
     return (
         <header className="topbar">
             {/* Left Side: Mobile Menu Toggle & Page Title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+            <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
                 <button
                     onClick={toggleSidebar}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', display: 'flex', alignItems: 'center' }}
+                    className="flex lg:hidden items-center justify-center w-10 h-10 -ml-2 text-slate-500 hover:bg-slate-50 rounded-lg transition-colors"
                 >
                     <Menu size={22} />
                 </button>
-                <h1 className="text-title" style={{ fontSize: '1.25rem' }}>{title}</h1>
+                <h1 className="text-sm sm:text-base md:text-xl font-bold text-slate-900 truncate max-w-[150px] sm:max-w-none">
+                    {title}
+                </h1>
             </div>
 
             {/* Right Side: Search, Notifications, Profile */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+            <div className="flex items-center gap-2 sm:gap-4">
                 {/* Branch Selector */}
                 {role === ROLES.BRANCH_ADMIN && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--card-bg)', padding: '6px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', margin: '0 10px' }}>
-                        <Building size={16} className="text-muted" />
+                    <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+                        <Building size={16} className="text-slate-400" />
                         <select
                             value={selectedBranch || 'all'}
                             onChange={(e) => setSelectedBranch(e.target.value)}
-                            style={{ border: 'none', background: 'transparent', outline: 'none', fontSize: '0.875rem', fontWeight: 500, color: 'var(--text)', cursor: 'pointer' }}
+                            className="border-none bg-transparent outline-none text-xs font-bold text-slate-700 cursor-pointer"
                         >
                             <option value="all">All Branches</option>
                             {branches?.map(b => (

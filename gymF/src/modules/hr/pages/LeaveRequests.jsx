@@ -67,86 +67,88 @@ const LeaveRequests = () => {
             </div>
 
             {/* Content Table */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Date Range</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Reason</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
-                                <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
+            <div className="saas-table-wrapper border-0 rounded-none">
+                <table className="saas-table saas-table-responsive">
+                    <thead>
+                        <tr className="bg-slate-50 border-b border-slate-100">
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Employee</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Type</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Date Range</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Reason</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Status</th>
+                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                        {requests.length === 0 ? (
+                            <tr>
+                                <td colSpan="6" className="px-6 py-12 text-center text-slate-500 pointer-events-none" data-label="Status">
+                                    No leave requests found.
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-50">
-                            {requests.length === 0 ? (
-                                <tr>
-                                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
-                                        No leave requests found.
-                                    </td>
-                                </tr>
-                            ) : requests.map((leave) => (
-                                <tr key={leave.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-bold text-slate-900">{leave.user?.name || 'Unknown'}</span>
-                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{leave.user?.role || 'Staff'}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
+                        ) : requests.map((leave) => (
+                            <tr key={leave.id} className="hover:bg-slate-50/50 transition-colors group">
+                                <td className="px-6 py-5" data-label="Employee">
+                                    <div className="flex flex-col text-right sm:text-left">
+                                        <span className="text-sm font-bold text-slate-900">{leave.user?.name || 'Unknown'}</span>
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{leave.user?.role || 'Staff'}</span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-5" data-label="Type">
+                                    <div className="flex justify-end sm:justify-start">
                                         <span className="text-xs font-bold text-slate-600">{leave.type}</span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-sm font-bold text-slate-900">
-                                                {new Date(leave.startDate).toLocaleDateString()}
-                                                {new Date(leave.startDate).getTime() !== new Date(leave.endDate).getTime() && ` – ${new Date(leave.endDate).toLocaleDateString()}`}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
+                                    </div>
+                                </td>
+                                <td className="px-6 py-5" data-label="Date Range">
+                                    <div className="flex flex-col gap-1 text-right sm:text-left">
+                                        <span className="text-sm font-bold text-slate-900">
+                                            {new Date(leave.startDate).toLocaleDateString()}
+                                            {new Date(leave.startDate).getTime() !== new Date(leave.endDate).getTime() && ` – ${new Date(leave.endDate).toLocaleDateString()}`}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-5" data-label="Reason">
+                                    <div className="flex justify-end sm:justify-start">
                                         <span className="text-xs text-slate-500 font-medium truncate max-w-[200px] block" title={leave.reason}>
                                             {leave.reason}
                                         </span>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex justify-center">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${getStatusStyle(leave.status)}`}>
-                                                {leave.status}
-                                            </span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-5">
-                                        <div className="flex justify-center gap-2">
-                                            {leave.status === 'Pending' && (
-                                                <>
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(leave.id, 'Approved')}
-                                                        disabled={isUpdating}
-                                                        className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100"
-                                                        title="Approve"
-                                                    >
-                                                        <CheckCircle2 size={18} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleUpdateStatus(leave.id, 'Rejected')}
-                                                        disabled={isUpdating}
-                                                        className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors border border-rose-100"
-                                                        title="Reject"
-                                                    >
-                                                        <XCircle size={18} />
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-5 text-center" data-label="Status">
+                                    <div className="flex justify-center">
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${getStatusStyle(leave.status)}`}>
+                                            {leave.status}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td className="px-6 py-5 text-center" data-label="Actions">
+                                    <div className="flex justify-center gap-2">
+                                        {leave.status === 'Pending' && (
+                                            <>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(leave.id, 'Approved')}
+                                                    disabled={isUpdating}
+                                                    className="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors border border-emerald-100"
+                                                    title="Approve"
+                                                >
+                                                    <CheckCircle2 size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleUpdateStatus(leave.id, 'Rejected')}
+                                                    disabled={isUpdating}
+                                                    className="p-2 bg-rose-50 text-rose-600 hover:bg-rose-100 rounded-lg transition-colors border border-rose-100"
+                                                    title="Reject"
+                                                >
+                                                    <XCircle size={18} />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

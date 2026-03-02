@@ -10,9 +10,15 @@ import {
     Users
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
+import CreateAnnouncementDrawer from './CreateAnnouncementDrawer';
+import BroadcastMessageDrawer from './BroadcastMessageDrawer';
+import MessageTemplatesDrawer from './MessageTemplatesDrawer';
 
 const TrainerAnnouncements = () => {
     const [activeTab, setActiveTab] = useState('Announcements');
+    const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+    const [isBroadcastDrawerOpen, setIsBroadcastDrawerOpen] = useState(false);
+    const [isTemplatesDrawerOpen, setIsTemplatesDrawerOpen] = useState(false);
 
     const StatItem = ({ title, value, subtitle, icon: Icon, color = 'primary' }) => {
         const colorClasses = {
@@ -62,13 +68,22 @@ const TrainerAnnouncements = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 flex-nowrap">
-                    <button className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <button
+                        onClick={() => setIsTemplatesDrawerOpen(true)}
+                        className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+                    >
                         <Layout size={16} /> Templates
                     </button>
-                    <button className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm">
+                    <button
+                        onClick={() => setIsBroadcastDrawerOpen(true)}
+                        className="h-11 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center gap-2 shadow-sm"
+                    >
                         <Send size={16} /> Broadcast
                     </button>
-                    <button className="h-11 px-8 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                    <button
+                        onClick={() => setIsCreateDrawerOpen(true)}
+                        className="h-11 px-8 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2"
+                    >
                         <Plus size={16} strokeWidth={3} /> New Announcement
                     </button>
                 </div>
@@ -124,8 +139,30 @@ const TrainerAnnouncements = () => {
                     )}
                 </div>
             </div>
+
+            {/* Drawers */}
+            <CreateAnnouncementDrawer
+                isOpen={isCreateDrawerOpen}
+                onClose={() => setIsCreateDrawerOpen(false)}
+                onSuccess={(data) => {
+                    console.log('Announcement Success:', data);
+                }}
+            />
+            <BroadcastMessageDrawer
+                isOpen={isBroadcastDrawerOpen}
+                onClose={() => setIsBroadcastDrawerOpen(false)}
+                onSuccess={(data) => {
+                    console.log('Broadcast Success:', data);
+                }}
+            />
+            <MessageTemplatesDrawer
+                isOpen={isTemplatesDrawerOpen}
+                onClose={() => setIsTemplatesDrawerOpen(false)}
+            />
         </div>
     );
 };
 
 export default TrainerAnnouncements;
+
+

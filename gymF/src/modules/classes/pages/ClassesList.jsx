@@ -236,46 +236,48 @@ const ClassesList = () => {
                             <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Loading classes...</p>
                         </div>
                     ) : filteredClasses.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
+                        <div className="saas-table-wrapper border-0 rounded-none">
+                            <table className="saas-table saas-table-responsive">
                                 <thead>
-                                    <tr className="border-b border-slate-100">
-                                        <th className="text-left py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Info</th>
-                                        <th className="text-left py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer</th>
-                                        <th className="text-left py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule</th>
-                                        <th className="text-left py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Bookings</th>
-                                        <th className="text-left py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="text-right py-4 px-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Info</th>
+                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer</th>
+                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule</th>
+                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Bookings</th>
+                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        <th className="text-right py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody className="divide-y divide-slate-100">
                                     {filteredClasses.map((cls) => (
-                                        <tr key={cls.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                                            <td className="py-4 px-2">
-                                                <div className="flex items-center gap-3">
+                                        <tr key={cls.id} className="hover:bg-slate-50/50 transition-colors group">
+                                            <td className="py-4 px-6" data-label="Class Info">
+                                                <div className="flex items-center gap-3 justify-end sm:justify-start">
                                                     <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
                                                         <Dumbbell size={20} />
                                                     </div>
-                                                    <div>
+                                                    <div className="text-right sm:text-left">
                                                         <div className="text-sm font-bold text-slate-900">{cls.name}</div>
                                                         <div className="text-[10px] font-bold text-slate-400 uppercase">{cls.requiredBenefit || 'General'}</div>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <div className="flex items-center gap-2">
+                                            <td className="py-4 px-6" data-label="Trainer">
+                                                <div className="flex items-center gap-2 justify-end sm:justify-start">
                                                     <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">
                                                         {cls.trainerName?.charAt(0)}
                                                     </div>
                                                     <span className="text-xs font-bold text-slate-700">{cls.trainerName}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <div className="text-xs font-bold text-slate-700">{cls.schedule}</div>
-                                                <div className="text-[10px] text-slate-400">{cls.duration}</div>
+                                            <td className="py-4 px-6" data-label="Schedule">
+                                                <div className="text-right sm:text-left">
+                                                    <div className="text-xs font-bold text-slate-700">{cls.schedule}</div>
+                                                    <div className="text-[10px] text-slate-400">{cls.duration}</div>
+                                                </div>
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <div className="flex items-center gap-2">
+                                            <td className="py-4 px-6" data-label="Bookings">
+                                                <div className="flex flex-col items-end sm:items-start gap-1">
                                                     <div className="text-xs font-bold text-slate-700">{cls.enrolled} / {cls.capacity}</div>
                                                     <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                         <div
@@ -285,15 +287,17 @@ const ClassesList = () => {
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${cls.status === 'Scheduled' ? 'bg-indigo-50 text-indigo-600' :
-                                                    cls.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
-                                                        'bg-slate-100 text-slate-500'
-                                                    }`}>
-                                                    {cls.status}
-                                                </span>
+                                            <td className="py-4 px-6" data-label="Status">
+                                                <div className="flex justify-end sm:justify-start">
+                                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${cls.status === 'Scheduled' ? 'bg-indigo-50 text-indigo-600' :
+                                                        cls.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
+                                                            'bg-slate-100 text-slate-500'
+                                                        }`}>
+                                                        {cls.status}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-4 px-6 text-right" data-label="Action">
                                                 <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
                                                     <MoreHorizontal size={18} />
                                                 </button>
@@ -359,7 +363,7 @@ const ClassesList = () => {
                                 </div>
 
                                 {/* Class Type & Capacity */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Type</label>
                                         <div className="relative">
@@ -388,7 +392,7 @@ const ClassesList = () => {
                                 </div>
 
                                 {/* Date & Time & Duration */}
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Date & Time *</label>
                                         <input
@@ -446,7 +450,7 @@ const ClassesList = () => {
                                 </div>
 
                                 {/* Action Buttons */}
-                                <div className="grid grid-cols-2 gap-4 pt-4 mt-auto border-t border-slate-50">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-auto border-t border-slate-50">
                                     <button
                                         type="button"
                                         disabled={submitting}
