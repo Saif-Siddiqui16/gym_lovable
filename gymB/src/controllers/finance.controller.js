@@ -4,20 +4,34 @@ const prisma = new PrismaClient();
 // Get all expenses
 const getExpenses = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
-        const role = req.user.role;
+        const { branchId: qBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
 
-        let expenses;
+        const branchId = qBranchId || headerTenantId;
+
+        let where = {};
         if (role === 'SUPER_ADMIN') {
-            expenses = await prisma.expense.findMany({
-                orderBy: { date: 'desc' }
-            });
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
         } else {
-            expenses = await prisma.expense.findMany({
-                where: { tenantId },
-                orderBy: { date: 'desc' }
-            });
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
+
+        const expenses = await prisma.expense.findMany({
+            where,
+            include: { tenant: { select: { name: true } } },
+            orderBy: { date: 'desc' }
+        });
 
         res.status(200).json(expenses);
     } catch (error) {
@@ -29,16 +43,21 @@ const getExpenses = async (req, res) => {
 // Add new expense
 const createExpense = async (req, res) => {
     try {
-        const { title, category, amount, date, notes, status } = req.body;
+        const { title, category, amount, date, notes, status, branchId } = req.body;
         const tenantId = req.user.tenantId;
 
-        if (!tenantId && req.user.role !== 'SUPER_ADMIN') {
+        let targetTenantId = tenantId;
+        if ((role === 'SUPER_ADMIN' || role === 'BRANCH_ADMIN') && branchId && branchId !== 'all') {
+            targetTenantId = parseInt(branchId);
+        }
+
+        if (!targetTenantId && req.user.role !== 'SUPER_ADMIN') {
             return res.status(400).json({ message: 'Tenant ID is required for creating an expense' });
         }
 
         const newExpense = await prisma.expense.create({
             data: {
-                tenantId: tenantId || 1, // Fallback for superadmin testing if needed
+                tenantId: targetTenantId || 1,
                 title,
                 category,
                 amount: parseFloat(amount),
@@ -59,14 +78,27 @@ const createExpense = async (req, res) => {
 // Get all invoices with stats
 const getInvoices = async (req, res) => {
     try {
-        const { branchId, status: statusFilter, search } = req.query;
-        const { role, tenantId: userTenantId } = req.user;
+        const { branchId: qBranchId, status: statusFilter, search } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { role, tenantId: userTenantId, email, name: userName } = req.user;
+
+        const branchId = qBranchId || headerTenantId;
 
         let where = {};
-        if (role !== 'SUPER_ADMIN') {
-            where.tenantId = userTenantId || 1;
-        } else if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (statusFilter && statusFilter !== 'All Status') {
@@ -83,7 +115,7 @@ const getInvoices = async (req, res) => {
         const [invoices, allInvoices] = await Promise.all([
             prisma.invoice.findMany({
                 where,
-                include: { member: true, items: true },
+                include: { member: true, items: true, tenant: { select: { name: true } } },
                 orderBy: { dueDate: 'desc' }
             }),
             prisma.invoice.findMany({
@@ -113,8 +145,13 @@ const getInvoices = async (req, res) => {
 
 const createInvoice = async (req, res) => {
     try {
-        const { memberId, dueDate, items, discount, taxRate, notes, status } = req.body;
-        const tenantId = req.user.tenantId || 1;
+        const { memberId, dueDate, items, discount, taxRate, notes, status, branchId } = req.body;
+        const { tenantId, role } = req.user;
+
+        let targetTenantId = tenantId;
+        if ((role === 'SUPER_ADMIN' || role === 'BRANCH_ADMIN') && branchId && branchId !== 'all') {
+            targetTenantId = parseInt(branchId);
+        }
 
         const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.rate) * parseInt(item.quantity)), 0);
         const disc = parseFloat(discount) || 0;
@@ -124,7 +161,7 @@ const createInvoice = async (req, res) => {
 
         const newInvoice = await prisma.invoice.create({
             data: {
-                tenantId,
+                tenantId: targetTenantId || 1,
                 invoiceNumber: `INV-${Date.now()}`,
                 memberId: memberId ? parseInt(memberId) : null,
                 subtotal,
@@ -197,14 +234,27 @@ const receivePayment = async (req, res) => {
 // Get all transactions
 const getTransactions = async (req, res) => {
     try {
-        const { branchId, search, startDate, endDate, method, status } = req.query;
-        const { role, tenantId: userTenantId } = req.user;
+        const { branchId: qBranchId, search, startDate, endDate, method, status } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { role, tenantId: userTenantId, email, name: userName } = req.user;
+
+        const branchId = qBranchId || headerTenantId;
 
         let where = {};
-        if (role !== 'SUPER_ADMIN') {
-            where.tenantId = userTenantId || 1;
-        } else if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (status && status !== 'All Status') {
@@ -230,7 +280,7 @@ const getTransactions = async (req, res) => {
 
         const invoices = await prisma.invoice.findMany({
             where,
-            include: { member: true },
+            include: { member: true, tenant: { select: { name: true } } },
             orderBy: { paidDate: 'desc' }
         });
 
@@ -241,7 +291,8 @@ const getTransactions = async (req, res) => {
             method: inv.paymentMode || 'Cash',
             amount: Number(inv.amount),
             date: inv.paidDate || inv.dueDate,
-            status: inv.status
+            status: inv.status,
+            branch: inv.tenant?.name || 'Main Branch'
         }));
 
         // Stats Calculation
@@ -299,37 +350,87 @@ const deleteExpense = async (req, res) => {
     }
 };
 
-const getFinanceStats = async (req, res) => {
+const getInvoiceById = async (req, res) => {
     try {
-        const { branchId } = req.query;
+        const { id } = req.params;
+        const invoice = await prisma.invoice.findUnique({
+            where: { id: parseInt(id) },
+            include: { member: true, items: true, tenant: { select: { name: true } } }
+        });
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+        res.json(invoice);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const deleteInvoice = async (req, res) => {
+    try {
+        const { id } = req.params;
         const { role, tenantId: userTenantId } = req.user;
 
+        const invoice = await prisma.invoice.findUnique({ where: { id: parseInt(id) } });
+        if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+        if (role !== 'SUPER_ADMIN' && invoice.tenantId !== userTenantId) {
+            return res.status(403).json({ message: 'Unauthorized' });
+        }
+
+        // Delete line items first
+        await prisma.invoiceItem.deleteMany({ where: { invoiceId: parseInt(id) } });
+        await prisma.invoice.delete({ where: { id: parseInt(id) } });
+
+        res.json({ message: 'Invoice deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getFinanceStats = async (req, res) => {
+    try {
+        const { branchId: qBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { role, tenantId: userTenantId, email, name: userName } = req.user;
+
+        const branchId = qBranchId || headerTenantId;
+
         let where = {};
-        if (role !== 'SUPER_ADMIN') {
-            where.tenantId = userTenantId || 1;
-        } else if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         // Fetch all data for the calculated where clause
         const [invoices, expenses, storeOrders] = await Promise.all([
             prisma.invoice.findMany({
                 where,
-                include: { member: true },
+                include: { member: true, tenant: { select: { name: true } } },
                 orderBy: { dueDate: 'desc' }
             }),
             prisma.expense.findMany({
                 where,
+                include: { tenant: { select: { name: true } } },
                 orderBy: { date: 'desc' }
             }),
             prisma.storeOrder.findMany({
                 where,
-                include: { member: true },
+                include: { member: true, tenant: { select: { name: true } } },
                 orderBy: { date: 'desc' }
             })
         ]);
 
-        // Aggregate summary
+        // ... summary logic (same as before)
         const incomeFromInvoices = invoices.reduce((acc, inv) => acc + Number(inv.amount), 0);
         const incomeFromPOS = storeOrders.reduce((acc, order) => acc + Number(order.total), 0);
         const totalIncome = incomeFromInvoices + incomeFromPOS;
@@ -337,7 +438,7 @@ const getFinanceStats = async (req, res) => {
         const netProfit = totalIncome - totalExpenses;
         const margin = totalIncome > 0 ? (netProfit / totalIncome) * 100 : 0;
 
-        // Group by month for chart (last 6 months)
+        // ... monthlyData logic (same as before)
         const monthlyData = [];
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const now = new Date();
@@ -368,7 +469,7 @@ const getFinanceStats = async (req, res) => {
             });
         }
 
-        // Recent transactions
+        // Recent transactions (Combined)
         const recentTransactions = [
             ...invoices.map(inv => ({
                 id: inv.invoiceNumber,
@@ -377,7 +478,9 @@ const getFinanceStats = async (req, res) => {
                 amount: Number(inv.amount),
                 date: (inv.paidDate || inv.dueDate).toISOString().split('T')[0],
                 status: inv.status,
-                method: inv.paymentMode || 'Cash'
+                method: inv.paymentMode || 'Cash',
+                branch: inv.tenant?.name || 'Main Branch',
+                flow: 'in'
             })),
             ...storeOrders.map(o => ({
                 id: `ORD-${o.id}`,
@@ -386,9 +489,22 @@ const getFinanceStats = async (req, res) => {
                 amount: Number(o.total),
                 date: o.date.toISOString().split('T')[0],
                 status: o.status,
-                method: 'POS'
+                method: 'POS',
+                branch: o.tenant?.name || 'Main Branch',
+                flow: 'in'
+            })),
+            ...expenses.map(exp => ({
+                id: `EXP-${exp.id}`,
+                type: exp.category || 'General',
+                member: exp.vendor || (exp.addedBy || 'Admin'),
+                amount: Number(exp.amount),
+                date: exp.date.toISOString().split('T')[0],
+                status: exp.status || 'Paid',
+                method: 'Expense',
+                branch: exp.tenant?.name || 'Main Branch',
+                flow: 'out'
             }))
-        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+        ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 100);
 
         res.json({
             summary: {
@@ -419,5 +535,7 @@ module.exports = {
     getTransactions,
     deleteExpense,
     getFinanceStats,
-    createInvoice
+    createInvoice,
+    getInvoiceById,
+    deleteInvoice
 };

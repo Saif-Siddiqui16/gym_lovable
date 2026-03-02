@@ -4,8 +4,10 @@ import { getStoreStats } from '../../api/storeApi';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const StoreDashboard = () => {
+    const { selectedBranch } = useBranchContext();
     const navigate = useNavigate();
     const { role } = useAuth();
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,8 @@ const StoreDashboard = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const statsData = await getStoreStats();
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
+            const statsData = await getStoreStats({ branchId: branchParam });
             setData(statsData);
         } catch (error) {
             toast.error(error);
@@ -26,7 +29,7 @@ const StoreDashboard = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedBranch]);
 
     if (loading || !data) {
         return (

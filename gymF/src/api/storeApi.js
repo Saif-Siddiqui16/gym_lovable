@@ -73,9 +73,9 @@ export const getCoupons = async (params = {}) => {
     }
 };
 
-export const getCouponStats = async () => {
+export const getCouponStats = async (params = {}) => {
     try {
-        const response = await apiClient.get('/store/coupons/stats');
+        const response = await apiClient.get('/store/coupons/stats', { params });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || 'Failed to load coupon stats';
@@ -145,9 +145,9 @@ export const deleteCategory = async (id) => {
         throw error.response?.data?.message || 'Failed to delete category';
     }
 };
-export const getStoreStats = async () => {
+export const getStoreStats = async (params = {}) => {
     try {
-        const response = await apiClient.get('/store/stats');
+        const response = await apiClient.get('/store/stats', { params });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || 'Failed to load store stats';

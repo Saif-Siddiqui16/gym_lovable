@@ -9,9 +9,9 @@ export const fetchFinanceStats = async (branchId) => {
     }
 };
 
-export const fetchExpenses = async () => {
+export const fetchExpenses = async (branchId) => {
     try {
-        const response = await apiClient.get('/finance/expenses');
+        const response = await apiClient.get('/finance/expenses', { params: { branchId } });
         return response.data;
     } catch (error) {
         throw error;
@@ -39,6 +39,22 @@ export const fetchInvoices = async (params) => {
 export const addInvoice = async (invoiceData) => {
     try {
         const response = await apiClient.post('/finance/invoices', invoiceData);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+export const fetchInvoiceById = async (id) => {
+    try {
+        const response = await apiClient.get(`/finance/invoices/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+export const deleteInvoice = async (id) => {
+    try {
+        const response = await apiClient.delete(`/finance/invoices/${id}`);
         return response.data;
     } catch (error) {
         throw error;

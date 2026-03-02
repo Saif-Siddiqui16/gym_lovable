@@ -39,7 +39,11 @@ const MembershipPlans = () => {
     const handleSavePlan = async (planData) => {
         try {
             const payload = { ...planData };
-            if (selectedBranch && selectedBranch !== 'all') {
+
+            // Pass branchId to backend for multi-branch or single-branch creation
+            if (!selectedBranch || selectedBranch === 'all') {
+                payload.branchId = 'all';
+            } else {
                 payload.branchId = selectedBranch;
             }
 
@@ -48,7 +52,11 @@ const MembershipPlans = () => {
                 toast.success('Plan updated successfully');
             } else {
                 await membershipApi.createPlan(payload);
-                toast.success('Plan created successfully');
+                if (!selectedBranch || selectedBranch === 'all') {
+                    toast.success('Plan created for all branches!');
+                } else {
+                    toast.success('Plan created successfully');
+                }
             }
             fetchPlans();
         } catch (error) {
@@ -135,10 +143,16 @@ const MembershipPlans = () => {
                     <div className="flex items-start justify-between w-full">
                         <div>
                             <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-widest">Avg Plan Price</p>
-                            <h3 className="text-3xl font-black text-slate-900">₹16,218</h3>
+                            <h3 className="text-3xl font-black text-slate-900">
+                                ₹{plans.length > 0 ? Math.round(plans.reduce((acc, p) => acc + (parseFloat(p.price) || 0), 0) / plans.length).toLocaleString() : 0}
+                            </h3>
                             <div className="mt-2 space-y-0.5">
-                                <p className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">Premium Monthly</p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">0 members</p>
+                                {plans.length > 0 && (
+                                    <p className="text-[10px] font-bold text-violet-600 uppercase tracking-widest">
+                                        {plans.sort((a, b) => (b.memberCount || 0) - (a.memberCount || 0))[0]?.name || '—'}
+                                    </p>
+                                )}
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{plans.reduce((acc, p) => acc + (p.memberCount || 0), 0)} total members</p>
                             </div>
                         </div>
                         <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-md">
@@ -156,9 +170,14 @@ const MembershipPlans = () => {
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/5 to-transparent rounded-bl-full pointer-events-none"></div>
 
                         <div className="flex justify-between items-start mb-4">
-                            <div>
+                            <div className="flex-1 pr-2">
                                 <h3 className="text-xl font-extrabold text-slate-900 leading-tight">{plan.name}</h3>
                                 <p className="text-sm text-slate-500 mt-1 line-clamp-2 min-h-[40px] font-medium">{plan.description || 'No description provided'}</p>
+                                {plan.branch && plan.branch !== '—' && (
+                                    <span className="inline-block mt-1 px-2 py-0.5 bg-violet-50 text-violet-600 text-[10px] font-black uppercase tracking-widest rounded-full border border-violet-100">
+                                        📍 {plan.branch}
+                                    </span>
+                                )}
                             </div>
                             <div className="flex gap-1">
                                 <button onClick={() => handleDelete(plan.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all">

@@ -34,6 +34,8 @@ model Tenant {
   storeCategories StoreCategory[]
   storeProducts   StoreProduct[]
   storeOrders     StoreOrder[]
+  amenities       Amenity[]
+  tasks           Task[]
 
   @@map("tenant")
 }
@@ -61,6 +63,8 @@ model User {
   classes        Class[]
   assignedLeads  Lead[]       @relation("LeadAssignee")
   assignedMember Member[]     @relation("TrainerToMember")
+  assignedTasks  Task[]       @relation("AssignedTasks")
+  createdTasks   Task[]       @relation("CreatedTasks")
   tenant         Tenant?      @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId], map: "user_tenantId_fkey")
@@ -195,6 +199,12 @@ model Member {
   phone          String?
   targetWeight   Decimal?        @db.Decimal(5, 2)
   targetBodyFat  Decimal?        @db.Decimal(5, 2)
+  dob            String?
+  source         String?
+  referralCode   String?
+  idType         String?
+  idNumber       String?
+  address        String?         @db.Text
   bookings       Booking[]
   storeOrders    StoreOrder[]
   lockers        Locker[]
@@ -500,6 +510,12 @@ model Task {
   priority     String
   dueDate      DateTime
   status       String   @default("Pending")
+  description  String?  @db.Text
+  tenantId     Int?
+
+  assignedTo   User     @relation("AssignedTasks", fields: [assignedToId], references: [id])
+  creator      User     @relation("CreatedTasks", fields: [creatorId], references: [id])
+  tenant       Tenant?  @relation(fields: [tenantId], references: [id])
 
   @@index([assignedToId], map: "Task_assignedToId_fkey")
   @@index([creatorId], map: "Task_creatorId_fkey")
@@ -753,6 +769,22 @@ model StoreOrderItem {
   @@index([orderId], map: "storeorderitem_orderId_fkey")
   @@index([productId], map: "storeorderitem_productId_fkey")
   @@map("store_order_item")
+}
+
+model Amenity {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  name        String
+  description String?  @db.Text
+  icon        String?
+  status      String   @default("Active")
+  gender      String   @default("UNISEX")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId], map: "amenity_tenantId_fkey")
+  @@map("amenity")
 }
 
 enum Role {

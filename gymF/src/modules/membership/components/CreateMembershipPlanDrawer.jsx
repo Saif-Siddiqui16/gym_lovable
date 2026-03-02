@@ -30,6 +30,7 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
             const fetchAmenities = async () => {
                 try {
                     const data = await amenityApi.getAll();
+                    console.log('[CreateMembershipPlanDrawer] Fetched amenities:', data);
                     const filteredData = data.filter(a => !['ICE BATH F', 'ICE BATH M'].includes(a.name));
                     setAmenities(filteredData);
                 } catch (error) {
@@ -246,7 +247,7 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => navigate('/settings/amenities')}
+                            onClick={() => navigate('/branchadmin/settings/amenities')}
                             className="text-xs h-8 px-3"
                         >
                             Manage Types

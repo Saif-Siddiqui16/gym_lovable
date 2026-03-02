@@ -12,21 +12,36 @@ const getAllGyms = async (req, res) => {
         const take = parseInt(limit);
 
         const where = {};
+        const constraints = [];
         if (status && status !== 'All') {
-            where.status = status;
+            constraints.push({ status });
         }
 
         if (search) {
-            where.OR = [
-                { name: { contains: search } },
-                { branchName: { contains: search } },
-                { owner: { contains: search } }
-            ];
+            constraints.push({
+                OR: [
+                    { name: { contains: search } },
+                    { branchName: { contains: search } },
+                    { owner: { contains: search } }
+                ]
+            });
         }
 
-        // Restriction for SaaS: Branch Admin sees only their own branch
-        if (req.user.role !== 'SUPER_ADMIN' && req.user.tenantId) {
-            where.id = req.user.tenantId;
+        // Restriction for SaaS: Branch Admin sees all branches they own
+        if (req.user.role === 'BRANCH_ADMIN') {
+            constraints.push({
+                OR: [
+                    { id: req.user.tenantId },
+                    { owner: req.user.email },
+                    { owner: req.user.name }
+                ]
+            });
+        } else if (req.user.role !== 'SUPER_ADMIN' && req.user.tenantId) {
+            constraints.push({ id: req.user.tenantId });
+        }
+
+        if (constraints.length > 0) {
+            where.AND = constraints;
         }
 
         const [gyms, total] = await Promise.all([
@@ -103,23 +118,30 @@ const addGym = async (req, res) => {
                 }
             });
 
-            // 2. Create the Branch Admin User
+            // 2. Assign or Create the Branch Admin/Manager User
             const existingUser = await tx.user.findUnique({ where: { email } });
+            let user;
             if (existingUser) {
-                throw new Error('User with this email already exists.');
+                user = await tx.user.update({
+                    where: { id: existingUser.id },
+                    data: {
+                        tenantId: tenant.id,
+                        role: existingUser.role === 'SUPER_ADMIN' ? 'SUPER_ADMIN' : 'MANAGER'
+                    }
+                });
+            } else {
+                const hashedPassword = await bcrypt.hash('123456', 10);
+                user = await tx.user.create({
+                    data: {
+                        email,
+                        password: hashedPassword,
+                        name: owner || email.split('@')[0],
+                        role: req.user.role === 'SUPER_ADMIN' ? 'BRANCH_ADMIN' : 'MANAGER',
+                        tenantId: tenant.id,
+                        status: 'Active'
+                    }
+                });
             }
-
-            const hashedPassword = await bcrypt.hash('123456', 10);
-            const user = await tx.user.create({
-                data: {
-                    email,
-                    password: hashedPassword,
-                    name: owner || email.split('@')[0],
-                    role: 'BRANCH_ADMIN',
-                    tenantId: tenant.id,
-                    status: 'Active'
-                }
-            });
 
             // 3. Create the Subscription
             const startDate = new Date();
@@ -757,8 +779,12 @@ const updateStaffMember = async (req, res) => {
             name, email, phone, department, role,
             joiningDate, status, baseSalary, commission, accountNumber, ifsc,
             trainerConfig, salesConfig, managerConfig, documents,
-            idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio
+            idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio,
+            position, bankName, taxId
         } = req.body;
+
+        const existingUser = await prisma.user.findUnique({ where: { id: parseInt(id) } });
+        if (!existingUser) return res.status(404).json({ message: 'User not found' });
 
         const updateData = {};
         if (name !== undefined) updateData.name = name;
@@ -767,24 +793,22 @@ const updateStaffMember = async (req, res) => {
         if (department !== undefined) updateData.department = department;
         if (status !== undefined) updateData.status = status;
         if (baseSalary !== undefined) updateData.baseSalary = baseSalary ? parseFloat(baseSalary) : null;
-        if (commission !== undefined) updateData.commission = commission ? parseFloat(commission) : 0;
         if (accountNumber !== undefined) updateData.accountNumber = accountNumber;
         if (ifsc !== undefined) updateData.ifsc = ifsc;
-        if (documents !== undefined) updateData.documents = documents;
-
-        // New fields
-        if (idType !== undefined) updateData.idType = idType;
-        if (idNumber !== undefined) updateData.idNumber = idNumber;
-        if (specialization !== undefined) updateData.specialization = specialization;
-        if (certifications !== undefined) updateData.certifications = certifications;
-        if (salaryType !== undefined) updateData.salaryType = salaryType;
-        if (hourlyRate !== undefined) updateData.hourlyRate = hourlyRate ? parseFloat(hourlyRate) : null;
-        if (ptSharePercent !== undefined) updateData.ptSharePercent = ptSharePercent ? parseFloat(ptSharePercent) : null;
-        if (bio !== undefined) updateData.bio = bio;
+        if (documents !== undefined) updateData.documents = documents ? JSON.stringify(documents) : null;
 
         if (joiningDate) {
             updateData.joinedDate = new Date(joiningDate);
         }
+
+        let parsedConfig = {};
+        if (existingUser.config) {
+            try {
+                parsedConfig = typeof existingUser.config === 'string' ? JSON.parse(existingUser.config) : existingUser.config;
+            } catch (e) { }
+        }
+
+        let newConfigObject = { ...parsedConfig };
 
         if (role) {
             let mappedRole = role.toUpperCase();
@@ -792,11 +816,25 @@ const updateStaffMember = async (req, res) => {
             if (role === 'Sales' || role === 'Sales Professional' || role === 'Receptionist') mappedRole = 'STAFF';
             updateData.role = mappedRole;
 
-            if (role === 'Trainer') updateData.config = trainerConfig || {};
-            else if (role === 'Sales') updateData.config = salesConfig || {};
-            else if (role === 'Manager') updateData.config = managerConfig || {};
-            else updateData.config = {};
+            if (role === 'Trainer') newConfigObject = { ...newConfigObject, ...(trainerConfig || {}) };
+            else if (role === 'Sales') newConfigObject = { ...newConfigObject, ...(salesConfig || {}) };
+            else if (role === 'Manager') newConfigObject = { ...newConfigObject, ...(managerConfig || {}) };
         }
+
+        if (idType !== undefined) newConfigObject.idType = idType;
+        if (idNumber !== undefined) newConfigObject.idNumber = idNumber;
+        if (specialization !== undefined) newConfigObject.specialization = specialization;
+        if (certifications !== undefined) newConfigObject.certifications = certifications;
+        if (salaryType !== undefined) newConfigObject.salaryType = salaryType;
+        if (hourlyRate !== undefined) newConfigObject.hourlyRate = hourlyRate ? parseFloat(hourlyRate) : null;
+        if (ptSharePercent !== undefined) newConfigObject.ptSharePercent = ptSharePercent ? parseFloat(ptSharePercent) : null;
+        if (bio !== undefined) newConfigObject.bio = bio;
+        if (commission !== undefined) newConfigObject.commission = commission ? parseFloat(commission) : 0;
+        if (position !== undefined) newConfigObject.position = position;
+        if (bankName !== undefined) newConfigObject.bankName = bankName;
+        if (taxId !== undefined) newConfigObject.taxId = taxId;
+
+        updateData.config = JSON.stringify(newConfigObject);
 
         const updatedStaff = await prisma.user.update({
             where: { id: parseInt(id) },

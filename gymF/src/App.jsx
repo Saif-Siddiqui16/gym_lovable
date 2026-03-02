@@ -207,7 +207,7 @@ export default function App() {
       <Toaster
         position="top-right"
         toastOptions={{
-          duration: 4000,
+          duration: 2000,
           style: {
             background: '#fff',
             color: '#363636',
@@ -427,6 +427,7 @@ export default function App() {
                 <Route path="/branchadmin/settings/communication" element={<Notifications />} />
                 <Route path="/branchadmin/settings/payments" element={<PaymentGateway />} />
                 <Route path="/branchadmin/settings/invoice" element={<InvoiceSettings />} />
+                <Route path="/branchadmin/settings/amenities" element={<AmenitySettings />} />
                 <Route path="/branchadmin/settings/referrals" element={<ReferralSettings />} />
                 <Route path="/branchadmin/settings/templates" element={<MessageTemplates />} />
                 <Route path="/branchadmin/settings/plan-benefit-templates" element={<PlanBenefitTemplates />} />

@@ -139,9 +139,14 @@ const MemberList = () => {
         }
         try {
             const memberPayload = { ...newMemberData };
-            if (selectedBranch && selectedBranch !== 'all') {
+
+            // Explicitly handle 'all' branches or specific branch selection
+            if (selectedBranch === 'all') {
+                memberPayload.branchId = 'all';
+            } else if (selectedBranch) {
                 memberPayload.branchId = selectedBranch;
             }
+
             await createMember(memberPayload);
             setIsAddDrawerOpen(false);
             setNewMemberData(initialNewMemberData);
@@ -324,10 +329,7 @@ const MemberList = () => {
                                         </td>
                                         <td className="px-6 py-4"><span className="text-xs font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded-md">{member.memberId}</span></td>
                                         <td className="px-6 py-4 text-sm text-slate-600">{member.branch || 'Main Branch'}</td>
-                                        <td className="px-6 py-4"><button onClick={() => {
-                                            const newStatus = member.status === 'Active' ? 'Inactive' : 'Active';
-                                            setMembers(prev => prev.map(m => m.id === member.id ? { ...m, status: newStatus } : m));
-                                        }}>{getStatusBadge(member.status)}</button></td>
+                                        <td className="px-6 py-4"><button onClick={() => handleToggleStatus(member.id)}>{getStatusBadge(member.status)}</button></td>
                                         <td className="px-6 py-4 text-sm font-semibold text-slate-700">{member.plan || '—'}</td>
                                         <td className="px-6 py-4 text-sm text-slate-600">{member.daysLeft ?? '—'}</td>
                                         <td className="px-6 py-4 text-sm text-slate-500">{member.joinDate || '—'}</td>

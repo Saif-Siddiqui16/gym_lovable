@@ -88,7 +88,7 @@ const CustomDropdown = ({ options, value, onChange, icon: Icon, placeholder, cla
                 border: '1px solid #e5e7eb',
                 borderRadius: '12px',
                 boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-                zIndex: 70000,
+                zIndex: 1000001,
                 maxHeight: '280px',
                 overflowY: 'auto',
                 padding: '6px',

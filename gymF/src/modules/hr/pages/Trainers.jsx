@@ -53,7 +53,7 @@ const Trainers = () => {
             setLoading(true);
             const branchId = selectedBranch === 'all' ? '' : selectedBranch;
             const [allStaff, trainerStats] = await Promise.all([
-                managerApi.getAllStaff(),
+                managerApi.getAllStaff(branchId || 'all'),
                 managerApi.getTrainerStats(branchId)
             ]);
 
@@ -150,19 +150,29 @@ const Trainers = () => {
 
     const openEditDrawer = (trainer) => {
         setEditingTrainer(trainer);
+
+        let parsedConfig = {};
+        if (trainer.config) {
+            try {
+                parsedConfig = typeof trainer.config === 'string' ? JSON.parse(trainer.config) : trainer.config;
+            } catch (e) {
+                console.error("Failed to parse trainer config", e);
+            }
+        }
+
         setFormData({
             name: trainer.name || '',
             email: trainer.email || '',
             phone: trainer.phone || '',
-            idType: trainer.idType || '',
-            idNumber: trainer.idNumber || '',
-            specialization: trainer.specialization || '',
-            certifications: trainer.certifications || '',
-            salaryType: trainer.salaryType || 'Monthly',
+            idType: parsedConfig.idType || '',
+            idNumber: parsedConfig.idNumber || '',
+            specialization: parsedConfig.specialization || '',
+            certifications: parsedConfig.certifications || '',
+            salaryType: parsedConfig.salaryType || 'Monthly',
             baseSalary: trainer.baseSalary || '',
-            hourlyRate: trainer.hourlyRate || '',
-            ptSharePercent: trainer.ptSharePercent || '',
-            bio: trainer.bio || '',
+            hourlyRate: parsedConfig.hourlyRate || '',
+            ptSharePercent: parsedConfig.ptSharePercent || '',
+            bio: parsedConfig.bio || '',
             status: trainer.status || 'Active'
         });
         setIsDrawerOpen(true);

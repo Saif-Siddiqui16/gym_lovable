@@ -3,8 +3,10 @@ import { Search, Filter, Ticket, Plus, Edit2, Trash2, ChevronRight, Zap, CheckCi
 import { getCoupons, deleteCoupon, getCouponStats } from '../../api/storeApi';
 import CouponDrawer from './CouponDrawer';
 import { toast } from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const Coupons = () => {
+    const { selectedBranch } = useBranchContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Status');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -22,9 +24,10 @@ const Coupons = () => {
     const fetchData = async () => {
         setLoading(true);
         try {
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
             const [couponsData, statsData] = await Promise.all([
-                getCoupons({ search: searchTerm, status: statusFilter }),
-                getCouponStats()
+                getCoupons({ search: searchTerm, status: statusFilter, branchId: branchParam }),
+                getCouponStats({ branchId: branchParam })
             ]);
             setCoupons(couponsData);
             setStats(statsData);
@@ -41,7 +44,7 @@ const Coupons = () => {
         }, 500);
 
         return () => clearTimeout(delayDebounceFn);
-    }, [searchTerm, statusFilter]);
+    }, [searchTerm, statusFilter, selectedBranch]);
 
     const handleEdit = (coupon) => {
         setSelectedCoupon(coupon);
@@ -177,6 +180,10 @@ const Coupons = () => {
                                                     <Ticket size={24} />
                                                 </div>
                                                 <div>
+                                                    <div className="flex items-center gap-1.5 mb-0.5">
+                                                        <div className="w-1 h-1 rounded-full bg-[#7c3aed]"></div>
+                                                        <span className="text-[9px] font-black text-[#7c3aed] uppercase tracking-widest">{c.tenant?.name || 'Main Branch'}</span>
+                                                    </div>
                                                     <p className="text-base font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{c.code}</p>
                                                     <p className="text-xs text-slate-400 font-bold truncate max-w-[180px] mt-0.5">{c.description || 'No description provided'}</p>
                                                 </div>
@@ -218,17 +225,24 @@ const Coupons = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 text-center">
-                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm ${c.status === 'Active'
-                                                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                                    : c.status === 'Expired'
-                                                        ? 'bg-red-50 text-red-600 border border-red-100'
-                                                        : 'bg-slate-50 text-slate-500 border border-slate-100'
-                                                }`}>
-                                                <div className={`w-1.5 h-1.5 rounded-full ${c.status === 'Active' ? 'bg-emerald-500 animate-pulse' :
-                                                        c.status === 'Expired' ? 'bg-red-500' : 'bg-slate-400'
-                                                    }`} />
-                                                {c.status}
-                                            </span>
+                                            {(() => {
+                                                const isExpired = c.status === 'Expired' || (c.endDate && new Date(c.endDate) < new Date());
+                                                const displayStatus = isExpired ? 'Expired' : c.status;
+
+                                                return (
+                                                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-2 shadow-sm ${displayStatus === 'Active'
+                                                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                        : displayStatus === 'Expired'
+                                                            ? 'bg-red-50 text-red-600 border border-red-100'
+                                                            : 'bg-slate-50 text-slate-500 border border-slate-100'
+                                                        }`}>
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${displayStatus === 'Active' ? 'bg-emerald-500 animate-pulse' :
+                                                            displayStatus === 'Expired' ? 'bg-red-500' : 'bg-slate-400'
+                                                            }`} />
+                                                        {displayStatus}
+                                                    </span>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">

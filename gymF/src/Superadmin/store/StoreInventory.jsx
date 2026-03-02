@@ -3,8 +3,10 @@ import { Archive, Search, Filter, AlertTriangle, Box, RefreshCcw, Plus, Edit2, T
 import { getStoreProducts, updateStoreProductStock, addStoreProduct, updateStoreProduct, deleteStoreProduct } from '../../api/storeApi';
 import toast from 'react-hot-toast';
 import ProductDrawer from './ProductDrawer';
+import { useBranchContext } from '../../context/BranchContext';
 
 const StoreInventory = () => {
+    const { selectedBranch } = useBranchContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [inventory, setInventory] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,8 @@ const StoreInventory = () => {
     const fetchInventory = async () => {
         try {
             setLoading(true);
-            const data = await getStoreProducts({ allStatus: 'true' });
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
+            const data = await getStoreProducts({ allStatus: 'true', branchId: branchParam });
             setInventory(data);
         } catch (error) {
             toast.error(error);
@@ -26,7 +29,7 @@ const StoreInventory = () => {
 
     useEffect(() => {
         fetchInventory();
-    }, []);
+    }, [selectedBranch]);
 
     const handleUpdateStock = async (id, currentStock) => {
         const newStockStr = prompt('Enter new stock count:', currentStock);
@@ -46,20 +49,9 @@ const StoreInventory = () => {
         }
     };
 
-    const handleDrawerSubmit = async (formData) => {
-        try {
-            if (drawerMode === 'add') {
-                await addStoreProduct(formData);
-                toast.success('Product added successfully!');
-            } else {
-                await updateStoreProduct(selectedProduct.id, formData);
-                toast.success('Product updated successfully!');
-            }
-            fetchInventory();
-            setIsAddDrawerOpen(false);
-        } catch (error) {
-            toast.error(error);
-        }
+    const handleDrawerSubmit = async () => {
+        fetchInventory();
+        setIsAddDrawerOpen(false);
     };
 
     const handleEditProduct = (product) => {
@@ -160,6 +152,10 @@ const StoreInventory = () => {
                             <div className="flex justify-between items-center py-3 border-b border-slate-50">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Current Stock</span>
                                 <span className={`text-sm font-black ${item.stock <= 10 ? 'text-orange-600' : 'text-slate-900'}`}>{item.stock} Units</span>
+                            </div>
+                            <div className="flex justify-between items-center py-3 border-b border-slate-50">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Branch</span>
+                                <span className="text-[11px] font-black text-[#7c3aed] uppercase tracking-widest">{item.tenant?.name || 'Main Branch'}</span>
                             </div>
                             <div className="flex justify-between items-center py-3">
                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Category</span>

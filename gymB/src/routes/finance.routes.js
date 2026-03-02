@@ -1,5 +1,5 @@
 const express = require('express');
-const { getExpenses, createExpense, getInvoices, receivePayment, getTransactions, deleteExpense, getFinanceStats, createInvoice } = require('../controllers/finance.controller');
+const { getExpenses, createExpense, getInvoices, receivePayment, getTransactions, deleteExpense, getFinanceStats, createInvoice, getInvoiceById, deleteInvoice } = require('../controllers/finance.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
 
 const router = express.Router();
@@ -12,7 +12,9 @@ router.get('/expenses', getExpenses);
 router.post('/expenses', createExpense);
 router.delete('/expenses/:id', deleteExpense);
 router.get('/invoices', getInvoices);
+router.get('/invoices/:id', getInvoiceById);
 router.post('/invoices', createInvoice);
+router.delete('/invoices/:id', deleteInvoice);
 router.post('/cashier', receivePayment);
 router.get('/transactions', getTransactions);
 

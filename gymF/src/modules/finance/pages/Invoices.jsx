@@ -19,19 +19,27 @@ import {
     PlusCircle,
     ChevronDown
 } from 'lucide-react';
-import { fetchInvoices, addInvoice } from '../../../api/finance/financeApi';
+import { fetchInvoices, addInvoice, fetchInvoiceById, deleteInvoice } from '../../../api/finance/financeApi';
+import { getMembers } from '../../../api/staff/memberApi';
 import { useBranchContext } from '../../../context/BranchContext';
+import { useAuth } from '../../../context/AuthContext';
 import RightDrawer from '../../../components/common/RightDrawer';
 import StatsCard from '../../dashboard/components/StatsCard';
 import toast from 'react-hot-toast';
 
 const Invoices = () => {
-    const { selectedBranch } = useBranchContext();
+    const { selectedBranch, branches } = useBranchContext();
+    const { role } = useAuth();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({ invoices: [], stats: { clients: 0, totalInvoices: 0, paid: 0, unpaid: 0 } });
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All Status');
     const [isCreateDrawerOpen, setIsCreateDrawerOpen] = useState(false);
+    const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
+    const [selectedInvoice, setSelectedInvoice] = useState(null);
+    const [fetchingInvoice, setFetchingInvoice] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [fetchingMembers, setFetchingMembers] = useState(false);
 
     // Create Invoice Form State
     const [invoiceForm, setInvoiceForm] = useState({
@@ -40,8 +48,31 @@ const Invoices = () => {
         items: [{ description: '', quantity: 1, rate: 0 }],
         discount: 0,
         taxRate: 18,
-        notes: ''
+        notes: '',
+        branchId: selectedBranch || 'all'
     });
+
+    useEffect(() => {
+        setInvoiceForm(prev => ({ ...prev, branchId: selectedBranch || 'all' }));
+    }, [selectedBranch]);
+
+    const loadMembers = async (branchId) => {
+        try {
+            setFetchingMembers(true);
+            const res = await getMembers({ branchId: branchId });
+            setMembers(res);
+        } catch (error) {
+            console.error("Failed to load members", error);
+        } finally {
+            setFetchingMembers(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isCreateDrawerOpen) {
+            loadMembers(invoiceForm.branchId);
+        }
+    }, [isCreateDrawerOpen, invoiceForm.branchId]);
 
     const loadInvoices = async () => {
         try {
@@ -99,6 +130,9 @@ const Invoices = () => {
     const handleSubmitInvoice = async (e) => {
         e.preventDefault();
         try {
+            if (role === 'SUPER_ADMIN' && (invoiceForm.branchId === 'all' || !invoiceForm.branchId)) {
+                return toast.error("Please select a specific branch for the invoice");
+            }
             if (invoiceForm.items.some(item => !item.description || item.rate <= 0)) {
                 return toast.error("Please fill all item details");
             }
@@ -111,11 +145,37 @@ const Invoices = () => {
                 items: [{ description: '', quantity: 1, rate: 0 }],
                 discount: 0,
                 taxRate: 18,
-                notes: ''
+                notes: '',
+                branchId: selectedBranch || 'all'
             });
             loadInvoices();
         } catch (error) {
             toast.error(error.message || "Failed to create invoice");
+        }
+    };
+
+    const handleViewInvoice = async (id) => {
+        try {
+            setFetchingInvoice(true);
+            setIsViewDrawerOpen(true);
+            const res = await fetchInvoiceById(id);
+            setSelectedInvoice(res);
+        } catch (error) {
+            toast.error("Failed to load invoice details");
+            setIsViewDrawerOpen(false);
+        } finally {
+            setFetchingInvoice(false);
+        }
+    };
+
+    const handleDeleteInvoice = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) return;
+        try {
+            await deleteInvoice(id);
+            toast.success("Invoice deleted successfully");
+            loadInvoices();
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to delete invoice");
         }
     };
 
@@ -205,6 +265,7 @@ const Invoices = () => {
                         <thead className="bg-slate-50/50">
                             <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                 <th className="px-8 py-5">Invoice Number</th>
+                                <th className="px-8 py-5">Branch</th>
                                 <th className="px-8 py-5">Client</th>
                                 <th className="px-8 py-5">Amount</th>
                                 <th className="px-8 py-5">Date</th>
@@ -222,6 +283,11 @@ const Invoices = () => {
                                             </div>
                                             <span className="text-sm font-black text-slate-900">{inv.invoiceNumber}</span>
                                         </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <span className="text-[10px] font-black text-[#7c3aed] bg-violet-50 px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">
+                                            {inv.tenant?.name || 'Main'}
+                                        </span>
                                     </td>
                                     <td className="px-8 py-6">
                                         <div>
@@ -246,10 +312,16 @@ const Invoices = () => {
                                     </td>
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all">
+                                            <button
+                                                onClick={() => handleViewInvoice(inv.id)}
+                                                className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
+                                            >
                                                 <Eye size={18} />
                                             </button>
-                                            <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all">
+                                            <button
+                                                onClick={() => handleDeleteInvoice(inv.id)}
+                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                            >
                                                 <Trash2 size={18} />
                                             </button>
                                         </div>
@@ -283,18 +355,38 @@ const Invoices = () => {
                 title="Create Invoice"
             >
                 <form onSubmit={handleSubmitInvoice} className="p-8 space-y-10">
+                    {/* Branch Selection */}
+                    <div className="space-y-2.5">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed] ml-1">Branch *</label>
+                        <div className="relative group">
+                            <select
+                                required
+                                value={invoiceForm.branchId}
+                                onChange={(e) => setInvoiceForm({ ...invoiceForm, branchId: e.target.value, memberId: '' })}
+                                className="w-full h-14 px-5 bg-violet-50/50 border border-violet-100 rounded-2xl text-[13px] font-bold text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%237c3aed%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat"
+                            >
+                                <option value="all">Select Branch</option>
+                                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </select>
+                        </div>
+                    </div>
                     <div className="space-y-6">
                         {/* Member Selection */}
                         <div className="space-y-2.5">
                             <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Member (optional)</label>
-                            <select
-                                value={invoiceForm.memberId}
-                                onChange={(e) => setInvoiceForm({ ...invoiceForm, memberId: e.target.value })}
-                                className="w-full h-14 px-5 bg-slate-50 border border-slate-200 rounded-2xl text-[13px] font-bold text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat"
-                            >
-                                <option value="">Walk-in Customer</option>
-                                <option value="1">John Doe (M001)</option>
-                            </select>
+                            <div className="relative group">
+                                <select
+                                    value={invoiceForm.memberId}
+                                    disabled={fetchingMembers}
+                                    onChange={(e) => setInvoiceForm({ ...invoiceForm, memberId: e.target.value })}
+                                    className="w-full h-14 px-5 bg-slate-50 border border-slate-200 rounded-2xl text-[13px] font-bold text-slate-900 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/5 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat disabled:opacity-50"
+                                >
+                                    <option value="">{fetchingMembers ? 'Loading members...' : 'Walk-in Customer'}</option>
+                                    {members.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name} ({m.memberId || `M-${m.id}`})</option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
 
                         {/* Due Date */}
@@ -457,6 +549,123 @@ const Invoices = () => {
                         </button>
                     </div>
                 </form>
+            </RightDrawer>
+
+            {/* View Invoice Drawer */}
+            <RightDrawer
+                isOpen={isViewDrawerOpen}
+                onClose={() => {
+                    setIsViewDrawerOpen(false);
+                    setSelectedInvoice(null);
+                }}
+                title="Invoice Details"
+                subtitle={selectedInvoice?.invoiceNumber}
+            >
+                {fetchingInvoice ? (
+                    <div className="p-24 flex flex-col items-center justify-center opacity-40 h-full">
+                        <div className="w-12 h-12 border-4 border-slate-200 border-t-violet-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-500 font-black italic uppercase tracking-widest text-[10px]">Fetching Details...</p>
+                    </div>
+                ) : selectedInvoice && (
+                    <div className="p-8 space-y-8 animate-in fade-in slide-in-from-right-8 duration-300">
+                        {/* Header Info */}
+                        <div className="flex justify-between items-start">
+                            <div>
+                                <span className="text-[10px] font-black text-violet-600 bg-violet-50 px-3 py-1 rounded-lg uppercase tracking-widest">
+                                    {selectedInvoice.status}
+                                </span>
+                                <h3 className="text-2xl font-black text-slate-900 mt-3">{selectedInvoice.invoiceNumber}</h3>
+                                <p className="text-sm font-bold text-slate-400 mt-1">{new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
+                                <p className="text-3xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8 py-8 border-y border-slate-50">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bill To</p>
+                                <p className="text-md font-black text-slate-900">{selectedInvoice.member?.name || 'Walk-in Guest'}</p>
+                                <p className="text-xs font-bold text-slate-500">{selectedInvoice.member?.memberId || 'GUEST-SALE'}</p>
+                                {selectedInvoice.member?.phone && <p className="text-xs font-bold text-slate-500">{selectedInvoice.member.phone}</p>}
+                            </div>
+                            <div className="space-y-1 text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Branch</p>
+                                <p className="text-md font-black text-slate-900">{selectedInvoice.tenant?.name || 'Main Branch'}</p>
+                            </div>
+                        </div>
+
+                        {/* Items Table */}
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Invoice Items</p>
+                            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
+                                <table className="w-full text-left">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/30">
+                                            <th className="px-6 py-4">Item</th>
+                                            <th className="px-6 py-4 text-center">Qty</th>
+                                            <th className="px-6 py-4 text-right">Rate</th>
+                                            <th className="px-6 py-4 text-right">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {selectedInvoice.items?.map((item, idx) => (
+                                            <tr key={idx} className="text-xs font-bold text-slate-700">
+                                                <td className="px-6 py-4">{item.description}</td>
+                                                <td className="px-6 py-4 text-center">{item.quantity}</td>
+                                                <td className="px-6 py-4 text-right">₹{Number(item.rate).toLocaleString()}</td>
+                                                <td className="px-6 py-4 text-right text-slate-900 font-black">₹{Number(item.amount).toLocaleString()}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Totals Section */}
+                        <div className="space-y-3 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                            <div className="flex justify-between text-xs font-bold text-slate-500">
+                                <span>Subtotal</span>
+                                <span>₹{Number(selectedInvoice.subtotal || 0).toLocaleString()}</span>
+                            </div>
+                            {selectedInvoice.discount > 0 && (
+                                <div className="flex justify-between text-xs font-bold text-red-500">
+                                    <span>Discount</span>
+                                    <span>-₹{Number(selectedInvoice.discount).toLocaleString()}</span>
+                                </div>
+                            )}
+                            <div className="flex justify-between text-xs font-bold text-slate-500">
+                                <span>GST ({selectedInvoice.taxRate}%)</span>
+                                <span>₹{Number(selectedInvoice.taxAmount || 0).toLocaleString()}</span>
+                            </div>
+                            <div className="h-px bg-slate-200 mt-2"></div>
+                            <div className="flex justify-between items-center pt-2">
+                                <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Total Amount</span>
+                                <span className="text-xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        {selectedInvoice.notes && (
+                            <div className="space-y-2 p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50">
+                                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Notes</p>
+                                <p className="text-xs font-medium text-slate-600 leading-relaxed italic">"{selectedInvoice.notes}"</p>
+                            </div>
+                        )}
+
+                        <div className="pt-8">
+                            <button
+                                onClick={() => {
+                                    window.print();
+                                }}
+                                className="w-full h-12 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 text-sm font-black text-slate-900 hover:border-violet-200 hover:bg-violet-50/30 transition-all active:scale-[0.98]"
+                            >
+                                <Download size={18} className="text-violet-600" />
+                                Download PDF Invoice
+                            </button>
+                        </div>
+                    </div>
+                )}
             </RightDrawer>
         </div>
     );

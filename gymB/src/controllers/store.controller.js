@@ -4,11 +4,28 @@ const cloudinary = require('../utils/cloudinary');
 
 exports.getProducts = async (req, res) => {
     try {
-        const { category, search, allStatus } = req.query;
+        const { category, search, allStatus, branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         let where = {};
 
-        if (req.user && req.user.role !== 'SUPER_ADMIN') {
-            where.tenantId = req.user.tenantId;
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (allStatus !== 'true') {
@@ -25,6 +42,7 @@ exports.getProducts = async (req, res) => {
 
         const products = await prisma.storeProduct.findMany({
             where,
+            include: { tenant: { select: { name: true } } },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -36,18 +54,45 @@ exports.getProducts = async (req, res) => {
 
 exports.getStoreStats = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId || 1;
+        const { branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        let targetTenantIds = [];
+
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                targetTenantIds = [parseInt(branchId)];
+            } else {
+                const branches = await prisma.tenant.findMany({ select: { id: true } });
+                targetTenantIds = branches.map(b => b.id);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                targetTenantIds = [parseInt(branchId)];
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                targetTenantIds = branches.map(b => b.id);
+            }
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
         const [products, orders, categoriesCount] = await Promise.all([
-            prisma.storeProduct.findMany({ where: { tenantId } }),
+            prisma.storeProduct.findMany({ where: { tenantId: { in: targetTenantIds } } }),
             prisma.storeOrder.findMany({
-                where: { tenantId },
+                where: { tenantId: { in: targetTenantIds } },
                 include: { items: { include: { product: true } }, member: true },
                 orderBy: { date: 'desc' }
             }),
-            prisma.storeCategory.count({ where: { tenantId } })
+            prisma.storeCategory.count({ where: { tenantId: { in: targetTenantIds } } })
         ]);
 
         const totalProducts = products.length;
@@ -102,8 +147,26 @@ exports.getStoreStats = async (req, res) => {
 
 exports.addProduct = async (req, res) => {
     try {
-        const { name, sku, category, price, stock, description, image, originalPrice } = req.body;
-        const tenantId = req.user.tenantId || 1;
+        const { name, sku, category, price, stock, description, image, originalPrice, branchId, costPrice, taxRate } = req.body;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        let targetTenantIds = [];
+
+        if (branchId === 'all') {
+            let branchQuery = {};
+            if (role !== 'SUPER_ADMIN') {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+                branchQuery.where = { OR: orConditions };
+            }
+            const branches = await prisma.tenant.findMany(branchQuery);
+            targetTenantIds = branches.map(b => b.id);
+        } else if (branchId) {
+            targetTenantIds = [parseInt(branchId)];
+        } else {
+            targetTenantIds = [userTenantId];
+        }
 
         // calculate status based on stock
         let status = 'Active';
@@ -119,24 +182,31 @@ exports.addProduct = async (req, res) => {
             imageUrl = uploadRes.secure_url;
         }
 
-        const product = await prisma.storeProduct.create({
-            data: {
-                tenantId,
-                name,
-                sku,
-                category,
-                price: parseFloat(price),
-                stock: parseInt(stock),
-                status,
-                description,
-                image: imageUrl,
-                originalPrice: originalPrice ? parseFloat(originalPrice) : null,
-            }
-        });
+        const products = await Promise.all(targetTenantIds.map(tId =>
+            prisma.storeProduct.create({
+                data: {
+                    tenantId: tId,
+                    name,
+                    sku,
+                    category,
+                    price: parseFloat(price),
+                    costPrice: costPrice ? parseFloat(costPrice) : null,
+                    taxRate: taxRate ? parseFloat(taxRate) : 0,
+                    stock: parseInt(stock),
+                    status,
+                    description,
+                    image: imageUrl,
+                    originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+                }
+            })
+        ));
 
-        res.status(201).json(product);
+        res.status(201).json(products[0]);
     } catch (error) {
         console.error("Create product error:", error);
+        if (error.code === 'P2002') {
+            return res.status(400).json({ message: `A product with SKU "${req.body.sku}" already exists. Please use a unique SKU.` });
+        }
         res.status(500).json({ message: error.message });
     }
 };
@@ -166,7 +236,7 @@ exports.updateStock = async (req, res) => {
 exports.updateProduct = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, sku, category, price, stock, description, image, originalPrice, status } = req.body;
+        const { name, sku, category, price, stock, description, image, originalPrice, status, costPrice, taxRate } = req.body;
 
         // Auto calculate status if stock updated and status is not explicitly set to something else
         let calculatedStatus = status || 'Active';
@@ -189,6 +259,8 @@ exports.updateProduct = async (req, res) => {
                 sku,
                 category,
                 price: parseFloat(price),
+                costPrice: costPrice ? parseFloat(costPrice) : null,
+                taxRate: taxRate ? parseFloat(taxRate) : 0,
                 stock: parseInt(stock),
                 status: calculatedStatus,
                 description,
@@ -335,15 +407,39 @@ exports.getOrders = async (req, res) => {
 // Coupons
 exports.getCoupons = async (req, res) => {
     try {
-        const { status, search } = req.query;
+        const { status, search, branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         let where = {};
 
-        if (req.user && req.user.role !== 'SUPER_ADMIN') {
-            where.tenantId = req.user.tenantId;
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (status && status !== 'All Status') {
-            where.status = status;
+            if (status === 'Expired') {
+                where.OR = [
+                    { status: 'Expired' },
+                    { endDate: { lt: new Date() } }
+                ];
+            } else {
+                where.status = status;
+            }
         }
 
         if (search) {
@@ -352,6 +448,7 @@ exports.getCoupons = async (req, res) => {
 
         const coupons = await prisma.coupon.findMany({
             where,
+            include: { tenant: { select: { name: true } } },
             orderBy: { createdAt: 'desc' },
         });
 
@@ -364,9 +461,28 @@ exports.getCoupons = async (req, res) => {
 
 exports.getCouponStats = async (req, res) => {
     try {
+        const { branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         let where = {};
-        if (req.user.role !== 'SUPER_ADMIN') {
-            where.tenantId = req.user.tenantId;
+
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const totalCoupons = await prisma.coupon.count({ where });
@@ -402,27 +518,50 @@ exports.getCouponStats = async (req, res) => {
 
 exports.createCoupon = async (req, res) => {
     try {
-        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status, tenantId } = req.body;
-        const actualTenantId = tenantId ? parseInt(tenantId) : req.user.tenantId;
+        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status, branchId } = req.body;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
 
-        const coupon = await prisma.coupon.create({
-            data: {
-                tenantId: actualTenantId,
-                code,
-                description,
-                type,
-                value: parseFloat(value),
-                minPurchase: minPurchase ? parseFloat(minPurchase) : 0,
-                maxUses: maxUses ? parseInt(maxUses) : 0,
-                startDate: startDate ? new Date(startDate) : new Date(),
-                endDate: endDate ? new Date(endDate) : null,
-                status: status || 'Active',
+        let targetTenantIds = [];
+
+        if (branchId === 'all') {
+            let branchQuery = {};
+            if (role !== 'SUPER_ADMIN') {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+                branchQuery.where = { OR: orConditions };
             }
-        });
+            const branches = await prisma.tenant.findMany(branchQuery);
+            targetTenantIds = branches.map(b => b.id);
+        } else if (branchId) {
+            targetTenantIds = [parseInt(branchId)];
+        } else {
+            targetTenantIds = [userTenantId];
+        }
 
-        res.status(201).json(coupon);
+        const coupons = await Promise.all(targetTenantIds.map(tId =>
+            prisma.coupon.create({
+                data: {
+                    tenantId: tId,
+                    code,
+                    description,
+                    type,
+                    value: parseFloat(value),
+                    minPurchase: minPurchase ? parseFloat(minPurchase) : 0,
+                    maxUses: maxUses ? parseInt(maxUses) : 0,
+                    startDate: startDate ? new Date(startDate) : new Date(),
+                    endDate: endDate ? new Date(endDate) : null,
+                    status: status || 'Active',
+                }
+            })
+        ));
+
+        res.status(201).json(coupons[0]);
     } catch (error) {
         console.error("Create coupon error:", error);
+        if (error.code === 'P2002') {
+            return res.status(400).json({ message: `A coupon with code "${req.body.code}" already exists. Please use a unique code.` });
+        }
         res.status(500).json({ message: error.message });
     }
 };
@@ -470,10 +609,28 @@ exports.deleteCoupon = async (req, res) => {
 
 exports.getCategories = async (req, res) => {
     try {
-        const { search } = req.query;
+        const { search, branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         let where = {};
-        if (req.user && req.user.role !== 'SUPER_ADMIN') {
-            where.tenantId = req.user.tenantId;
+
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (search) {
@@ -482,6 +639,7 @@ exports.getCategories = async (req, res) => {
 
         const categories = await prisma.storeCategory.findMany({
             where,
+            include: { tenant: { select: { name: true } } },
             orderBy: { sortOrder: 'asc' },
         });
 
@@ -494,8 +652,26 @@ exports.getCategories = async (req, res) => {
 
 exports.createCategory = async (req, res) => {
     try {
-        const { name, description, image, sortOrder, status } = req.body;
-        const tenantId = req.user.tenantId || 1;
+        const { name, description, image, sortOrder, status, branchId } = req.body;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        let targetTenantIds = [];
+
+        if (branchId === 'all') {
+            let branchQuery = {};
+            if (role !== 'SUPER_ADMIN') {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+                branchQuery.where = { OR: orConditions };
+            }
+            const branches = await prisma.tenant.findMany(branchQuery);
+            targetTenantIds = branches.map(b => b.id);
+        } else if (branchId) {
+            targetTenantIds = [parseInt(branchId)];
+        } else {
+            targetTenantIds = [userTenantId];
+        }
 
         let imageUrl = image;
         if (image && image.startsWith('data:image')) {
@@ -505,20 +681,25 @@ exports.createCategory = async (req, res) => {
             imageUrl = uploadRes.secure_url;
         }
 
-        const category = await prisma.storeCategory.create({
-            data: {
-                tenantId,
-                name,
-                description,
-                image: imageUrl,
-                sortOrder: parseInt(sortOrder) || 0,
-                status: status || 'Active',
-            }
-        });
+        const categories = await Promise.all(targetTenantIds.map(tId =>
+            prisma.storeCategory.create({
+                data: {
+                    tenantId: tId,
+                    name,
+                    description,
+                    image: imageUrl,
+                    sortOrder: parseInt(sortOrder) || 0,
+                    status: status || 'Active',
+                }
+            })
+        ));
 
-        res.status(201).json(category);
+        res.status(201).json(categories[0]);
     } catch (error) {
         console.error("Create category error:", error);
+        if (error.code === 'P2002') {
+            return res.status(400).json({ message: `A category with the name "${req.body.name}" already exists for this branch.` });
+        }
         res.status(500).json({ message: error.message });
     }
 };

@@ -2,6 +2,7 @@ import React from 'react';
 import { Plus, Edit2, MapPin, Users, Briefcase, TrendingUp, MoreVertical, Sparkles } from 'lucide-react';
 import { BRANCHES } from '../data/mockSettingsData';
 import { fetchAllGyms, addGym } from '../../../api/superadmin/superAdminApi';
+import { getAllStaff } from '../../../api/manager/managerApi';
 import { useState, useEffect } from 'react';
 
 const BranchManagement = () => {
@@ -16,6 +17,16 @@ const BranchManagement = () => {
         email: '',
         location: ''
     });
+    const [staffList, setStaffList] = useState([]);
+
+    const fetchStaff = async () => {
+        try {
+            const data = await getAllStaff();
+            setStaffList(data || []);
+        } catch (error) {
+            console.error("Failed to fetch staff:", error);
+        }
+    };
 
     const fetchBranches = async () => {
         try {
@@ -43,6 +54,7 @@ const BranchManagement = () => {
 
     useEffect(() => {
         fetchBranches();
+        fetchStaff();
     }, []);
 
     const handleChange = (e) => {
@@ -219,17 +231,47 @@ const BranchManagement = () => {
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Manager/Owner</label>
+                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Assign Manager (Optional)</label>
                                     <div className="relative">
                                         <Users className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                                        <select
+                                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-medium text-slate-700 appearance-none bg-white"
+                                            onChange={(e) => {
+                                                const selectedStaff = staffList.find(s => s.email === e.target.value);
+                                                if (selectedStaff) {
+                                                    setFormData({
+                                                        ...formData,
+                                                        owner: selectedStaff.name,
+                                                        email: selectedStaff.email,
+                                                        phone: selectedStaff.phone || ''
+                                                    });
+                                                } else {
+                                                    setFormData({
+                                                        ...formData,
+                                                        owner: '',
+                                                        email: '',
+                                                        phone: ''
+                                                    });
+                                                }
+                                            }}
+                                            defaultValue=""
+                                        >
+                                            <option value="" disabled>Select a user to assign as Manager...</option>
+                                            {staffList.map(staff => (
+                                                <option key={staff.id} value={staff.email}>{staff.name} ({staff.email})</option>
+                                            ))}
+                                            <option value="new">-- Enter New User Manually --</option>
+                                        </select>
+                                    </div>
+                                    <div className="mt-2 space-y-2">
                                         <input
                                             type="text"
                                             name="owner"
                                             value={formData.owner}
                                             onChange={handleChange}
                                             required
-                                            className="w-full pl-10 pr-4 py-2 rounded-xl border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-medium text-slate-700"
-                                            placeholder="Full Name"
+                                            className="w-full px-4 py-2 rounded-xl border border-slate-200 focus:border-violet-500 focus:ring-2 focus:ring-violet-200 outline-none transition-all font-medium text-slate-700 text-sm"
+                                            placeholder="Manager Full Name"
                                         />
                                     </div>
                                 </div>
