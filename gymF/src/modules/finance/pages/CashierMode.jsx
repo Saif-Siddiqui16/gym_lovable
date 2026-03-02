@@ -365,30 +365,30 @@ const CashierMode = () => {
 
                         {/* Right Column: Calculations & Actions */}
                         <div className="lg:col-span-4 h-fit sticky top-8">
-                            <div className="bg-slate-900 rounded-[40px] shadow-2xl p-8 text-white relative overflow-hidden group">
+                            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-slate-900 relative overflow-hidden group">
                                 {/* Decorative elements */}
-                                <div className="absolute top-0 right-0 p-12 opacity-5 translate-x-1/2 -translate-y-1/4 group-hover:scale-125 transition-transform duration-1000">
+                                <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-slate-900 translate-x-1/2 -translate-y-1/4 group-hover:scale-125 transition-transform duration-1000">
                                     <Receipt size={240} strokeWidth={1} />
                                 </div>
 
                                 <div className="relative z-10 space-y-8">
                                     <div className="text-center">
-                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-2">Final Payable</p>
-                                        <h2 className="text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-2xl">
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-2">Final Payable</p>
+                                        <h2 className="text-5xl lg:text-6xl font-black italic tracking-tighter tabular-nums drop-shadow-sm text-slate-900">
                                             ₹{calculateFinal().toLocaleString()}
                                         </h2>
                                     </div>
 
-                                    <div className="space-y-4 pt-8 border-t border-white/10">
-                                        <div className="flex justify-between items-center opacity-60">
+                                    <div className="space-y-4 pt-8 border-t border-slate-100">
+                                        <div className="flex justify-between items-center text-slate-500">
                                             <span className="text-[10px] font-black uppercase tracking-widest">Base Amount</span>
                                             <span className="font-bold tabular-nums">₹{parseFloat(paymentDetails.amount || 0).toLocaleString()}</span>
                                         </div>
-                                        <div className="flex justify-between items-center text-rose-400">
+                                        <div className="flex justify-between items-center text-rose-500">
                                             <span className="text-[10px] font-black uppercase tracking-widest">Instant Discount</span>
                                             <span className="font-bold tabular-nums">-₹{parseFloat(paymentDetails.discount || 0).toLocaleString()}</span>
                                         </div>
-                                        <div className="flex justify-between items-center pt-4 border-t border-white/10 text-emerald-400">
+                                        <div className="flex justify-between items-center pt-4 border-t border-slate-100 text-emerald-600">
                                             <span className="text-[10px] font-black uppercase tracking-widest">Method</span>
                                             <span className="font-black uppercase tracking-widest">{paymentDetails.method}</span>
                                         </div>
@@ -397,11 +397,11 @@ const CashierMode = () => {
                                     <div className="pt-4">
                                         <button
                                             onClick={handleReceivePayment}
-                                            className="w-full py-5 bg-gradient-to-r from-emerald-400 to-teal-500 text-white rounded-[24px] font-black uppercase tracking-widest text-sm shadow-xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.03] active:scale-95 transition-all flex items-center justify-center gap-3"
+                                            className="w-full py-4 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest text-sm shadow-sm hover:!bg-emerald-700 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 border border-transparent"
                                         >
                                             Receive Payment <ArrowRight size={20} />
                                         </button>
-                                        <p className="text-[9px] font-bold opacity-30 uppercase tracking-[0.2em] text-center mt-6">
+                                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] text-center mt-6">
                                             Secure Branch Level Encryption
                                         </p>
                                     </div>

@@ -390,7 +390,7 @@ const FinancialDashboard = () => {
                         </button>
                         <button
                             type="submit"
-                            className="flex-[2] py-4 bg-[#0f172a] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-800 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
+                            className="flex-[2] py-4 bg-violet-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-violet-700 transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2"
                         >
                             <CheckCircle2 size={16} /> Submit Expense
                         </button>

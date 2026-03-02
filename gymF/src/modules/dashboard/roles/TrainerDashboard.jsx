@@ -46,13 +46,16 @@ const TrainerDashboard = () => {
     return (
         <div className="h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b-2 border-slate-100">
-                <div>
-                    <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">Welcome, Demo!</h1>
-                    <div className="flex items-center gap-3">
-                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Main Branch</span>
-                        <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                        <span className="text-slate-500 font-bold text-xs uppercase tracking-widest">Personal Training</span>
+            <div className="relative mb-2">
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl md:rounded-3xl blur-2xl opacity-10 pointer-events-none"></div>
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-xl border border-slate-100 px-6 py-5 md:px-8 md:py-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">Welcome, Demo!</h1>
+                        <div className="flex items-center gap-3">
+                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Main Branch</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                            <span className="text-slate-500 font-bold text-xs uppercase tracking-widest">Personal Training</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -94,25 +97,25 @@ const TrainerDashboard = () => {
                             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Today's Sessions</h2>
                         </div>
                         <Card className="p-0 border-2 border-indigo-100 shadow-2xl shadow-indigo-100/20 overflow-hidden bg-white group cursor-pointer hover:border-indigo-300 transition-all">
-                            <div className="p-6 flex items-center justify-between border-l-8 border-indigo-600">
-                                <div className="flex items-center gap-6">
-                                    <div className="w-14 h-14 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-center text-slate-900 font-black text-2xl group-hover:scale-110 transition-transform">
+                            <div className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between border-l-8 border-indigo-600 gap-4">
+                                <div className="flex items-center gap-4 sm:gap-6">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 bg-slate-50 border-2 border-slate-100 rounded-xl sm:rounded-2xl flex items-center justify-center text-slate-900 font-black text-xl sm:text-2xl group-hover:scale-110 transition-transform shrink-0">
                                         D
                                     </div>
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-xl tracking-tight mb-1 group-hover:text-indigo-600 transition-colors">Demo Client</h4>
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex items-center gap-1.5 text-slate-500 font-bold text-xs uppercase tracking-tight">
-                                                <Clock size={14} className="text-slate-300" />
+                                    <div className="min-w-0">
+                                        <h4 className="font-black text-slate-900 text-lg sm:text-xl tracking-tight mb-1 group-hover:text-indigo-600 transition-colors truncate">Demo Client</h4>
+                                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                                            <div className="flex items-center gap-1.5 text-slate-500 font-bold text-[10px] sm:text-xs uppercase tracking-tight">
+                                                <Clock size={12} className="text-slate-300 md:w-[14px] md:h-[14px]" />
                                                 15:04
                                             </div>
-                                            <div className="w-1 h-1 rounded-full bg-slate-300" />
-                                            <span className="text-slate-500 font-bold text-xs uppercase tracking-tight">60 min</span>
+                                            <div className="w-1 h-1 rounded-full bg-slate-300 hidden xs:block" />
+                                            <span className="text-slate-500 font-bold text-[10px] sm:text-xs uppercase tracking-tight">60 min</span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex flex-col items-end gap-2">
-                                    <span className="px-4 py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[10px] font-black uppercase tracking-widest animate-pulse">
+                                <div className="flex sm:flex-col items-start sm:items-end gap-2 shrink-0">
+                                    <span className="px-3 sm:px-4 py-1 sm:py-1.5 bg-amber-50 text-amber-600 border border-amber-100 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest animate-pulse">
                                         scheduled
                                     </span>
                                 </div>
@@ -174,13 +177,13 @@ const TrainerDashboard = () => {
                             <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Upcoming Class</h2>
                         </div>
                         <Card className="p-0 border-2 border-emerald-100 shadow-2xl shadow-emerald-100/20 overflow-hidden bg-white group cursor-pointer hover:border-emerald-300 transition-all">
-                            <div className="p-6 border-t-8 border-emerald-600">
-                                <div className="flex justify-between items-start mb-6">
-                                    <div>
-                                        <h4 className="font-black text-slate-900 text-2xl tracking-tight mb-1 group-hover:text-emerald-600 transition-colors">Power Lifting</h4>
-                                        <p className="text-emerald-600 font-black text-[10px] uppercase tracking-[0.2em] mb-4">Strength Training</p>
+                            <div className="p-5 md:p-6 border-t-8 border-emerald-600">
+                                <div className="flex justify-between items-start mb-4 md:mb-6">
+                                    <div className="min-w-0">
+                                        <h4 className="font-black text-slate-900 text-xl md:text-2xl tracking-tight mb-1 group-hover:text-emerald-600 transition-colors truncate">Power Lifting</h4>
+                                        <p className="text-emerald-600 font-black text-[9px] md:text-[10px] uppercase tracking-[0.2em] mb-2 md:mb-4">Strength Training</p>
                                     </div>
-                                    <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse" />
+                                    <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.5)] animate-pulse shrink-0 mt-2" />
                                 </div>
                                 <div className="space-y-4 px-2">
                                     <div className="flex items-center gap-4 text-slate-600 group-hover:translate-x-1 transition-transform">

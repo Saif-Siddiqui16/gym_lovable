@@ -83,7 +83,7 @@ const ProductCategories = () => {
                 </div>
                 <button
                     onClick={handleAdd}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-black shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-xl text-sm font-black shadow-md shadow-violet-200 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all"
                 >
                     <Plus size={18} /> Add Category
                 </button>
@@ -138,7 +138,7 @@ const ProductCategories = () => {
                                 <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
                                     <button
                                         onClick={() => handleEdit(cat)}
-                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-slate-900 text-white rounded-xl text-xs font-black hover:bg-slate-800 transition-all active:scale-95"
+                                        className="flex-1 flex items-center justify-center gap-2 py-3 bg-violet-600 text-white rounded-xl text-xs font-black shadow-md shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95"
                                     >
                                         <Edit2 size={14} /> Edit
                                     </button>
@@ -162,7 +162,7 @@ const ProductCategories = () => {
                     <p className="text-slate-400 text-sm font-medium mt-1 mb-8">Get started by creating your first product category</p>
                     <button
                         onClick={handleAdd}
-                        className="flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:scale-105 active:scale-95 transition-all"
+                        className="flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl font-black text-sm shadow-md shadow-violet-200 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all"
                     >
                         <Plus size={20} /> Create New Category
                     </button>

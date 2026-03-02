@@ -195,7 +195,7 @@ const MembershipPlans = () => {
                         <div className="mt-auto">
                             <button
                                 onClick={() => handleEdit(plan)}
-                                className="w-full h-12 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 transition-all active:scale-95 shadow-md shadow-slate-200 flex items-center justify-center gap-2"
+                                className="w-full h-12 bg-violet-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-violet-700 transition-all active:scale-95 shadow-md shadow-violet-200 flex items-center justify-center gap-2"
                             >
                                 <Edit2 size={14} />
                                 Edit Plan

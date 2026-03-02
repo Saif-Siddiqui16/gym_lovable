@@ -78,10 +78,10 @@ export const menuConfig = {
         { label: 'SaaS Plans', path: '/superadmin/plans/list', icon: FileText },
         { label: 'Subscriptions', path: '/superadmin/subscriptions/active', icon: CreditCard },
         // { label: 'Audit Logs', path: '/superadmin/audit-logs/activity', icon: Shield },
-        { label: 'Webhook Logs', path: '/superadmin/audit-logs/webhooks', icon: Terminal },
+        // { label: 'Webhook Logs', path: '/superadmin/audit-logs/webhooks', icon: Terminal },
         { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
-        { label: 'Device Dashboard', path: '/operations/devices', icon: Smartphone },
-        //     ]
+        // { label: 'Device Dashboard', path: '/operations/devices', icon: Smartphone },
+        // //     ]
         // },
         // {
         //     label: 'Facility Management',
@@ -121,8 +121,8 @@ export const menuConfig = {
         //         { label: 'Commissions', path: '/finance/commissions', icon: Percent },
         //     ]
         // },
-        { label: 'General Settings', path: '/superadmin/general-settings/general', icon: Building },
-        { label: 'Hardware Settings', path: '/superadmin/general-settings/hardware', icon: Lock },
+        // { label: 'General Settings', path: '/superadmin/general-settings/general', icon: Building },
+        // { label: 'Hardware Settings', path: '/superadmin/general-settings/hardware', icon: Lock },
         {
             label: 'Profile',
             icon: User,
@@ -334,110 +334,55 @@ export const menuConfig = {
     ],
 
     [ROLES.MANAGER]: [
-        { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         {
-            label: 'Memberships',
-            icon: CreditCard,
-            children: [
-                { label: 'Plans & Benefits', path: '/memberships', icon: CreditCard },
-                { label: 'Renewal Alerts', path: '/members/renewal-alerts', icon: AlertCircle },
-            ]
-        },
-        { label: 'Classes', path: '/classes', icon: Calendar },
-        {
-            label: 'CRM & Sales',
-            icon: Search,
-            children: [
-                { label: 'Walk-in Inquiry', path: '/crm/inquiry', icon: UserPlus },
-                { label: 'Leads Pipeline', path: '/crm/pipeline', icon: GitBranch },
-                { label: 'Today Follow-ups', path: '/crm/followups', icon: Clock },
-            ]
-        },
-        {
-            label: 'Attendance',
-            icon: Clock,
-            children: [
-                { label: 'Live Monitor', path: '/manager/attendance/live-checkin', icon: Activity },
-                { label: 'Member Log', path: '/manager/attendance/today/member', icon: Users },
-                { label: 'Staff Log', path: '/manager/attendance/today/staff', icon: Users },
-            ]
-        },
-        {
-            label: 'Operations',
-            icon: Activity,
-            children: [
-                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
-                { label: 'Lockers', path: '/operations/lockers', icon: Lock },
-                { label: 'Inventory', path: '/operations/inventory', icon: Package },
-                { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },
-                { label: 'Rewards Program', path: '/operations/rewards', icon: Activity },
-                { label: 'Feedback', path: '/operations/feedback', icon: Bell },
-                { label: 'Member List', path: '/manager/members/list', icon: Users },
-                { label: 'Tasks', path: '/manager/tasks/list', icon: ClipboardList },
-                { label: 'Assign Task', path: '/manager/tasks/assign', icon: UserPlus },
-                { label: 'Device Dashboard', path: '/operations/devices', icon: Smartphone },
-            ]
-        },
-        {
-            label: 'Facility Management',
-            icon: Wrench,
-            children: [
-                { label: 'Equipment List', path: '/facility/equipment', icon: Package },
-                { label: 'Maintenance Requests', path: '/facility/maintenance', icon: ClipboardList },
-                { label: 'Service History', path: '/facility/history', icon: History },
-            ]
-        },
-        {
-            label: 'Financials',
-            icon: Banknote,
-            children: [
-                { label: 'Benefit Wallets', path: '/manager/wallet', icon: Wallet },
-                { label: 'Cashier Mode', path: '/finance/cashier', icon: Receipt },
-                { label: 'Branch Transactions', path: '/finance/transactions', icon: History },
-                { label: 'Petty Cash / Expenses', path: '/finance/petty-cash', icon: Banknote },
-            ]
-        },
-        {
-            label: 'HR & Staff',
-            icon: Users,
-            children: [
-                { label: 'Trainers', path: '/hr/trainers', icon: Users },
-                { label: 'Staff List', path: '/hr/staff/management', icon: Users },
-                { label: 'Add Staff', path: '/hr/staff/create', icon: UserPlus },
-                { label: 'Leave Requests', path: '/hr/leave-requests', icon: Calendar },
-                { label: 'Trainer Requests', path: '/manager/requests', icon: UserCheck },
-                { label: 'Trainer Change Requests', path: '/manager/change-requests', icon: Activity },
-                { label: 'Payroll Creation', path: '/manager/payroll/create', icon: Banknote },
-                { label: 'Payroll', path: '/hr/payroll', icon: Banknote },
-            ]
-        },
-        {
-            label: 'Settings',
-            icon: Settings,
-            children: [
-                { label: 'Organization', path: '/settings', icon: Building },
-                // { label: 'Branches', path: '/settings/branches', icon: GitBranch },
-                // { label: 'Roles & Permissions', path: '/settings/roles', icon: Shield },
-                { label: 'Security', path: '/settings/security', icon: Lock },
-                { label: 'Amenities', path: '/settings/amenities', icon: Layers },
-            ]
-        },
-        {
-            label: 'Reports',
+            label: 'Performance Tracking',
             icon: BarChart3,
             children: [
-                { label: 'Attendance Report', path: '/manager/reports/daily-attendance', icon: ClipboardList },
-                { label: 'Booking Report', path: '/manager/reports/booking', icon: Calendar },
+                { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
+                { label: 'Analytics', path: '/branchadmin/reports/performance', icon: Activity },
+                { label: 'Attendance Report', path: '/branchadmin/reports/daily-attendance', icon: ClipboardList },
+                { label: 'Booking Report', path: '/branchadmin/reports/booking', icon: Calendar },
+                { label: 'Revenue Report', path: '/branchadmin/reports/revenue', icon: Banknote },
+            ]
+        },
+        {
+            label: 'Sales Oversight',
+            icon: ShoppingCart,
+            children: [
+                { label: 'Leads Pipeline', path: '/crm/pipeline', icon: GitBranch },
+                { label: 'POS', path: '/branchadmin/store/pos', icon: ShoppingCart },
+                { label: 'Store Orders', path: '/branchadmin/store/orders', icon: Receipt },
+                { label: 'Coupons', path: '/branchadmin/store/coupons', icon: Percent },
+            ]
+        },
+        {
+            label: 'Member Service',
+            icon: Users,
+            children: [
+                { label: 'Members', path: '/branchadmin/members/list', icon: Users },
+                { label: 'Feedback', path: '/operations/feedback', icon: MessageSquare },
+                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+                { label: 'Lockers', path: '/operations/lockers', icon: Lock },
+            ]
+        },
+        {
+            label: 'People Management',
+            icon: Shield,
+            children: [
+                { label: 'HRM / Payroll', path: '/hr/payroll', icon: Users },
+                { label: 'Staff Attendance', path: '/hr/staff/management', icon: ClipboardList },
+                { label: 'Tasks', path: '/branchadmin/tasks/list', icon: ClipboardList },
+                { label: 'Approvals', path: '/branchadmin/trainer-requests', icon: CheckCircle },
             ]
         },
         {
             label: 'Profile',
             icon: User,
             children: [
-                { label: 'My Profile', path: '/manager/profile/me', icon: User },
+                { label: 'My Profile', path: '/branchadmin/profile/me', icon: User },
                 { label: 'Logout', path: '/login', icon: LogOut },
             ]
-        },
+        }
     ],
 
     [ROLES.STAFF]: [

@@ -66,29 +66,29 @@ const StoreDashboard = () => {
             </div>
 
             {/* Store Overview Banner */}
-            <div className="bg-[#7c3aed] rounded-[2rem] p-8 mb-8 text-white relative overflow-hidden shadow-2xl shadow-violet-200">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
+            <div className="bg-white rounded-[2rem] p-8 mb-8 text-slate-900 relative overflow-hidden shadow-sm border border-slate-200">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-violet-50 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl"></div>
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                     <div>
-                        <h2 className="text-2xl font-black mb-1">Store Overview</h2>
-                        <p className="text-violet-100 text-sm font-medium">Today's sales & inventory at a glance</p>
+                        <h2 className="text-2xl font-black mb-1 text-slate-900">Store Overview</h2>
+                        <p className="text-slate-500 text-sm font-medium">Today's sales & inventory at a glance</p>
                     </div>
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-16 w-full md:w-auto">
                         <div className="text-center md:text-left">
-                            <p className="text-violet-200 text-[10px] font-black uppercase tracking-widest mb-1">Total Sales</p>
-                            <p className="text-2xl font-black">{stats.totalSales}</p>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Sales</p>
+                            <p className="text-2xl font-black text-slate-900">{stats.totalSales}</p>
                         </div>
                         <div className="text-center md:text-left">
-                            <p className="text-violet-200 text-[10px] font-black uppercase tracking-widest mb-1">Products</p>
-                            <p className="text-2xl font-black">{stats.productsCount}</p>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Products</p>
+                            <p className="text-2xl font-black text-slate-900">{stats.productsCount}</p>
                         </div>
                         <div className="text-center md:text-left">
-                            <p className="text-violet-200 text-[10px] font-black uppercase tracking-widest mb-1">Today's POS</p>
-                            <p className="text-2xl font-black">₹{stats.todayPos.toLocaleString()}</p>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Today's POS</p>
+                            <p className="text-2xl font-black text-slate-900">₹{stats.todayPos.toLocaleString()}</p>
                         </div>
                         <div className="text-center md:text-left">
-                            <p className="text-violet-200 text-[10px] font-black uppercase tracking-widest mb-1">Total Revenue</p>
-                            <p className="text-2xl font-black">₹{stats.totalRevenue.toLocaleString()}</p>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Revenue</p>
+                            <p className="text-2xl font-black text-slate-900">₹{stats.totalRevenue.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -250,7 +250,7 @@ const StoreDashboard = () => {
                                 <div className="flex flex-col items-center justify-center py-10">
                                     <button
                                         onClick={() => navigate(`${basePath}/products`)}
-                                        className="bg-[#0f172a] text-white px-8 py-3 rounded-xl font-bold text-sm shadow-xl"
+                                        className="bg-violet-600 text-white px-8 py-3 rounded-xl font-bold text-sm shadow-md shadow-violet-200 hover:bg-violet-700 transition-all"
                                     >
                                         View Product List
                                     </button>

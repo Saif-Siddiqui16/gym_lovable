@@ -166,32 +166,32 @@ const BookingReport = () => {
                 <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-6">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-6">
-                                <ClipboardList size={28} />
+                            <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex flex-shrink-0 items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-6">
+                                <ClipboardList size={24} className="md:w-7 md:h-7" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                                <h1 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
                                     Booking Report
                                 </h1>
-                                <p className="text-slate-600 text-sm mt-1">Analyze class and personal training booking performance</p>
+                                <p className="text-slate-600 text-[10px] md:text-sm mt-0.5 md:mt-1 font-medium">Analyze class and PT booking performance</p>
                             </div>
                         </div>
-                        <div className="flex flex-wrap gap-3">
+                        <div className="flex flex-wrap gap-2 md:gap-3">
                             <button
                                 onClick={handleExportCSV}
-                                className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all rounded-xl px-4 py-2.5 text-sm font-semibold"
+                                className="flex-1 md:flex-none bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all rounded-xl px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold"
                             >
-                                <Download size={16} className="text-gray-500" /> Export CSV
+                                <Download size={14} className="text-gray-500 md:w-4 md:h-4" /> Export CSV
                             </button>
                             <button
                                 onClick={handleExportPDF}
-                                className="bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center gap-2 shadow-sm hover:shadow-md transition-all rounded-xl px-4 py-2.5 text-sm font-semibold"
+                                className="flex-1 md:flex-none bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all rounded-xl px-4 py-2 md:py-2.5 text-xs md:text-sm font-semibold"
                             >
-                                <FileText size={16} className="text-gray-500" /> Export PDF
+                                <FileText size={14} className="text-gray-500 md:w-4 md:h-4" /> Export PDF
                             </button>
                             <button
                                 onClick={() => setShowFilters(!showFilters)}
-                                className={`p-2.5 border rounded-xl hover:bg-gray-50 transition-all ${showFilters ? 'bg-violet-50 border-violet-200 ring-2 ring-violet-100 text-violet-600' : 'bg-white border-gray-200 text-gray-500'}`}
+                                className={`p-2 md:p-2.5 border rounded-xl hover:bg-gray-50 transition-all ${showFilters ? 'bg-violet-50 border-violet-200 ring-2 ring-violet-100 text-violet-600' : 'bg-white border-gray-200 text-gray-500'}`}
                             >
                                 <Filter size={18} />
                             </button>
@@ -201,15 +201,15 @@ const BookingReport = () => {
             </div>
 
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
                 {stats.map((stat, idx) => (
-                    <div key={idx} className={`bg-white p-6 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 hover:shadow-2xl hover:border-violet-200 transition-all duration-300 transform hover:-translate-y-1 hover:scale-105 group cursor-pointer`}>
-                        <div className={`p-4 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-125 group-hover:rotate-6 transition-all duration-500 shadow-md`}>
-                            <stat.icon size={24} />
+                    <div key={idx} className={`bg-white p-5 md:p-6 rounded-2xl shadow-xl border border-slate-100 flex items-center gap-4 hover:shadow-2xl hover:border-violet-200 transition-all duration-300 transform md:hover:-translate-y-1 md:hover:scale-105 group cursor-pointer`}>
+                        <div className={`p-3 md:p-4 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-110 md:group-hover:scale-125 md:group-hover:rotate-6 transition-all duration-500 shadow-md`}>
+                            <stat.icon size={20} className="md:w-6 md:h-6" />
                         </div>
                         <div>
-                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.label}</p>
-                            <p className="text-3xl font-black text-gray-900 leading-none">
+                            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{stat.label}</p>
+                            <p className="text-2xl md:text-3xl font-black text-gray-900 leading-none">
                                 {loading ? <span className="text-lg text-gray-300">...</span> : stat.value}
                             </p>
                         </div>
@@ -258,8 +258,8 @@ const BookingReport = () => {
                 )}
 
                 <div className="saas-table-wrapper">
-                    <table className="saas-table saas-table-responsive">
-                        <thead className="bg-gradient-to-r from-violet-50 via-purple-50 to-fuchsia-50 border-b-2 border-violet-200">
+                    <table className="saas-table saas-table-responsive w-full">
+                        <thead className="hidden sm:table-header-group bg-gradient-to-r from-violet-50 via-purple-50 to-fuchsia-50 border-b-2 border-violet-200">
                             <tr>
                                 <th className="px-6 py-4 text-[11px] font-bold text-violet-600 uppercase tracking-wider">Booking ID</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-violet-600 uppercase tracking-wider">Member</th>
@@ -270,10 +270,10 @@ const BookingReport = () => {
                                 <th className="px-6 py-4 text-[11px] font-bold text-violet-600 uppercase tracking-wider text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-gray-100 flex flex-col sm:table-row-group">
                             {loading ? (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center">
+                                    <td colSpan="7" className="px-6 py-12 text-center flex items-center justify-center w-full">
                                         <div className="flex items-center justify-center gap-2 text-violet-600">
                                             <div className="w-5 h-5 border-2 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
                                             <span className="text-sm font-medium">Generating report...</span>
@@ -282,11 +282,13 @@ const BookingReport = () => {
                                 </tr>
                             ) : bookings.length > 0 ? (
                                 bookings.map((row) => (
-                                    <tr key={row.id} className="hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-purple-50/30 transition-colors duration-200 group">
-                                        <td className="px-6 py-4" data-label="Booking ID">
+                                    <tr key={row.id} className="flex flex-col sm:table-row hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-purple-50/30 transition-colors duration-200 group p-4 sm:p-0 border-b sm:border-0 border-slate-100">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Booking ID">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Booking ID</span>
                                             <span className="text-xs font-mono text-indigo-600 font-bold bg-indigo-50 px-2 py-1 rounded-md">#{row.id}</span>
                                         </td>
-                                        <td className="px-6 py-4" data-label="Member">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Member">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Member</span>
                                             <div className="flex items-center gap-3">
                                                 <div className="h-8 w-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">
                                                     {(row.memberName || 'U').charAt(0).toUpperCase()}
@@ -294,31 +296,36 @@ const BookingReport = () => {
                                                 <p className="text-sm font-bold text-gray-800">{row.memberName || 'Unknown'}</p>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4" data-label="Booking Type">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Booking Type">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</span>
                                             <span className="text-sm font-medium text-gray-700">{row.classType || 'N/A'}</span>
                                         </td>
-                                        <td className="px-6 py-4" data-label="Trainer">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Trainer">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer</span>
                                             <span className="text-sm text-gray-600 font-medium">{row.trainerName || 'Unassigned'}</span>
                                         </td>
-                                        <td className="px-6 py-4" data-label="Date / Time">
-                                            <div className="text-sm text-gray-700">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Date / Time">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Date / Time</span>
+                                            <div className="text-right sm:text-left text-sm text-gray-700">
                                                 <div className="font-semibold">{row.date || '-'}</div>
-                                                <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                                                <div className="flex items-center justify-end sm:justify-start gap-1 text-xs text-gray-400 mt-0.5">
                                                     <Clock size={11} />
                                                     {row.time || '-'}
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4" data-label="Status">
-                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transform transition-transform hover:scale-105 inline-block ${getStatusStyle(row.status)}`}>
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Status">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</span>
+                                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transform transition-transform md:hover:scale-105 inline-block ${getStatusStyle(row.status)}`}>
                                                 {row.status || 'Pending'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-right" data-label="Actions">
-                                            <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+                                        <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell sm:text-right" data-label="Actions">
+                                            <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</span>
+                                            <div className="flex items-center justify-end gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200 sm:transform sm:translate-x-2 sm:group-hover:translate-x-0">
                                                 <button
                                                     onClick={() => handleViewDetails(row)}
-                                                    className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all hover:scale-110 duration-300"
+                                                    className="p-2 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all md:hover:scale-110 duration-300"
                                                     title="View Details"
                                                 >
                                                     <Eye size={16} />
@@ -336,7 +343,7 @@ const BookingReport = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400 text-sm">
+                                    <td colSpan="7" className="px-6 py-12 text-center text-gray-400 text-sm w-full">
                                         <div className="flex flex-col items-center gap-2">
                                             <div className="p-3 bg-gray-50 rounded-full">
                                                 <Filter size={20} className="text-gray-300" />
@@ -352,15 +359,15 @@ const BookingReport = () => {
 
                 {/* Pagination */}
                 {!loading && totalItems > 0 && (
-                    <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-between items-center">
-                        <span className="text-xs font-medium text-gray-500">
-                            Showing <span className="font-bold text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="font-bold text-gray-900">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of <span className="font-bold text-gray-900">{totalItems}</span>
+                    <div className="px-4 md:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-center">
+                        <span className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest text-center">
+                            Showing <span className="text-gray-900">{(currentPage - 1) * itemsPerPage + 1}</span> - <span className="text-gray-900">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of <span className="text-gray-900">{totalItems}</span> entries
                         </span>
                         <div className="flex items-center gap-2">
                             <button
                                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                                 disabled={currentPage === 1}
-                                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all hover:-translate-y-0.5"
+                                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all md:hover:-translate-y-0.5 active:scale-95"
                                 aria-label="Previous Page"
                             >
                                 <ChevronLeft size={18} />
@@ -368,7 +375,7 @@ const BookingReport = () => {
                             <button
                                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalItems / itemsPerPage)))}
                                 disabled={currentPage === Math.ceil(totalItems / itemsPerPage)}
-                                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all hover:-translate-y-0.5"
+                                className="w-9 h-9 flex items-center justify-center border border-gray-200 rounded-xl bg-white hover:bg-gray-50 text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all md:hover:-translate-y-0.5 active:scale-95"
                                 aria-label="Next Page"
                             >
                                 <ChevronRight size={18} />
@@ -388,17 +395,17 @@ const BookingReport = () => {
             >
                 {selectedBooking && (
                     <div className="space-y-6">
-                        <div className="flex flex-col items-center py-6 bg-slate-50 rounded-2xl border border-slate-100">
-                            <div className="h-20 w-20 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-2xl mb-3 shadow-lg ring-4 ring-indigo-50 ring-offset-4">
+                        <div className="flex flex-col items-center py-6 bg-slate-50 rounded-2xl border border-slate-100 mx-2">
+                            <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-black text-xl md:text-2xl mb-3 shadow-lg ring-4 ring-indigo-50 ring-offset-4">
                                 {(selectedBooking.memberName || 'U').charAt(0).toUpperCase()}
                             </div>
-                            <h4 className="text-xl font-bold text-gray-900">{selectedBooking.memberName || 'Unknown Member'}</h4>
+                            <h4 className="text-lg md:text-xl font-bold text-gray-900">{selectedBooking.memberName || 'Unknown Member'}</h4>
                             <span className="text-[10px] font-black px-3 py-1 rounded-full mt-2 uppercase tracking-widest bg-indigo-50 text-indigo-600 border border-indigo-100">
                                 {selectedBooking.classType || 'Booking'}
                             </span>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-2">
                             <div className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                                     <User size={12} /> Trainer
@@ -409,13 +416,13 @@ const BookingReport = () => {
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                                     <Clock size={12} /> Time Slot
                                 </p>
-                                <p className="text-lg font-black text-slate-800">{selectedBooking.time || '-'}</p>
+                                <p className="text-base md:text-lg font-black text-slate-800">{selectedBooking.time || '-'}</p>
                             </div>
                             <div className="p-4 bg-white rounded-xl border border-slate-100 shadow-sm">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
                                     <Activity size={12} /> Status
                                 </p>
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full border ${getStatusStyle(selectedBooking.status)}`}>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border inline-block ${getStatusStyle(selectedBooking.status)}`}>
                                     {selectedBooking.status || 'Pending'}
                                 </span>
                             </div>
@@ -427,19 +434,21 @@ const BookingReport = () => {
                             </div>
                         </div>
 
-                        <div className="mt-6 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex gap-3 text-sm text-indigo-900">
-                            <div className="p-1 bg-white rounded-lg h-fit border border-indigo-200">
+                        <div className="mt-6 p-4 bg-indigo-50/50 rounded-xl border border-indigo-100 flex gap-3 text-sm text-indigo-900 mx-2">
+                            <div className="p-1.5 bg-white rounded-lg h-fit border border-indigo-200">
                                 <Calendar size={14} className="text-indigo-600" />
                             </div>
-                            <p>Scheduled for <span className="font-bold">{selectedBooking.date || 'N/A'}</span> at <span className="font-bold">{selectedBooking.time || 'N/A'}</span>.</p>
+                            <p className="text-xs md:text-sm">Scheduled for <span className="font-bold">{selectedBooking.date || 'N/A'}</span> at <span className="font-bold">{selectedBooking.time || 'N/A'}</span>.</p>
                         </div>
 
-                        <button
-                            onClick={() => setIsViewModalOpen(false)}
-                            className="w-full py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-slate-800 transition-all mt-6 shadow-lg shadow-slate-200"
-                        >
-                            Close Details
-                        </button>
+                        <div className="px-2 pb-6">
+                            <button
+                                onClick={() => setIsViewModalOpen(false)}
+                                className="w-full py-3.5 bg-slate-900 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-all shadow-lg active:scale-95"
+                            >
+                                Close Details
+                            </button>
+                        </div>
                     </div>
                 )}
             </RightDrawer>

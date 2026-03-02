@@ -108,28 +108,20 @@ body {
    -------------------------------------------------------------------------- */
 .saas-card {
     background-color: var(--bg-card);
-    border-radius: 16px;
-    padding: 1rem;
-    /* Optimized for mobile (~95% width utilization) */
-    margin-bottom: 1rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-radius: 1rem;
+    /* rounded-2xl */
+    padding: 1.5rem;
+    /* p-6 */
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    /* shadow-sm */
+    border: 1px solid var(--border-color);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@media (min-width: 768px) {
-    .saas-card {
-        border-radius: 32px;
-        /* premium large radius */
-        padding: 2rem;
-        margin-bottom: 2rem;
-        box-shadow: 0 20px 40px -20px rgba(0, 0, 0, 0.08);
-    }
-}
-
 .saas-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    /* shadow-md */
 }
 
 /* --------------------------------------------------------------------------
@@ -187,16 +179,19 @@ body {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 0.65rem 1.25rem;
-    border-radius: var(--radius-sm);
-    font-size: 0.9375rem;
-    font-weight: 500;
+    padding: 0.75rem 1.5rem;
+    /* px-6 py-3 */
+    border-radius: 0.75rem;
+    /* rounded-xl */
+    font-size: 0.875rem;
+    /* text-sm */
+    font-weight: 600;
+    /* semibold */
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s;
     border: none;
     white-space: nowrap;
     min-height: 44px;
-    /* Minimum tap target for mobile */
 }
 
 /* Mobile full-width buttons utility */

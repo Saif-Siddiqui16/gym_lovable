@@ -80,7 +80,7 @@ const Coupons = () => {
             <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent flex items-center gap-3">
-                        <div className="p-2 bg-slate-900 rounded-xl shadow-lg shadow-slate-200">
+                        <div className="p-2 bg-violet-600 rounded-xl shadow-lg shadow-violet-200">
                             <Percent size={24} className="text-white" />
                         </div>
                         Discount Coupons
@@ -91,7 +91,7 @@ const Coupons = () => {
                 </div>
                 <button
                     onClick={handleAdd}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-black shadow-2xl shadow-slate-300 hover:scale-105 active:scale-95 transition-all duration-300 group"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-sm font-black shadow-md shadow-violet-200 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all duration-300 group"
                 >
                     <Plus size={20} className="group-hover:rotate-90 transition-transform" />
                     Create New Coupon
@@ -200,7 +200,7 @@ const Coupons = () => {
                                                 </div>
                                                 <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-slate-900 rounded-full transition-all duration-700"
+                                                        className="h-full bg-violet-600 rounded-full transition-all duration-700"
                                                         style={{ width: `${c.maxUses === 0 ? 100 : Math.min((c.usedCount / c.maxUses) * 100, 100)}%` }}
                                                     />
                                                 </div>
@@ -268,7 +268,7 @@ const Coupons = () => {
                                             </div>
                                             <button
                                                 onClick={handleAdd}
-                                                className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black hover:scale-105 active:scale-95 transition-all"
+                                                className="mt-4 px-6 py-3 bg-violet-600 text-white rounded-xl text-xs font-black hover:bg-violet-700 shadow-md shadow-violet-200 hover:scale-105 active:scale-95 transition-all"
                                             >
                                                 Start Creating
                                             </button>

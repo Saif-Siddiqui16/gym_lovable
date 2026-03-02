@@ -79,7 +79,13 @@ const ManagerDashboard = () => {
 
     return (
         <div className="fade-in">
-            <h2 className="text-title" style={{ marginBottom: 'var(--space-4)' }}>Manager Dashboard</h2>
+            {/* Header Section */}
+            <div className="relative mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl md:rounded-3xl blur-2xl opacity-10 pointer-events-none"></div>
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl md:rounded-3xl shadow-xl border border-slate-100 px-6 py-5 md:px-8 md:py-6">
+                    <h2 className="text-title" style={{ marginBottom: 0 }}>Manager Dashboard</h2>
+                </div>
+            </div>
 
             {/* Financial Overview Section (New for RBAC Alignment) */}
             <div className="mb-8">
@@ -147,7 +153,7 @@ const ManagerDashboard = () => {
                             <div className="mt-2 flex items-center gap-2">
                                 <button
                                     onClick={() => navigate('/finance/petty-cash')}
-                                    className="px-3 py-1 bg-slate-900 text-white text-[9px] font-black rounded-lg hover:bg-black transition-all"
+                                    className="px-3 py-1 bg-violet-600 text-white text-[9px] font-black rounded-lg hover:bg-violet-700 transition-all"
                                 >
                                     Log Expense
                                 </button>
@@ -175,9 +181,9 @@ const ManagerDashboard = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-50/30 via-purple-50/20 to-blue-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                     <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-4 sm:mb-6 pb-4 border-b border-slate-100">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6 pb-4 border-b border-slate-100">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex flex-shrink-0 items-center justify-center text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
                                     <Dumbbell size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
                                 </div>
                                 <div>
@@ -192,7 +198,7 @@ const ManagerDashboard = () => {
                             </div>
                             <button
                                 onClick={() => navigate('/classes')}
-                                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold shadow-lg shadow-violet-500/50 hover:shadow-xl hover:shadow-violet-500/60 hover:scale-105 transition-all flex items-center gap-1.5 sm:gap-2 flex-shrink-0"
+                                className="w-full sm:w-auto px-3 sm:px-4 py-2 sm:py-2 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-bold shadow-lg shadow-violet-500/50 hover:shadow-xl hover:shadow-violet-500/60 hover:scale-105 transition-all flex items-center justify-center gap-1.5 sm:gap-2 flex-shrink-0"
                             >
                                 View Schedule <ArrowRight size={12} className="sm:w-[14px] sm:h-[14px]" />
                             </button>
@@ -218,7 +224,7 @@ const ManagerDashboard = () => {
                                         <div className="relative z-10">
                                             <div className="flex items-start justify-between mb-3 sm:mb-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${colorScheme.gradient} flex items-center justify-center text-white shadow-lg transition-all duration-300 group-hover/class:scale-110 group-hover/class:rotate-12`}>
+                                                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br ${colorScheme.gradient} flex flex-shrink-0 items-center justify-center text-white shadow-lg transition-all duration-300 group-hover/class:scale-110 group-hover/class:rotate-12`}>
                                                         <Dumbbell size={20} className="sm:w-[22px] sm:h-[22px]" strokeWidth={2.5} />
                                                     </div>
                                                     <div>
@@ -269,9 +275,9 @@ const ManagerDashboard = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-amber-50/30 via-orange-50/20 to-red-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                     <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-4 sm:mb-6 pb-4 border-b border-slate-100">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-0 mb-4 sm:mb-6 pb-4 border-b border-slate-100">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex flex-shrink-0 items-center justify-center text-white shadow-lg transition-all duration-300 group-hover:scale-110 group-hover:rotate-6">
                                     <Bell size={20} className="sm:w-[22px] sm:h-[22px] animate-pulse" strokeWidth={2.5} />
                                 </div>
                                 <div>
@@ -284,8 +290,8 @@ const ManagerDashboard = () => {
                                     <p className="text-[10px] sm:text-xs text-slate-500 font-semibold">Important updates and reminders</p>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-black shadow-lg shadow-red-500/50">
+                            <div className="flex items-center justify-start w-full sm:w-auto gap-2">
+                                <span className="w-full sm:w-auto inline-flex justify-center items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 sm:py-1.5 rounded-lg sm:rounded-xl bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-black shadow-lg shadow-red-500/50">
                                     {data.tasksAndNotices.length} Pending
                                 </span>
                             </div>

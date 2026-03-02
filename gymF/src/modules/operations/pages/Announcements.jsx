@@ -27,60 +27,60 @@ const Announcements = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-slate-50/20 p-6 md:p-10 space-y-8 animate-fadeIn font-sans text-slate-900">
+        <div className="min-h-screen bg-slate-50/20 p-4 md:p-10 space-y-6 md:space-y-8 animate-fadeIn font-sans text-slate-900">
 
             {/* KPI Stats Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {stats.map((stat, idx) => {
                     const Icon = stat.icon;
                     return (
-                        <div key={idx} className="bg-white rounded-[1.25rem] p-6 shadow-sm border border-slate-100 flex flex-col justify-between h-[130px] relative group hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-500 cursor-pointer">
+                        <div key={idx} className="bg-white rounded-[1.25rem] p-5 md:p-6 shadow-sm border border-slate-100 flex flex-col justify-between h-[110px] md:h-[130px] relative group hover:shadow-xl hover:shadow-indigo-500/10 hover:-translate-y-2 transition-all duration-500 cursor-pointer">
                             <div className="flex justify-between items-start w-full">
-                                <span className="text-slate-400 text-[11px] font-bold uppercase tracking-tight">{stat.label}</span>
-                                <div className={`w-10 h-10 ${stat.iconBg} ${stat.iconColor} rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500`}>
-                                    <Icon size={18} />
+                                <span className="text-slate-400 text-[10px] md:text-[11px] font-bold uppercase tracking-tight">{stat.label}</span>
+                                <div className={`w-8 h-8 md:w-10 md:h-10 ${stat.iconBg} ${stat.iconColor} rounded-xl flex items-center justify-center group-hover:rotate-12 transition-transform duration-500`}>
+                                    <Icon size={16} className="md:w-[18px] md:h-[18px]" />
                                 </div>
                             </div>
-                            <h2 className={`text-4xl font-black ${stat.color} mb-1 group-hover:scale-105 transition-transform origin-left duration-500`}>{stat.value}</h2>
+                            <h2 className={`text-3xl md:text-4xl font-black ${stat.color} mb-1 group-hover:scale-105 transition-transform origin-left duration-500`}>{stat.value}</h2>
                         </div>
                     );
                 })}
             </div>
 
             {/* Title & Action Buttons Row */}
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-                <h1 className="text-3xl font-black text-[#0f172a] tracking-tight">Communication Hub</h1>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-6">
+                <h1 className="text-2xl md:text-3xl font-black text-[#0f172a] tracking-tight">Communication Hub</h1>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3 w-full md:w-auto">
                     <button
                         onClick={() => setIsTemplatesOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] md:text-[12px] font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
                     >
-                        <FileText size={16} className="text-slate-400" />
+                        <FileText size={14} className="text-slate-400 md:w-4 md:h-4" />
                         Templates
                     </button>
                     <button
                         onClick={() => setIsBroadcastOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[12px] font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-5 py-2.5 bg-white border border-slate-200 rounded-xl text-[11px] md:text-[12px] font-bold text-slate-700 hover:bg-slate-50 transition-all shadow-sm"
                     >
-                        <Send size={16} className="text-slate-400" />
+                        <Send size={14} className="text-slate-400 md:w-4 md:h-4" />
                         Broadcast
                     </button>
                     <button
                         onClick={() => setIsCreateOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-[12px] font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+                        className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl text-[11px] md:text-[12px] font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
                     >
-                        <Plus size={18} />
+                        <Plus size={16} className="md:w-[18px] md:h-[18px]" />
                         New Announcement
                     </button>
                 </div>
             </div>
 
             {/* Tabs Row (Pill Style) */}
-            <div className="flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200 w-fit">
+            <div className="flex items-center bg-slate-100/50 p-1 rounded-2xl border border-slate-200 w-full md:w-fit overflow-x-auto no-scrollbar">
                 <button
                     onClick={() => setActiveTab('Announcements')}
-                    className={`px-6 py-2 rounded-xl text-[12px] font-bold transition-all ${activeTab === 'Announcements'
+                    className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-xl text-[11px] md:text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === 'Announcements'
                         ? 'bg-white text-slate-900 shadow-sm border border-slate-100'
                         : 'text-slate-500 hover:text-slate-700'
                         }`}
@@ -89,7 +89,7 @@ const Announcements = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('Communication Logs')}
-                    className={`px-6 py-2 rounded-xl text-[12px] font-bold transition-all ${activeTab === 'Communication Logs'
+                    className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-xl text-[11px] md:text-[12px] font-bold transition-all whitespace-nowrap ${activeTab === 'Communication Logs'
                         ? 'bg-white text-slate-900 shadow-sm border border-slate-100'
                         : 'text-slate-500 hover:text-slate-700'
                         }`}

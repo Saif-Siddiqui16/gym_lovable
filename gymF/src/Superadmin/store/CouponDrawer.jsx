@@ -241,7 +241,7 @@ const CouponDrawer = ({ isOpen, onClose, coupon, mode = 'add', onSuccess }) => {
                     <button
                         onClick={handleSubmit}
                         disabled={loading}
-                        className="flex-[2] py-4 bg-slate-900 text-white rounded-xl text-sm font-black shadow-xl shadow-slate-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                        className="flex-[2] py-4 bg-violet-600 text-white rounded-xl text-sm font-black shadow-md shadow-violet-200 hover:bg-violet-700 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 transition-all flex items-center justify-center gap-2"
                     >
                         {loading ? 'Processing...' : (
                             <>
