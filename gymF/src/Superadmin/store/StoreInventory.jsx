@@ -92,7 +92,7 @@ const StoreInventory = () => {
                     <p className="text-slate-500 text-xs sm:text-sm font-medium mt-1">Monitor stock levels and warehouse locations</p>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
-                    <button onClick={() => { setSelectedProduct(null); setDrawerMode('add'); setIsAddDrawerOpen(true); }} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl text-sm font-black shadow-xl shadow-slate-200 hover:scale-105 transition-all">
+                    <button onClick={() => { setSelectedProduct(null); setDrawerMode('add'); setIsAddDrawerOpen(true); }} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-xl text-sm font-black shadow-md shadow-violet-200 hover:scale-105 hover:bg-violet-700 transition-all">
                         <Plus size={18} /> Add New Product
                     </button>
                     <button onClick={fetchInventory} className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-xl text-sm font-black shadow-xl shadow-violet-200 hover:scale-105 transition-all">
@@ -164,7 +164,7 @@ const StoreInventory = () => {
                         </div>
 
                         <div className="mt-6 flex gap-2">
-                            <button onClick={() => handleUpdateStock(item.id, item.stock)} className="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black text-xs hover:bg-slate-800 transition-all">
+                            <button onClick={() => handleUpdateStock(item.id, item.stock)} className="flex-1 py-3 bg-violet-600 text-white rounded-xl font-black text-xs hover:bg-violet-700 shadow-md shadow-violet-200 transition-all">
                                 Update Stock
                             </button>
                             <button onClick={() => handleEditProduct(item)} className="p-3 bg-violet-50 text-violet-600 rounded-xl hover:bg-violet-100 transition-all" title="Edit">

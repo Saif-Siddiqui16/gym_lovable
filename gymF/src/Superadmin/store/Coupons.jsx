@@ -83,7 +83,7 @@ const Coupons = () => {
             <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent flex items-center gap-3">
-                        <div className="p-2 bg-slate-900 rounded-xl shadow-lg shadow-slate-200">
+                        <div className="p-2 bg-violet-600 rounded-xl shadow-lg shadow-violet-200">
                             <Percent size={24} className="text-white" />
                         </div>
                         Discount Coupons
@@ -94,7 +94,7 @@ const Coupons = () => {
                 </div>
                 <button
                     onClick={handleAdd}
-                    className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-2xl text-sm font-black shadow-2xl shadow-slate-300 hover:scale-105 active:scale-95 transition-all duration-300 group"
+                    className="w-full md:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-sm font-black shadow-md shadow-violet-200 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all duration-300 group"
                 >
                     <Plus size={20} className="group-hover:rotate-90 transition-transform" />
                     Create New Coupon
@@ -149,10 +149,10 @@ const Coupons = () => {
                 </div>
 
                 {/* Table Section */}
-                <div className="p-0 overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="bg-slate-50/50 border-b border-slate-100">
+                <div className="saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full">
+                        <thead className="bg-slate-50/50">
+                            <tr className="border-b border-slate-100">
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Coupon</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Discount</th>
                                 <th className="px-8 py-5 text-left text-[10px] font-black uppercase tracking-widest text-slate-400">Performance</th>
@@ -173,10 +173,10 @@ const Coupons = () => {
                                 </tr>
                             ) : coupons.length > 0 ? (
                                 coupons.map((c) => (
-                                    <tr key={c.id} className="group hover:bg-slate-50/50 transition-all duration-300">
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform duration-300 border border-slate-100 shadow-sm">
+                                    <tr key={c.id} className="group hover:bg-slate-50/50 transition-all duration-300 cursor-pointer">
+                                        <td className="px-8 py-6" data-label="Coupon">
+                                            <div className="flex items-center gap-4 justify-end sm:justify-start">
+                                                <div className="w-14 h-14 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-2xl flex items-center justify-center text-slate-900 group-hover:scale-110 transition-transform duration-300 border border-slate-100 shadow-sm flex-shrink-0">
                                                     <Ticket size={24} />
                                                 </div>
                                                 <div>
@@ -189,8 +189,8 @@ const Coupons = () => {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div>
+                                        <td className="px-8 py-6" data-label="Discount">
+                                            <div className="text-right sm:text-left">
                                                 <p className="text-sm font-black text-slate-900">
                                                     {c.type === 'Percentage' ? `${c.value}% OFF` : `₹${c.value} OFF`}
                                                 </p>
@@ -199,27 +199,27 @@ const Coupons = () => {
                                                 </p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1.5 flex flex-col">
+                                        <td className="px-8 py-6" data-label="Performance">
+                                            <div className="space-y-1.5 flex flex-col items-end sm:items-start">
                                                 <div className="flex justify-between w-32">
                                                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Usage</span>
                                                     <span className="text-[10px] font-black text-slate-900">{c.usedCount} / {c.maxUses === 0 ? '∞' : c.maxUses}</span>
                                                 </div>
                                                 <div className="w-32 h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                     <div
-                                                        className="h-full bg-slate-900 rounded-full transition-all duration-700"
+                                                        className="h-full bg-violet-600 rounded-full transition-all duration-700"
                                                         style={{ width: `${c.maxUses === 0 ? 100 : Math.min((c.usedCount / c.maxUses) * 100, 100)}%` }}
                                                     />
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-6">
-                                            <div className="space-y-1">
-                                                <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
+                                        <td className="px-8 py-6" data-label="Validity">
+                                            <div className="space-y-1 text-right sm:text-left">
+                                                <div className="flex items-center gap-2 justify-end sm:justify-start text-xs font-bold text-slate-600">
                                                     <Timer size={14} className="text-slate-300" />
                                                     {new Date(c.startDate).toLocaleDateString()}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400">
+                                                <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                                     TO {c.endDate ? new Date(c.endDate).toLocaleDateString() : 'UNTIL CANCELLED'}
                                                 </div>
                                             </div>
@@ -244,25 +244,25 @@ const Coupons = () => {
                                                 );
                                             })()}
                                         </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-3 translate-x-4 opacity-0 group-hover:translate-x-0 group-hover:opacity-100 transition-all duration-300">
+                                        <td className="px-8 py-6 text-right" data-label="Actions">
+                                            <div className="flex items-center justify-end gap-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
                                                 <button
-                                                    onClick={() => handleEdit(c)}
+                                                    onClick={(e) => { e.stopPropagation(); handleEdit(c); }}
                                                     className="p-3 bg-white text-slate-400 hover:text-indigo-600 border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-indigo-50 transition-all"
                                                     title="Edit Coupon"
                                                 >
                                                     <Edit2 size={16} />
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDelete(c.id)}
+                                                    onClick={(e) => { e.stopPropagation(); handleDelete(c.id); }}
                                                     className="p-3 bg-white text-slate-400 hover:text-red-600 border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-red-50 transition-all"
                                                     title="Delete Coupon"
                                                 >
                                                     <Trash2 size={16} />
                                                 </button>
                                             </div>
-                                            <div className="group-hover:hidden transition-all text-slate-300 pr-2">
-                                                <MoreVertical size={20} />
+                                            <div className="sm:group-hover:hidden transition-all text-slate-300">
+                                                <MoreVertical size={20} className="ml-auto" />
                                             </div>
                                         </td>
                                     </tr>
@@ -280,7 +280,7 @@ const Coupons = () => {
                                             </div>
                                             <button
                                                 onClick={handleAdd}
-                                                className="mt-4 px-6 py-3 bg-slate-900 text-white rounded-xl text-xs font-black hover:scale-105 active:scale-95 transition-all"
+                                                className="mt-4 px-6 py-3 bg-violet-600 text-white rounded-xl text-xs font-black hover:bg-violet-700 shadow-md shadow-violet-200 hover:scale-105 active:scale-95 transition-all"
                                             >
                                                 Start Creating
                                             </button>

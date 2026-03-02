@@ -51,23 +51,23 @@ const Notifications = () => {
     );
 
     return (
-        <div className="p-6 space-y-6 bg-[#F5F7FA] min-h-full">
+        <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-[26px] font-semibold text-[#111827] tracking-tight">Notification Settings</h1>
-                <p className="text-[#6B7280] text-[15px] font-normal mt-1">Configure email and system notifications</p>
+                <h1 className="text-page-title">Notification Settings</h1>
+                <p className="text-muted mt-1">Configure email and system notifications</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Email Notifications */}
-                <div className="bg-white rounded-[12px] border border-[#E5E7EB] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                            <Mail size={22} />
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                            <Mail size={24} />
                         </div>
                         <div>
-                            <h2 className="text-[19px] font-medium text-[#111827]">Email Notifications</h2>
-                            <p className="text-[#6B7280] text-sm font-normal">Configure email notifications for various events</p>
+                            <h2 className="text-card-title">Email Notifications</h2>
+                            <p className="text-muted text-sm mt-0.5">Configure email alerts for member events</p>
                         </div>
                     </div>
 
@@ -78,10 +78,10 @@ const Notifications = () => {
                             { key: 'classNotifications', title: 'Class Notifications', desc: 'Send class booking confirmations' },
                             { key: 'announcements', title: 'Announcements', desc: 'Receive gym announcements via email' }
                         ].map(({ key, title, desc }) => (
-                            <div key={key} className="flex items-center justify-between">
+                            <div key={key} className="flex items-center justify-between gap-4">
                                 <div>
-                                    <h3 className="font-medium text-[#111827] text-base">{title}</h3>
-                                    <p className="text-[#6B7280] text-sm font-normal">{desc}</p>
+                                    <h3 className="font-medium text-slate-900">{title}</h3>
+                                    <p className="text-muted text-xs mt-0.5">{desc}</p>
                                 </div>
                                 <Toggle active={emailSettings[key]} onToggle={() => toggleEmailSetting(key)} />
                             </div>
@@ -90,14 +90,14 @@ const Notifications = () => {
                 </div>
 
                 {/* System Alerts */}
-                <div className="bg-white rounded-[12px] border border-[#E5E7EB] p-6 shadow-sm">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                            <Bell size={22} />
+                <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+                            <Bell size={24} />
                         </div>
                         <div>
-                            <h2 className="text-[19px] font-medium text-[#111827]">System Alerts</h2>
-                            <p className="text-[#6B7280] text-sm font-normal">Manage system notification preferences</p>
+                            <h2 className="text-card-title">System Alerts</h2>
+                            <p className="text-muted text-sm mt-0.5">Manage inner-app notification triggers</p>
                         </div>
                     </div>
 
@@ -108,10 +108,10 @@ const Notifications = () => {
                             { key: 'paymentAlerts', title: 'Payment Alerts', desc: 'Get notified about overdue payments' },
                             { key: 'taskReminders', title: 'Task Reminders', desc: 'Get reminders for assigned tasks' }
                         ].map(({ key, title, desc }) => (
-                            <div key={key} className="flex items-center justify-between">
+                            <div key={key} className="flex items-center justify-between gap-4">
                                 <div>
-                                    <h3 className="font-medium text-[#111827] text-base">{title}</h3>
-                                    <p className="text-[#6B7280] text-sm font-normal">{desc}</p>
+                                    <h3 className="font-medium text-slate-900">{title}</h3>
+                                    <p className="text-muted text-xs mt-0.5">{desc}</p>
                                 </div>
                                 <Toggle active={systemSettings[key]} onToggle={() => toggleSystemSetting(key)} />
                             </div>
@@ -121,27 +121,30 @@ const Notifications = () => {
             </div>
 
             {/* Automated Reminders */}
-            <div className="bg-white rounded-[12px] border border-[#E5E7EB] p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                        <Clock size={22} />
+            <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+                <div className="flex items-center gap-4 mb-6">
+                    <div className="p-3 bg-amber-50 text-amber-600 rounded-xl shrink-0">
+                        <Clock size={24} />
                     </div>
-                    <h2 className="text-[19px] font-medium text-[#111827]">Automated Reminders</h2>
+                    <div>
+                        <h2 className="text-base sm:text-card-title">Reminders Engine</h2>
+                        <p className="text-muted text-xs sm:text-sm mt-0.5">Manually trigger system reminders</p>
+                    </div>
                 </div>
 
-                <p className="text-[#6B7280] text-sm font-normal leading-relaxed max-w-4xl mb-8">
-                    Manually trigger all pending reminders (payments, birthdays, membership expiry, class/PT/benefit bookings). For automated daily execution, set up an external cron service to call the reminders endpoint.
+                <p className="text-muted text-xs sm:text-sm leading-relaxed mb-8">
+                    Manually trigger all pending reminders (payments, birthdays, membership expiry, class/PT/benefit bookings).
                 </p>
 
-                <div className="space-y-6">
-                    <div className="flex flex-wrap gap-3">
+                <div className="space-y-8">
+                    <div className="flex flex-wrap gap-2">
                         {reminderTypes.map(type => (
                             <button
                                 key={type}
                                 onClick={() => setSelectedReminderType(type)}
-                                className={`px-5 py-2 rounded-full text-sm font-medium border transition-all ${selectedReminderType === type
-                                    ? 'bg-blue-600 border-blue-600 text-white shadow-sm'
-                                    : 'bg-white border-[#E5E7EB] text-[#374151] hover:border-blue-400'
+                                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[10px] sm:text-xs font-semibold transition-all ${selectedReminderType === type
+                                    ? 'bg-slate-900 text-white shadow-md'
+                                    : 'bg-slate-50 border border-slate-200 text-slate-600 hover:bg-slate-100'
                                     }`}
                             >
                                 {type}
@@ -149,22 +152,22 @@ const Notifications = () => {
                         ))}
                     </div>
 
-                    <button className="flex items-center gap-2 px-6 py-2.5 rounded-lg border border-[#E5E7EB] text-[#374151] font-medium hover:bg-slate-50 transition-all active:scale-95 text-sm">
-                        <Play size={18} />
+                    <button className="w-full sm:w-auto btn border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 px-6 h-12 flex items-center justify-center gap-2">
+                        <Play size={18} fill="currentColor" className="text-primary" />
                         Run Reminders Now
                     </button>
                 </div>
             </div>
 
-            {/* Footer Save Button */}
-            <div className="flex justify-end pt-4">
+            {/* Save Action */}
+            <div className="flex justify-end pt-6">
                 <button
-                    className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md active:scale-95 disabled:opacity-50 text-sm"
+                    className="w-full sm:w-auto btn btn-primary px-10 h-12 shadow-xl shadow-primary/20"
                     disabled={isReadOnly}
                     onClick={() => alert('Settings saved successfully!')}
                 >
-                    <Save size={18} />
-                    Save Preferences
+                    <Save size={20} />
+                    Save All Changes
                 </button>
             </div>
         </div>

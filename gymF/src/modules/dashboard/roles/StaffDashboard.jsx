@@ -34,17 +34,17 @@ const StaffDashboard = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 animate-fadeIn">
             {/* Header section */}
-            <div className="mb-10 relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-2xl opacity-10"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="mb-6 sm:mb-10 relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl sm:rounded-3xl blur-2xl opacity-10"></div>
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 p-5 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-1">
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight ">Hello, Demo!</h1>
-                        <p className="text-slate-500 font-black text-[10px] uppercase tracking-[0.3em]">
+                        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">Hello, Demo!</h1>
+                        <p className="text-slate-500 font-black text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">
                             Main Branch • Sunday, 01 Mar 2026
                         </p>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="px-5 py-2.5 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200">
+                    <div className="flex items-center">
+                        <div className="px-4 py-2 sm:px-5 sm:py-2.5 bg-violet-600 text-white rounded-xl sm:rounded-2xl text-[9px] sm:text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200">
                             Staff Portal
                         </div>
                     </div>
@@ -59,17 +59,17 @@ const StaffDashboard = () => {
                     </div>
                     <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Quick Actions</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
                     {quickActions.map((action, idx) => (
                         <button
                             key={idx}
                             onClick={() => action.path ? navigate(action.path) : action.icon && typeof action.icon === 'string' && navigate(action.icon)}
-                            className="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-violet-500/10 hover:border-violet-200 transition-all duration-300 group flex flex-col items-center text-center gap-4"
+                            className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-violet-500/10 hover:border-violet-200 transition-all duration-300 group flex flex-col items-center text-center gap-3 sm:gap-4"
                         >
-                            <div className={`p-4 rounded-2xl ${action.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm`}>
-                                {action.customIcon ? <action.customIcon size={24} /> : action.icon && typeof action.icon !== 'string' && <action.icon size={24} />}
+                            <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${action.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm`}>
+                                {action.customIcon ? <action.customIcon size={20} className="sm:w-6 sm:h-6" /> : action.icon && typeof action.icon !== 'string' && <action.icon size={20} className="sm:w-6 sm:h-6" />}
                             </div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-violet-600">{action.label}</span>
+                            <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-violet-600 leading-tight">{action.label}</span>
                         </button>
                     ))}
                 </div>

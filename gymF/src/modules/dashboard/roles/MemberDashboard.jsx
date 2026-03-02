@@ -67,26 +67,26 @@ const MemberDashboard = () => {
         <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-8 border-b-2 border-slate-100">
-                <div className="flex items-center gap-5">
-                    <div className="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
-                        <User size={32} strokeWidth={2.5} />
+                <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 shrink-0 rounded-xl sm:rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                        <User size={24} className="sm:w-8 sm:h-8" strokeWidth={2.5} />
                     </div>
-                    <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                    <div className="min-w-0">
+                        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1 truncate">
                             Welcome, <span className="text-indigo-600">Demo!</span>
                         </h1>
-                        <div className="flex items-center gap-3">
-                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-indigo-100">Member ID: MEM001</span>
-                            <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                            <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border border-indigo-100 whitespace-nowrap">Member ID: MEM001</span>
+                            <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-slate-300" />
+                            <p className="text-slate-500 font-bold text-[9px] sm:text-xs uppercase tracking-widest">
                                 Main Branch Access
                             </p>
                         </div>
                     </div>
                 </div>
-                <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border-2 border-slate-100 shadow-sm">
-                    <Calendar size={18} className="text-indigo-600" />
-                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">{today}</span>
+                <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 bg-white rounded-xl sm:rounded-2xl border-2 border-slate-100 shadow-sm self-start sm:self-auto">
+                    <Calendar size={16} className="text-indigo-600 shrink-0" />
+                    <span className="text-[9px] sm:text-xs font-black text-slate-700 uppercase tracking-widest">{today}</span>
                 </div>
             </div>
 

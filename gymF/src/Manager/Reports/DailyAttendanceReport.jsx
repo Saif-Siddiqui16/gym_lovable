@@ -204,18 +204,18 @@ const DailyAttendanceReport = () => {
                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <button
                         onClick={() => loadData()}
-                        className="flex-1 md:flex-none px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-violet-500/30 transition-all active:scale-95"
+                        className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-violet-500/30 transition-all active:scale-95"
                     >
                         Search
                     </button>
-                    <div className="relative flex-1 md:flex-none">
+                    <div className="relative w-full sm:w-auto">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             type="date"
-                            className="w-full pl-9 h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 text-sm font-medium transition-all bg-white outline-none"
+                            className="w-full pl-9 h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 text-sm font-medium transition-all bg-white outline-none min-w-[150px]"
                             value={selectedDate}
                             onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(1); }}
                         />
@@ -269,8 +269,8 @@ const DailyAttendanceReport = () => {
 
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="saas-table-wrapper">
-                        <table className="saas-table">
-                            <thead className="bg-gray-50 border-b border-gray-200">
+                        <table className="saas-table saas-table-responsive">
+                            <thead className="hidden sm:table-header-group bg-gray-50 border-b border-gray-200">
                                 <tr>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Member</th>
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">Code</th>
@@ -279,7 +279,7 @@ const DailyAttendanceReport = () => {
                                     <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Action</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 flex flex-col sm:table-row-group">
                                 {loading ? (
                                     <tr>
                                         <td colSpan="5" className="px-6 py-12 text-center text-gray-400 font-medium lowercase">
@@ -291,24 +291,35 @@ const DailyAttendanceReport = () => {
                                     </tr>
                                 ) : attendance.length > 0 ? (
                                     attendance.map((row) => (
-                                        <tr key={row.id} className="hover:bg-gray-50/50 transition-colors group">
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center gap-3">
+                                        <tr key={row.id} className="flex flex-col sm:table-row hover:bg-gray-50/50 transition-colors group p-4 sm:p-0 border-b sm:border-0 border-gray-100">
+                                            <td className="flex justify-between items-center sm:table-cell px-2 py-2 sm:px-6 sm:py-4 sm:whitespace-nowrap">
+                                                <span className="sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Member</span>
+                                                <div className="flex items-center gap-3 justify-end sm:justify-start">
                                                     <div className="w-8 h-8 rounded-lg bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-xs group-hover:bg-violet-50 group-hover:text-violet-600 transition-colors">
                                                         {(row.name || '?').charAt(0)}
                                                     </div>
                                                     <span className="text-sm font-medium text-gray-900">{row.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.memberId || 'MEM-001'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.time || row.checkIn}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{row.duration || '-'}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                <div className="flex justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all">
-                                                    <button onClick={() => handleViewDetails(row)} className="p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all">
+                                            <td className="flex justify-between items-center sm:table-cell px-2 py-2 sm:px-6 sm:py-4 sm:whitespace-nowrap text-sm text-gray-500">
+                                                <span className="sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Code</span>
+                                                <span>{row.memberId || 'MEM-001'}</span>
+                                            </td>
+                                            <td className="flex justify-between items-center sm:table-cell px-2 py-2 sm:px-6 sm:py-4 sm:whitespace-nowrap text-sm text-gray-500">
+                                                <span className="sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Check-In</span>
+                                                <span>{row.time || row.checkIn}</span>
+                                            </td>
+                                            <td className="flex justify-between items-center sm:table-cell px-2 py-2 sm:px-6 sm:py-4 sm:whitespace-nowrap text-sm text-gray-500">
+                                                <span className="sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Duration</span>
+                                                <span>{row.duration || '-'}</span>
+                                            </td>
+                                            <td className="flex justify-between items-center sm:table-cell px-2 py-2 sm:px-6 sm:py-4 sm:whitespace-nowrap sm:text-right mt-2 sm:mt-0 pt-3 sm:pt-4 border-t sm:border-0 border-dashed border-gray-100">
+                                                <span className="sm:hidden text-[10px] font-bold text-gray-400 uppercase tracking-widest">Action</span>
+                                                <div className="flex justify-end gap-2 opacity-100 transition-all">
+                                                    <button onClick={() => handleViewDetails(row)} className="p-2 sm:p-1.5 text-gray-400 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition-all bg-gray-50 sm:bg-transparent">
                                                         <Eye size={16} />
                                                     </button>
-                                                    <button onClick={() => handleDelete(row.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                                                    <button onClick={() => handleDelete(row.id)} className="p-2 sm:p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all bg-gray-50 sm:bg-transparent">
                                                         <Trash2 size={16} />
                                                     </button>
                                                 </div>
@@ -328,7 +339,7 @@ const DailyAttendanceReport = () => {
 
                     {/* Pagination */}
                     {!loading && totalItems > 0 && (
-                        <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex justify-between items-center">
+                        <div className="px-4 sm:px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex flex-col sm:flex-row gap-4 sm:gap-0 justify-between items-center text-center">
                             <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none">
                                 Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} entries
                             </span>

@@ -114,16 +114,16 @@ const BranchPerformanceReport = () => {
             </div>
 
             {/* ── Top KPI Cards ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 {[
                     { label: 'Total Members', value: '0', icon: Users, from: 'from-violet-500', to: 'to-purple-600' },
                     { label: 'Total Revenue', value: '₹0k', icon: IndianRupee, from: 'from-emerald-500', to: 'to-emerald-600' },
                     { label: 'Collection Rate', value: '0%', icon: TrendingUp, from: 'from-blue-500', to: 'to-blue-600' },
                     { label: 'Pending Dues', value: '₹0k', icon: Activity, from: 'from-fuchsia-500', to: 'to-fuchsia-600' },
                 ].map((kpi, i) => (
-                    <div key={i} className="group bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5">
-                        <div className="flex items-start justify-between">
-                            <div>
+                    <div key={i} className="group bg-white rounded-2xl shadow-lg border border-slate-100 p-4 sm:p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div className="w-full">
                                 <p className="text-sm font-semibold text-slate-600 mb-2">{kpi.label}</p>
                                 <h3 className="text-3xl font-black text-slate-900 mb-2">{kpi.value}</h3>
                                 <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
@@ -131,8 +131,8 @@ const BranchPerformanceReport = () => {
                                     0% from last month
                                 </p>
                             </div>
-                            <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${kpi.from} ${kpi.to} flex items-center justify-center text-white shadow-lg transition-transform duration-300`}>
-                                <kpi.icon size={24} />
+                            <div className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-xl bg-gradient-to-br ${kpi.from} ${kpi.to} flex items-center justify-center text-white shadow-lg transition-transform duration-300`}>
+                                <kpi.icon size={20} className="sm:w-6 sm:h-6" />
                             </div>
                         </div>
                     </div>
@@ -171,15 +171,15 @@ const BranchPerformanceReport = () => {
                     </div>
 
                     {/* Earnings Summary Cards */}
-                    <div className="grid grid-cols-3 gap-3 mt-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
                         {[
                             { label: 'Earnings', value: '₹0', color: 'text-indigo-600', bg: 'bg-indigo-50' },
                             { label: 'Profit', value: '₹0', color: 'text-emerald-600', bg: 'bg-emerald-50' },
                             { label: 'Expenses', value: '₹0', color: 'text-rose-600', bg: 'bg-rose-50' },
                         ].map((item) => (
-                            <div key={item.label} className={`${item.bg} rounded-xl p-3 text-center`}>
+                            <div key={item.label} className={`${item.bg} rounded-xl p-3 sm:p-4 text-center sm:text-left flex flex-col items-center sm:items-start`}>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
-                                <p className={`text-lg font-black ${item.color}`}>{item.value}</p>
+                                <p className={`text-lg sm:text-xl font-black ${item.color}`}>{item.value}</p>
                             </div>
                         ))}
                     </div>
@@ -250,15 +250,15 @@ const BranchPerformanceReport = () => {
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Net</p>
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3 mt-2">
-                        <div className="bg-emerald-50 rounded-xl p-3 text-center">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                        <div className="bg-emerald-50 rounded-xl p-4 text-center sm:text-left flex flex-col items-center sm:items-start">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Income</p>
-                            <p className="text-base font-black text-emerald-600">₹0</p>
+                            <p className="text-lg sm:text-base font-black text-emerald-600">₹0</p>
                             <p className="text-[9px] text-slate-400 font-medium">Payments collected</p>
                         </div>
-                        <div className="bg-rose-50 rounded-xl p-3 text-center">
+                        <div className="bg-rose-50 rounded-xl p-4 text-center sm:text-left flex flex-col items-center sm:items-start">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Expenses</p>
-                            <p className="text-base font-black text-rose-600">₹0</p>
+                            <p className="text-lg sm:text-base font-black text-rose-600">₹0</p>
                             <p className="text-[9px] text-slate-400 font-medium">Approved expenses</p>
                         </div>
                     </div>
@@ -284,7 +284,7 @@ const BranchPerformanceReport = () => {
 
             {/* ── Recent Store Orders ── */}
             <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden mb-8 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5">
-                <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/30">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-6 border-b border-slate-100 bg-slate-50/30">
                     <div>
                         <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                             <Package className="text-slate-600" size={18} />
@@ -292,7 +292,7 @@ const BranchPerformanceReport = () => {
                         </h3>
                         <p className="text-xs text-slate-500 font-semibold">POS & store sales overview</p>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                         {orderTabs.map(tab => (
                             <button
                                 key={tab}

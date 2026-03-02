@@ -119,9 +119,9 @@ const TrainerAssignment = () => {
                 })}
             </div>
 
-            <div style={{ marginTop: '48px', display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
-                <Button variant="outline" onClick={() => navigate(`/classes/${id}`)} disabled={saving}>Cancel</Button>
-                <Button variant="primary" onClick={handleSave} loading={saving}>
+            <div className="mt-12 flex flex-col-reverse sm:flex-row justify-end gap-4 pb-12">
+                <Button variant="outline" onClick={() => navigate(`/classes/${id}`)} disabled={saving} className="w-full sm:w-auto">Cancel</Button>
+                <Button variant="primary" onClick={handleSave} loading={saving} className="w-full sm:w-auto">
                     Confirm Assignment
                 </Button>
             </div>

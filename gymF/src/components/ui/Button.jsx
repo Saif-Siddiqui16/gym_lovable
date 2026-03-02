@@ -2,25 +2,27 @@ import React from 'react';
 
 const Button = ({
     children,
-    variant = 'primary', // primary, success, outline
+    variant = 'primary', // primary, success, outline, secondary, danger
     className = '',
     icon: Icon,
     ...props
 }) => {
     const variantClasses = {
-        primary: 'bg-violet-600 hover:bg-violet-700 text-white shadow-lg shadow-violet-200',
-        success: 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-200',
-        outline: 'bg-white border-2 border-slate-200 text-slate-600 hover:border-violet-500 hover:text-violet-600'
+        primary: 'bg-violet-600 hover:bg-violet-700 text-white shadow-sm border border-transparent',
+        success: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm border border-transparent',
+        danger: 'bg-red-600 hover:bg-red-700 text-white shadow-sm border border-transparent',
+        secondary: 'bg-slate-100 hover:bg-slate-200 text-slate-700 shadow-sm border border-transparent',
+        outline: 'bg-white border text-slate-700 border-slate-200 hover:border-violet-500 hover:text-violet-700 hover:bg-violet-50'
     };
 
     const selectedVariant = variantClasses[variant] || variantClasses.primary;
 
     return (
         <button
-            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:pointer-events-none ${selectedVariant} ${className}`}
+            className={`inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold transition-all duration-300 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ${selectedVariant} ${className}`}
             {...props}
         >
-            {Icon && <Icon size={16} />}
+            {Icon && <Icon size={18} />}
             {children}
         </button>
     );

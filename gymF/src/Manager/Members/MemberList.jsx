@@ -309,8 +309,8 @@ const MemberList = () => {
                 </div>
 
                 {members.length > 0 ? (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="saas-table-wrapper border-0 rounded-none">
+                        <table className="saas-table saas-table-responsive">
                             <thead className="bg-slate-50 border-b border-slate-200">
                                 <tr>
                                     {['Name', 'Member ID', 'Branch', 'Status', 'Plan', 'Days Left', 'Joined', 'Actions'].map(col => (
@@ -318,11 +318,11 @@ const MemberList = () => {
                                     ))}
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-slate-100">
                                 {members.map((member) => (
                                     <tr key={member.id} className="group hover:bg-violet-50/30 transition-all duration-150 border-b border-slate-50">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
+                                        <td className="px-6 py-4 whitespace-nowrap" data-label="Name">
+                                            <div className="flex items-center gap-3 justify-end sm:justify-start">
                                                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-sm border-2 border-violet-200">{(member.name || '?').charAt(0).toUpperCase()}</div>
                                                 <span className="text-sm font-bold text-slate-900 group-hover:text-violet-700 transition-colors">{member.name}</span>
                                             </div>

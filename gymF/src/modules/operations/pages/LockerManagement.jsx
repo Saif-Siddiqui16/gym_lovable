@@ -8,6 +8,7 @@ import {
     Unlock,
     Key,
     User,
+    Settings,
     ChevronDown,
     LayoutGrid,
     List
@@ -246,30 +247,44 @@ const LockerManagement = () => {
                                 })}
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left text-sm text-slate-600">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive">
                                     <thead>
-                                        <tr className="border-b border-slate-200">
-                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Number</th>
-                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Size</th>
-                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Area</th>
-                                            <th className="py-3 px-4 font-medium text-slate-500 text-xs">Status</th>
+                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Number</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Size</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Area</th>
+                                            <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Status</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-slate-50">
                                         {lockers.map(locker => (
-                                            <tr key={locker.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
-                                                <td className="py-3 px-4 font-medium">{locker.number}</td>
-                                                <td className="py-3 px-4">{locker.size}</td>
-                                                <td className="py-3 px-4">{locker.area || '-'}</td>
-                                                <td className="py-3 px-4">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium ${locker.status === 'Available' ? 'bg-green-100 text-green-700' :
+                                            <tr key={locker.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
+                                                <td className="px-6 py-4 font-bold text-slate-900" data-label="Number">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        {locker.number}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-600 font-medium" data-label="Size">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        {locker.size}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500 font-medium" data-label="Area">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        {locker.area || '-'}
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4" data-label="Status">
+                                                    <div className="flex justify-end sm:justify-start">
+                                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${locker.status === 'Available' ? 'bg-green-100 text-green-700' :
                                                             locker.status === 'Assigned' ? 'bg-slate-200 text-slate-700' :
                                                                 locker.status === 'Maintenance' ? 'bg-orange-100 text-orange-700' :
                                                                     'bg-blue-100 text-blue-700'
-                                                        }`}>
-                                                        {locker.status}
-                                                    </span>
+                                                            }`}>
+                                                            {locker.status}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))}
@@ -279,7 +294,7 @@ const LockerManagement = () => {
                         )}
 
                         {viewMode === 'grid' && lockers.length > 0 && (
-                            <div className="flex items-center justify-start gap-6 pt-4 mt-8 border-t border-slate-100">
+                            <div className="flex items-center justify-start gap-6 pt-4 mt-8 border-t border-slate-100 flex-wrap">
                                 <div className="flex items-center gap-2">
                                     <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
                                     <span className="text-xs text-slate-500">Available</span>
@@ -302,30 +317,44 @@ const LockerManagement = () => {
                 )}
 
                 {activeTab === 'Assigned' && (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm text-slate-600">
+                    <div className="saas-table-wrapper border-0 rounded-none">
+                        <table className="saas-table saas-table-responsive">
                             <thead>
-                                <tr className="border-b border-slate-200">
-                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Locker No.</th>
-                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Assigned Member</th>
-                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Member ID</th>
-                                    <th className="py-3 px-4 font-medium text-slate-500 text-xs">Phone</th>
+                                <tr className="bg-slate-50 border-b border-slate-100">
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Locker No.</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Assigned Member</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Member ID</th>
+                                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Phone</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody className="divide-y divide-slate-50">
                                 {lockers.filter(l => l.status === 'Assigned').map(locker => (
-                                    <tr key={locker.id} className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
-                                        <td className="py-3 px-4 font-medium text-slate-800">{locker.number}</td>
-                                        <td className="py-3 px-4">
-                                            {locker.assignedTo?.name || 'N/A'}
+                                    <tr key={locker.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => openDrawer('details', locker)}>
+                                        <td className="px-6 py-4 font-bold text-slate-900" data-label="Locker No.">
+                                            <div className="flex justify-end sm:justify-start">
+                                                {locker.number}
+                                            </div>
                                         </td>
-                                        <td className="py-3 px-4">{locker.assignedTo?.memberId || '-'}</td>
-                                        <td className="py-3 px-4">{locker.assignedTo?.phone || '-'}</td>
+                                        <td className="px-6 py-4 font-bold text-slate-700" data-label="Assigned Member">
+                                            <div className="flex justify-end sm:justify-start">
+                                                {locker.assignedTo?.name || 'N/A'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500 font-medium" data-label="Member ID">
+                                            <div className="flex justify-end sm:justify-start">
+                                                {locker.assignedTo?.memberId || '-'}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-slate-500 font-medium" data-label="Phone">
+                                            <div className="flex justify-end sm:justify-start">
+                                                {locker.assignedTo?.phone || '-'}
+                                            </div>
+                                        </td>
                                     </tr>
                                 ))}
                                 {lockers.filter(l => l.status === 'Assigned').length === 0 && (
                                     <tr>
-                                        <td colSpan="4" className="py-8 text-center text-slate-500">
+                                        <td colSpan="4" className="px-6 py-12 text-center text-slate-500 pointer-events-none" data-label="Phone">
                                             No assigned lockers found.
                                         </td>
                                     </tr>
@@ -369,10 +398,5 @@ const LockerManagement = () => {
         </div>
     );
 };
-
-// Add a dummy Settings icon component since I mapped it to Bulk Create visually based on lucide choices
-const Settings = ({ size, className }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m6 9 6 6 6-6" /></svg>
-); // Actually just a standard icon but keeping the simple layout. Wait, I will use Grid/Layers or something else for Bulk Create. Let me just use Settings from lucide-react if I want. I already imported generic icons so it's fine. Wait, Setting is not imported in LockerManagement but I used it. I will fix imports!
 
 export default LockerManagement;

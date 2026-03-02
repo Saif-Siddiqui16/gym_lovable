@@ -108,26 +108,26 @@ const Expenses = () => {
                 {/* Summary Section */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Monthly Summary Card */}
-                    <div className="bg-slate-900 rounded-[24px] md:rounded-[32px] p-6 md:p-8 text-white shadow-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <div className="bg-white rounded-2xl p-6 md:p-8 text-slate-900 border border-slate-200 shadow-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-slate-900 group-hover:scale-110 transition-transform duration-500">
                             <PieChart size={120} />
                         </div>
                         <div className="relative z-10">
                             <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Total Expenses (Current)</p>
-                            <h2 className="text-5xl font-black mb-6">₹{totalExpenses.toLocaleString()}</h2>
+                            <h2 className="text-5xl font-black mb-6 text-slate-900">₹{totalExpenses.toLocaleString()}</h2>
 
                             <div className="space-y-4">
-                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 pb-2">Category Breakdown</p>
+                                <p className="text-xs font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-2">Category Breakdown</p>
                                 <div className="space-y-3">
                                     {categoryBreakdown.slice(0, 3).map((item, idx) => (
                                         <div key={idx} className="space-y-1">
-                                            <div className="flex justify-between text-xs font-bold">
+                                            <div className="flex justify-between text-xs font-bold text-slate-700">
                                                 <span>{item.category}</span>
-                                                <span>₹{item.amount.toLocaleString()}</span>
+                                                <span className="text-slate-900">₹{item.amount.toLocaleString()}</span>
                                             </div>
-                                            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                                            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                                                 <div
-                                                    className="h-full bg-violet-500 rounded-full transition-all duration-1000"
+                                                    className="h-full bg-violet-600 rounded-full transition-all duration-1000"
                                                     style={{ width: `${item.percentage}%` }}
                                                 />
                                             </div>

@@ -59,8 +59,9 @@ const StaffManagement = ({ role, branchId }) => {
                     </div>
 
                     <div className="bg-white/60 backdrop-blur-md rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[800px]">
+                        {/* Desktop View */}
+                        <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                            <table className="w-full">
                                 <thead>
                                     <tr className="bg-slate-50/50 border-b border-slate-100">
                                         <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
@@ -83,6 +84,16 @@ const StaffManagement = ({ role, branchId }) => {
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Mobile View */}
+                        <div className="md:hidden p-6 space-y-4">
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Clock size={32} />
+                                </div>
+                                <h3 className="text-lg font-black text-slate-800 text-center">No staff currently on duty</h3>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -94,8 +105,9 @@ const StaffManagement = ({ role, branchId }) => {
                     </div>
 
                     <div className="bg-white/60 backdrop-blur-md rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="overflow-x-auto custom-scrollbar">
-                            <table className="w-full min-w-[800px]">
+                        {/* Desktop View */}
+                        <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                            <table className="w-full">
                                 <thead>
                                     <tr className="bg-slate-50/50 border-b border-slate-100">
                                         <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Staff</th>
@@ -118,6 +130,16 @@ const StaffManagement = ({ role, branchId }) => {
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Mobile View */}
+                        <div className="md:hidden p-6 space-y-4">
+                            <div className="flex flex-col items-center justify-center py-12">
+                                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Briefcase size={32} />
+                                </div>
+                                <h3 className="text-lg font-black text-slate-800 text-center">No attendance records for today</h3>
+                            </div>
                         </div>
                     </div>
                 </div>

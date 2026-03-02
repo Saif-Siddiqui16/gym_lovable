@@ -161,8 +161,8 @@ const StaffSchedule = () => {
 
             {/* Desktop Table View */}
             <div className="hidden md:block bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
+                <div className="saas-table-wrapper border-0 rounded-none">
+                    <table className="saas-table saas-table-responsive w-full">
                         <thead>
                             <tr className="bg-gradient-to-r from-slate-50 to-slate-100/50 border-b-2 border-slate-200">
                                 <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">Staff Member</th>
@@ -177,8 +177,8 @@ const StaffSchedule = () => {
                                     key={staff.id}
                                     className="group hover:bg-gradient-to-r hover:from-violet-50/50 hover:via-purple-50/30 hover:to-transparent transition-all duration-300 cursor-pointer"
                                 >
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-3">
+                                    <td className="px-6 py-4" data-label="Staff Member">
+                                        <div className="flex items-center gap-3 justify-end sm:justify-start">
                                             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-md group-hover:shadow-lg group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
                                                 {(staff.name || '?').charAt(0)}
                                             </div>
@@ -189,19 +189,23 @@ const StaffSchedule = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200 shadow-sm group-hover:scale-110 group-hover:shadow-md group-hover:from-violet-50 group-hover:to-purple-50 group-hover:text-violet-700 group-hover:border-violet-200 transition-all duration-300">
-                                            {staff.role}
-                                        </span>
+                                    <td className="px-6 py-4" data-label="Role">
+                                        <div className="flex justify-end sm:justify-start">
+                                            <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-50 to-slate-100 text-slate-700 border border-slate-200 shadow-sm group-hover:scale-110 group-hover:shadow-md group-hover:from-violet-50 group-hover:to-purple-50 group-hover:text-violet-700 group-hover:border-violet-200 transition-all duration-300">
+                                                {staff.role}
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                                    <td className="px-6 py-4" data-label="Shift">
+                                        <div className="flex items-center gap-2 text-sm text-slate-600 justify-end sm:justify-start">
                                             <Clock className="w-4 h-4 text-slate-400 transition-transform duration-300 group-hover:scale-125" />
                                             {staff.shift}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        {getStatusBadge(staff.status)}
+                                    <td className="px-6 py-4" data-label="Status">
+                                        <div className="flex justify-end sm:justify-start">
+                                            {getStatusBadge(staff.status)}
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

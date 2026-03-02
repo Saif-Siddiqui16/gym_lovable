@@ -246,16 +246,17 @@ const BranchList = () => {
                 </div>
 
                 <div className="w-full">
-                    <table className="w-full text-left border-collapse table-auto">
+                    {/* Desktop Table View */}
+                    <table className="w-full text-left border-collapse table-auto hidden md:table">
                         <thead className="bg-slate-50/50 border-b border-slate-200">
                             <tr>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Branch</th>
-                                <th className="px-4 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center hidden md:table-cell">Code</th>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">Manager</th>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">Location</th>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden xl:table-cell">Contact</th>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
-                                <th className="px-4 sm:px-8 py-4 sm:py-6 text-[10px] sm:text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Branch</th>
+                                <th className="px-4 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">Code</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden lg:table-cell">Manager</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden xl:table-cell">Location</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] hidden 2xl:table-cell">Contact</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                                <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -282,9 +283,9 @@ const BranchList = () => {
                                 </tr>
                             ) : branches.filter(b => (b.gymName || b.branchName)?.toLowerCase().includes(searchTerm.toLowerCase())).map((branch) => (
                                 <tr key={branch.id} className="hover:bg-slate-50/50 transition-colors group">
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6">
-                                        <div className="flex items-center gap-3 sm:gap-4">
-                                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
+                                    <td className="px-8 py-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform flex-shrink-0">
                                                 <MapPin size={20} strokeWidth={3} />
                                             </div>
                                             <div className="min-w-0">
@@ -293,12 +294,12 @@ const BranchList = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 py-4 sm:py-6 text-center hidden md:table-cell font-bold">
+                                    <td className="px-4 py-6 text-center font-bold">
                                         <span className="px-3 py-1.5 bg-slate-100 rounded-xl text-[10px] text-slate-500 tracking-wider">
                                             BR-{branch.id?.toString().padStart(3, '0')}
                                         </span>
                                     </td>
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden sm:table-cell font-bold">
+                                    <td className="px-8 py-6 hidden lg:table-cell font-bold">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 border border-white flex-shrink-0">
                                                 {branch.owner?.[0] || 'M'}
@@ -306,13 +307,13 @@ const BranchList = () => {
                                             <span className="text-sm text-slate-700 truncate">{branch.owner || 'Not Assigned'}</span>
                                         </div>
                                     </td>
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden lg:table-cell font-bold">
+                                    <td className="px-8 py-6 hidden xl:table-cell font-bold">
                                         <div className="max-w-[200px]">
                                             <div className="text-sm text-slate-600 truncate">{branch.location || 'N/A'}</div>
                                             <div className="text-[10px] text-slate-400 uppercase tracking-tighter">Primary Address</div>
                                         </div>
                                     </td>
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6 hidden xl:table-cell font-bold">
+                                    <td className="px-8 py-6 hidden 2xl:table-cell font-bold">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2 text-xs text-slate-600">
                                                 <Phone size={12} className="text-slate-300" />
@@ -324,32 +325,31 @@ const BranchList = () => {
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6 font-bold">
-                                        <span className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${branch.status === 'Active' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
+                                    <td className="px-8 py-6 font-bold">
+                                        <span className={`inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.15em] px-4 py-2 rounded-full ${branch.status === 'Active' ? 'text-emerald-600 bg-emerald-50 border border-emerald-100' : 'text-slate-400 bg-slate-50 border border-slate-100'}`}>
                                             <div className={`h-1.5 w-1.5 rounded-full ${branch.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`}></div>
-                                            <span className="hidden sm:inline">{branch.status}</span>
-                                            <span className="sm:hidden">{branch.status?.[0]}</span>
+                                            {branch.status}
                                         </span>
                                     </td>
-                                    <td className="px-4 sm:px-8 py-4 sm:py-6 text-right">
-                                        <div className="flex items-center justify-end gap-1 sm:gap-2">
+                                    <td className="px-8 py-6 text-right">
+                                        <div className="flex items-center justify-end gap-2 text-right">
                                             <button
                                                 onClick={() => handleViewBranch(branch)}
-                                                className="p-2 sm:p-3 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
+                                                className="p-3 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all"
                                                 title="View Details"
                                             >
                                                 <Eye size={18} strokeWidth={3} />
                                             </button>
                                             <button
                                                 onClick={() => handleEditBranch(branch)}
-                                                className="p-2 sm:p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
+                                                className="p-3 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-all"
                                                 title="Edit Branch"
                                             >
                                                 <Edit2 size={18} strokeWidth={3} />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteBranch(branch.id)}
-                                                className="p-2 sm:p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
+                                                className="p-3 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all"
                                                 title="Delete Branch"
                                             >
                                                 <Trash2 size={18} strokeWidth={3} />
@@ -360,6 +360,60 @@ const BranchList = () => {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Mobile/Tablet Stacked View */}
+                    <div className="md:hidden divide-y divide-slate-100">
+                        {loading ? (
+                            <div className="text-center py-20 text-slate-400 font-bold">
+                                <Loader className="animate-spin text-violet-500 mx-auto mb-4" size={40} strokeWidth={3} />
+                                <span className="text-[10px] uppercase tracking-widest opacity-50">Syncing locations...</span>
+                            </div>
+                        ) : branches.length === 0 ? (
+                            <div className="text-center py-20 text-slate-400 font-bold px-6">
+                                <Building2 size={40} className="opacity-20 mx-auto mb-4" />
+                                <span className="text-lg text-slate-800">No branches found</span>
+                            </div>
+                        ) : branches.filter(b => (b.gymName || b.branchName)?.toLowerCase().includes(searchTerm.toLowerCase())).map((branch) => (
+                            <div key={branch.id} className="p-6 space-y-4 hover:bg-slate-50/50 transition-colors">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center flex-shrink-0">
+                                            <MapPin size={20} strokeWidth={3} />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-sm font-black text-slate-900 leading-tight">{branch.gymName || branch.branchName}</h4>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">BR-{branch.id?.toString().padStart(3, '0')}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${branch.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-400 border-slate-100'}`}>
+                                        <div className={`h-1 w-1 rounded-full ${branch.status === 'Active' ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                        {branch.status}
+                                    </span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4 pt-2">
+                                    {branch.owner && (
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Manager</p>
+                                            <p className="text-[11px] font-bold text-slate-700">{branch.owner}</p>
+                                        </div>
+                                    )}
+                                    {branch.phone && (
+                                        <div>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Contact</p>
+                                            <p className="text-[11px] font-bold text-slate-700">{branch.phone}</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex items-center justify-end gap-2 pt-4">
+                                    <button onClick={() => handleViewBranch(branch)} className="p-2.5 text-slate-400 hover:text-violet-600 border border-slate-100 rounded-xl transition-all"><Eye size={18} strokeWidth={3} /></button>
+                                    <button onClick={() => handleEditBranch(branch)} className="p-2.5 text-slate-400 hover:text-emerald-600 border border-slate-100 rounded-xl transition-all"><Edit2 size={18} strokeWidth={3} /></button>
+                                    <button onClick={() => handleDeleteBranch(branch.id)} className="p-2.5 text-slate-400 hover:text-rose-600 border border-slate-100 rounded-xl transition-all"><Trash2 size={18} strokeWidth={3} /></button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
 

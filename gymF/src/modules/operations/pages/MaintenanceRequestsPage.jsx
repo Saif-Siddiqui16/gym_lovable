@@ -189,9 +189,8 @@ const MaintenanceRequestsPage = () => {
                             ))}
                         </div>
 
-                        {/* Desktop Table View */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full text-left">
+                        <div className="saas-table-wrapper border-0 rounded-none hidden md:block">
+                            <table className="saas-table saas-table-responsive w-full text-left">
                                 <thead>
                                     <tr className="bg-slate-50/50 border-b border-slate-100">
                                         <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">Ticket ID</th>
@@ -212,43 +211,51 @@ const MaintenanceRequestsPage = () => {
                                                 setIsDetailDrawerOpen(true);
                                             }}
                                         >
-                                            <td className="px-6 py-5">
-                                                <span className="text-xs font-black text-slate-900 group-hover:text-amber-600 transition-colors uppercase">#T-{ticket.id}</span>
+                                            <td className="px-6 py-5" data-label="Ticket ID">
+                                                <div className="flex justify-end sm:justify-start">
+                                                    <span className="text-xs font-black text-slate-900 group-hover:text-amber-600 transition-colors uppercase">#T-{ticket.id}</span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-3">
+                                            <td className="px-6 py-5" data-label="Equipment">
+                                                <div className="flex items-center gap-3 justify-end sm:justify-start">
                                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${ticket.priority === 'Critical' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'}`}>
                                                         <AlertTriangle size={16} />
                                                     </div>
                                                     <span className="font-bold text-slate-800 text-sm">{ticket.equipment?.name}</span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-${getSeverityColor(ticket.priority)}-50 text-${getSeverityColor(ticket.priority)}-700 text-[10px] font-black uppercase tracking-wider border border-${getSeverityColor(ticket.priority)}-100`}>
-                                                    <div className={`w-1.5 h-1.5 rounded-full bg-${getSeverityColor(ticket.priority)}-500`} />
-                                                    {ticket.priority}
-                                                </span>
+                                            <td className="px-6 py-5" data-label="Priority">
+                                                <div className="flex justify-end sm:justify-start">
+                                                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-${getSeverityColor(ticket.priority)}-50 text-${getSeverityColor(ticket.priority)}-700 text-[10px] font-black uppercase tracking-wider border border-${getSeverityColor(ticket.priority)}-100`}>
+                                                        <div className={`w-1.5 h-1.5 rounded-full bg-${getSeverityColor(ticket.priority)}-500`} />
+                                                        {ticket.priority}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex flex-col">
+                                            <td className="px-6 py-5" data-label="Date Reported">
+                                                <div className="flex flex-col text-right sm:text-left">
                                                     <p className="text-xs font-bold text-slate-700">Staff</p>
                                                     <p className="text-[10px] text-slate-400 font-medium">{new Date(ticket.createdAt).toLocaleDateString()}</p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <StatusBadge
-                                                    status={ticket.status}
-                                                    color={getStatusConfig(ticket.status).color}
-                                                />
+                                            <td className="px-6 py-5" data-label="Status">
+                                                <div className="flex justify-end sm:justify-start">
+                                                    <StatusBadge
+                                                        status={ticket.status}
+                                                        color={getStatusConfig(ticket.status).color}
+                                                    />
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-5 text-right" onClick={e => e.stopPropagation()}>
-                                                <select
-                                                    className="text-[10px] font-black uppercase tracking-tight bg-slate-50 border-none rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:bg-slate-100 transition-colors"
-                                                    value={ticket.status}
-                                                    onChange={(e) => handleStatusUpdate(ticket.id, e.target.value)}
-                                                >
-                                                    {TICKET_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-                                                </select>
+                                            <td className="px-6 py-5 text-right" data-label="Actions" onClick={e => e.stopPropagation()}>
+                                                <div className="flex justify-end">
+                                                    <select
+                                                        className="text-[10px] font-black uppercase tracking-tight bg-slate-50 border-none rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:bg-slate-100 transition-colors"
+                                                        value={ticket.status}
+                                                        onChange={(e) => handleStatusUpdate(ticket.id, e.target.value)}
+                                                    >
+                                                        {TICKET_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                                                    </select>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}

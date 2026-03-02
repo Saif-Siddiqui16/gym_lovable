@@ -192,7 +192,7 @@ const CategoryDrawer = ({ isOpen, onClose, category, mode = 'add', onSubmit }) =
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-[1.5] py-4 bg-slate-900 text-white rounded-2xl font-black text-sm shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all"
+                                        className="flex-[1.5] py-4 bg-violet-600 text-white rounded-2xl font-black text-sm shadow-md shadow-violet-200 hover:bg-violet-700 transition-all"
                                     >
                                         {mode === 'edit' ? 'Update Category' : 'Add Category'}
                                     </button>

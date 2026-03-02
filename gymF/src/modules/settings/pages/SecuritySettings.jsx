@@ -37,30 +37,30 @@ const SecuritySettings = () => {
     );
 
     return (
-        <div className="p-6 space-y-6 bg-[#F5F7FA] min-h-full">
+        <div className="space-y-8">
             {/* Header */}
             <div>
-                <h1 className="text-[26px] font-semibold text-[#111827] tracking-tight">Security Settings</h1>
-                <p className="text-[#6B7280] text-[15px] font-normal mt-1">Configure security and access controls</p>
+                <h1 className="text-page-title">Security Settings</h1>
+                <p className="text-muted mt-1">Configure security and access controls</p>
             </div>
 
             {/* Security Card */}
-            <div className="bg-white rounded-[12px] border border-[#E5E7EB] p-6 shadow-sm">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-                        <Shield size={22} />
+            <div className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm">
+                <div className="flex items-center gap-4 mb-10">
+                    <div className="p-3 bg-red-50 text-red-600 rounded-xl">
+                        <Shield size={24} />
                     </div>
                     <div>
-                        <h2 className="text-[19px] font-medium text-[#111827]">Security</h2>
-                        <p className="text-[#6B7280] text-sm font-normal">Manage global security policies and session settings</p>
+                        <h2 className="text-card-title">Access Policy</h2>
+                        <p className="text-muted text-sm mt-0.5">Manage global security and session rules</p>
                     </div>
                 </div>
 
-                <div className="space-y-8 mt-10">
-                    <div className="flex items-center justify-between">
+                <div className="space-y-10">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h3 className="font-medium text-[#111827] text-base">Two-Factor Authentication</h3>
-                            <p className="text-[#6B7280] text-sm font-normal">Require 2FA for all admin users</p>
+                            <h3 className="font-medium text-slate-900">Two-Factor Authentication</h3>
+                            <p className="text-muted text-sm mt-0.5">Require 2FA for all admin users</p>
                         </div>
                         <Toggle
                             active={securityConfig.twoFactorAuth}
@@ -68,10 +68,10 @@ const SecuritySettings = () => {
                         />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h3 className="font-medium text-[#111827] text-base">Session Timeout</h3>
-                            <p className="text-[#6B7280] text-sm font-normal">Auto logout after inactivity</p>
+                            <h3 className="font-medium text-slate-900">Session Timeout</h3>
+                            <p className="text-muted text-sm mt-0.5">Auto logout after inactivity</p>
                         </div>
                         <Toggle
                             active={securityConfig.sessionTimeout}
@@ -79,21 +79,21 @@ const SecuritySettings = () => {
                         />
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="font-medium text-[#111827] text-base block">Session Duration (hours)</label>
+                    <div className="space-y-3">
+                        <label className="form-label">Session Duration (hours)</label>
                         <input
                             type="text"
                             value={securityConfig.sessionDuration}
                             onChange={(e) => handleInputChange('sessionDuration', e.target.value)}
                             disabled={isReadOnly}
-                            className="w-full sm:w-[350px] p-4 bg-[#f8fafc] border border-[#E5E7EB] rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-[#374151] font-medium"
+                            className="w-full sm:w-96 p-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all font-medium"
                         />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between gap-4">
                         <div>
-                            <h3 className="font-medium text-[#111827] text-base">Login Alerts</h3>
-                            <p className="text-[#6B7280] text-sm font-normal">Notify on new device logins</p>
+                            <h3 className="font-medium text-slate-900">Login Alerts</h3>
+                            <p className="text-muted text-sm mt-0.5">Notify on new device logins</p>
                         </div>
                         <Toggle
                             active={securityConfig.loginAlerts}
@@ -104,14 +104,14 @@ const SecuritySettings = () => {
             </div>
 
             {/* Footer Save Button */}
-            <div className="flex justify-end pt-4">
+            <div className="flex justify-end pt-6">
                 <button
-                    className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all shadow-md active:scale-95 disabled:opacity-50 text-sm"
+                    className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20"
                     disabled={isReadOnly}
                     onClick={() => alert('Security settings saved successfully!')}
                 >
-                    <Save size={18} />
-                    Save Preferences
+                    <Save size={20} />
+                    Save Security Policy
                 </button>
             </div>
         </div>

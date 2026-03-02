@@ -80,7 +80,7 @@ const ClassDetails = () => {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: 'var(--space-6)' }}>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-12">
                 {/* Left Col: Overview */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
                     <Card title="Class Overview">

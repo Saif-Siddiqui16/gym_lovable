@@ -32,13 +32,13 @@ const MyTasks = () => {
                         <ClipboardList size={28} />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Task Management</h1>
-                        <p className="text-slate-500 text-sm font-medium">Manage and track your operational responsibilities</p>
+                        <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">Task Management</h1>
+                        <p className="text-slate-500 text-xs md:text-sm font-medium">Manage and track your operational responsibilities</p>
                     </div>
                 </div>
                 <button
                     onClick={() => setIsCreateOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-xl md:rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-200"
                 >
                     <Plus size={16} /> New Task
                 </button>
@@ -53,17 +53,17 @@ const MyTasks = () => {
                     { label: 'Completed', value: stats.completed, color: 'text-emerald-500', bg: 'bg-emerald-50' },
                     { label: 'Overdue', value: stats.overdue, color: 'text-rose-500', bg: 'bg-rose-50' }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-[2rem] p-9 shadow-sm border border-slate-100 flex flex-col items-center justify-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-4">{item.label}</p>
-                        <h2 className={`text-5xl font-black ${item.color}`}>{item.value}</h2>
+                    <div key={idx} className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-9 shadow-sm border border-slate-100 flex flex-col items-center justify-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                        <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mb-4">{item.label}</p>
+                        <h2 className={`text-3xl md:text-5xl font-black ${item.color}`}>{item.value}</h2>
                     </div>
                 ))}
             </div>
 
             {/* All Tasks Section */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+            <div className="bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                 {/* Section Header */}
-                <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 className="text-xl font-black text-slate-800 tracking-tight">All Tasks</h3>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -85,7 +85,7 @@ const MyTasks = () => {
 
                 {/* Table Headers */}
                 {tasks.length === 0 && (
-                    <div className="px-8 py-6 border-b border-slate-50 grid grid-cols-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/30">
+                    <div className="hidden md:grid px-8 py-6 border-b border-slate-50 grid grid-cols-6 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] bg-slate-50/30">
                         <span>Task</span>
                         <span>Priority</span>
                         <span>Assigned To</span>

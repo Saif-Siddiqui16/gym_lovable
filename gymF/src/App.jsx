@@ -396,8 +396,8 @@ export default function App() {
             </>
           )}
 
-          {/* MODULE: BRANCH ADMIN */}
-          {currentRole === ROLES.BRANCH_ADMIN && (
+          {/* MODULE: BRANCH ADMIN & MANAGER (OPERATIONAL) */}
+          {(currentRole === ROLES.BRANCH_ADMIN || currentRole === ROLES.MANAGER) && (
             <>
               <Route path="/branchadmin/store/dashboard" element={<StoreDashboard />} />
               <Route path="/branchadmin/store/pos" element={<POS />} />
@@ -422,7 +422,9 @@ export default function App() {
 
               <Route element={<SettingsLayout role={currentRole} />}>
                 <Route path="/branchadmin/settings/general" element={<OrganizationSettings role={currentRole} />} />
-                <Route path="/branchadmin/settings/branches" element={<BranchList />} />
+                {currentRole === ROLES.BRANCH_ADMIN && (
+                  <Route path="/branchadmin/settings/branches" element={<BranchList />} />
+                )}
                 <Route path="/branchadmin/settings/hardware" element={<HardwareSettings />} />
                 <Route path="/branchadmin/settings/communication" element={<Notifications />} />
                 <Route path="/branchadmin/settings/payments" element={<PaymentGateway />} />
@@ -436,31 +438,11 @@ export default function App() {
                 <Route path="/branchadmin/settings/website" element={<WebsiteSettings />} />
                 <Route path="/branchadmin/settings/integrations" element={<IntegrationsSettings />} />
               </Route>
-              <Route path="/branchadmin/profile/me" element={<BranchAdminProfile />} />
+              <Route path="/branchadmin/profile/me" element={(currentRole === ROLES.BRANCH_ADMIN) ? <BranchAdminProfile /> : <ManagerProfile />} />
             </>
           )}
 
-          {/* MODULE: MANAGER */}
-          {currentRole === ROLES.MANAGER && (
-            <>
-              <Route path="/manager/attendance/live-checkin" element={<LiveCheckInMonitor />} />
-              <Route path="/manager/attendance/today/member" element={<MemberLog />} />
-              <Route path="/manager/attendance/today/staff" element={<StaffLog />} />
-              <Route path="/manager/reports/daily-attendance" element={<DailyAttendanceReport />} />
-              <Route path="/manager/reports/booking" element={<BookingReport />} />
-              <Route path="/manager/bookings/calendar" element={<BookingCalendar />} />
-              <Route path="/manager/tasks" element={<TaskList />} />
-              <Route path="/manager/tasks/list" element={<TaskList />} />
-              <Route path="/manager/tasks/assign" element={<AssignTask />} />
-              <Route path="/manager/communication" element={<CommunicationPage />} />
-              <Route path="/manager/requests" element={<TrainerRequests role={currentRole} />} />
-              <Route path="/manager/change-requests" element={<TrainerChangeRequestList role={currentRole} />} />
-              <Route path="/manager/wallet" element={<WalletList role={currentRole} />} />
-              <Route path="/manager/payroll/create" element={<PayrollCreation role={currentRole} />} />
-              <Route path="/manager/members/list" element={<MemberList />} />
-              <Route path="/manager/profile/me" element={<ManagerProfile />} />
-            </>
-          )}
+
 
           {/* MODULE: STAFF */}
           {currentRole === ROLES.STAFF && (
