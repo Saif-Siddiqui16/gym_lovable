@@ -89,12 +89,37 @@ const TodaysCheckIns = () => {
                 </div>
 
                 {/* Table Body / Empty State */}
-                <div className="min-h-[300px] flex flex-col items-center justify-center text-center p-10 md:p-20 animate-fadeIn">
-                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-[1.5rem] md:rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 mb-6">
-                        <UserCircle size={40} className="md:w-12 md:h-12" />
+                <div className="min-h-[400px] flex flex-col items-center justify-center text-center p-10 md:p-20 animate-fadeIn">
+                    <div className="relative mb-8">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-br from-slate-50 to-slate-100/50 flex items-center justify-center text-slate-200 rotation-slow">
+                            {activeTab === 'currentlyIn' ? (
+                                <UserCircle size={48} className="md:w-16 md:h-16 text-slate-300" />
+                            ) : (
+                                <Clock size={48} className="md:w-16 md:h-16 text-slate-300" />
+                            )}
+                        </div>
+                        <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-50 flex items-center justify-center text-rose-500 animate-bounce">
+                            <Users size={20} />
+                        </div>
                     </div>
-                    <h3 className="text-base md:text-lg font-black text-slate-900 tracking-tight">No members currently checked in</h3>
-                    <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mt-2 px-6">Scan a barcode or search to get started</p>
+
+                    <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
+                        {activeTab === 'currentlyIn'
+                            ? "No members currently checked in"
+                            : "No attendance records for today"}
+                    </h3>
+                    <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-4 max-w-xs leading-relaxed opacity-70">
+                        {activeTab === 'currentlyIn'
+                            ? "Scan a barcode or search to record a new check-in"
+                            : "Attendance logs will appear here once members start checking in"}
+                    </p>
+
+                    <div className="mt-10 flex flex-col sm:flex-row items-center gap-4">
+                        <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 rounded-full border border-emerald-100">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">System Online</span>
+                        </div>
+                    </div>
                 </div>
             </div>
 

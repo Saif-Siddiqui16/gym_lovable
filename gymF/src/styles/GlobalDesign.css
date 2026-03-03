@@ -453,6 +453,15 @@ body {
     /* Firefox */
 }
 
+@keyframes rotation-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.rotation-slow {
+    animation: rotation-slow 20s linear infinite;
+}
+
 /* Global Scroll Lock Utility */
 body.drawer-no-scroll,
 body.drawer-no-scroll .content-area,

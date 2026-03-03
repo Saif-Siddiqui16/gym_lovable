@@ -148,52 +148,99 @@ const LockerManagement = () => {
                     })}
                 </div>
 
-                {/* Locker Map Card */}
-                <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-                    <div className="p-5 sm:p-8 border-b border-slate-50 flex justify-between items-center">
-                        <h3 className="text-xl font-black text-slate-800 tracking-tight">Locker Map</h3>
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lockers.length} lockers</span>
-                    </div>
+                {/* Tab Content */}
+                {activeTab === 'Overview' ? (
+                    /* Locker Map Card (Overview Content) */
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+                        <div className="p-5 sm:p-8 border-b border-slate-50 flex justify-between items-center">
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Locker Map</h3>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lockers.length} lockers</span>
+                        </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4">
-                        {lockers.length === 0 ? (
-                            <>
-                                <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
-                                    <Lock size={40} strokeWidth={1.5} />
-                                </div>
-                                <h4 className="text-slate-400 text-sm font-black uppercase tracking-widest">No lockers found</h4>
-                            </>
-                        ) : (
-                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full">
-                                {lockers.map(locker => (
-                                    <div
-                                        key={locker.id}
-                                        onClick={() => handleAction(locker)}
-                                        className="aspect-square bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all group"
-                                    >
-                                        <Lock size={20} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
-                                        <span className="text-xs font-black text-slate-700">{locker.number}</span>
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4">
+                            {lockers.length === 0 ? (
+                                <>
+                                    <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
+                                        <Lock size={40} strokeWidth={1.5} />
                                     </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                                    <h4 className="text-slate-400 text-sm font-black uppercase tracking-widest">No lockers found</h4>
+                                </>
+                            ) : (
+                                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full">
+                                    {lockers.map(locker => (
+                                        <div
+                                            key={locker.id}
+                                            onClick={() => handleAction(locker)}
+                                            className="aspect-square bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all group"
+                                        >
+                                            <Lock size={20} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
+                                            <span className="text-xs font-black text-slate-700">{locker.number}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Legend */}
-                    <div className="p-5 sm:p-8 bg-slate-50/50 flex flex-wrap gap-6 border-t border-slate-50">
-                        {[
-                            { label: 'Available', color: 'bg-green-400' },
-                            { label: 'Assigned', color: 'bg-slate-400' },
-                            { label: 'Maintenance', color: 'bg-orange-400' },
-                            { label: 'Reserved', color: 'bg-blue-300' }
-                        ].map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                                <div className={`w-3 h-3 rounded-full ${item.color} shadow-sm shadow-slate-200`} />
-                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
-                            </div>
-                        ))}
+                        {/* Legend */}
+                        <div className="p-5 sm:p-8 bg-slate-50/50 flex flex-wrap gap-6 border-t border-slate-50">
+                            {[
+                                { label: 'Available', color: 'bg-green-400' },
+                                { label: 'Assigned', color: 'bg-slate-400' },
+                                { label: 'Maintenance', color: 'bg-orange-400' },
+                                { label: 'Reserved', color: 'bg-blue-300' }
+                            ].map((item, idx) => (
+                                <div key={idx} className="flex items-center gap-2">
+                                    <div className={`w-3 h-3 rounded-full ${item.color} shadow-sm shadow-slate-200`} />
+                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* Assigned Lockers Content */
+                    <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
+                        <div className="p-5 sm:p-8 border-b border-slate-50 flex justify-between items-center bg-slate-50/30">
+                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Assigned Lockers</h3>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats.assigned} active assignments</span>
+                        </div>
+
+                        {/* Table Header */}
+                        <div className="hidden sm:grid grid-cols-6 px-10 py-5 border-b border-slate-50 bg-white">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Locker</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Member</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Start Date</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">End Date</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Fee</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1 text-right">Actions</span>
+                        </div>
+
+                        {/* Table Body / Empty State */}
+                        <div className="flex-1 flex flex-col items-center justify-center p-10 md:p-20 text-center animate-fadeIn">
+                            <div className="relative mb-8">
+                                <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-br from-slate-50 to-slate-100/50 flex items-center justify-center text-slate-200 rotation-slow">
+                                    <Key size={48} className="md:w-16 md:h-16 text-slate-300" />
+                                </div>
+                                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-50 flex items-center justify-center text-indigo-500 animate-bounce">
+                                    <Lock size={20} />
+                                </div>
+                            </div>
+
+                            <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">No lockers currently assigned</h3>
+                            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-4 max-w-xs leading-relaxed opacity-70">
+                                Assigned lockers will appear here in a detailed list once members rent them
+                            </p>
+
+                            <div className="mt-10">
+                                <button
+                                    onClick={() => setActiveTab('Overview')}
+                                    className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                                >
+                                    Go to Map to Assign
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Drawers */}
