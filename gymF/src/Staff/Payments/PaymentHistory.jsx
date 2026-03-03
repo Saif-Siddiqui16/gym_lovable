@@ -91,7 +91,7 @@ const PaymentHistory = () => {
     };
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-paymenthistory">
+        <div className="p-0 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-paymenthistory">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">Payment History</h1>
@@ -111,7 +111,7 @@ const PaymentHistory = () => {
 
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Filters Section */}
-                <div className="p-6 border-b border-gray-50 flex flex-col lg:flex-row gap-4">
+                <div className="p-4 sm:p-6 border-b border-gray-50 flex flex-col lg:flex-row gap-4">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input

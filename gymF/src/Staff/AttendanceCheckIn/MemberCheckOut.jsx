@@ -45,7 +45,7 @@ const MemberCheckOut = () => {
     };
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-membercheckout">
+        <div className="p-0 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-membercheckout">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 animate-fade-in-down">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">Member Check-Out</h1>

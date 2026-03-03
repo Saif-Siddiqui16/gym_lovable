@@ -24,7 +24,7 @@ const MyTasks = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 space-y-8 animate-fadeIn text-slate-900 font-sans">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 sm:p-8 space-y-8 animate-fadeIn text-slate-900 font-sans">
             {/* Premium Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div className="flex items-center gap-4">
@@ -53,7 +53,7 @@ const MyTasks = () => {
                     { label: 'Completed', value: stats.completed, color: 'text-emerald-500', bg: 'bg-emerald-50' },
                     { label: 'Overdue', value: stats.overdue, color: 'text-rose-500', bg: 'bg-rose-50' }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-6 md:p-9 shadow-sm border border-slate-100 flex flex-col items-center justify-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div key={idx} className="bg-white rounded-[1.5rem] md:rounded-[2rem] p-4 md:p-9 shadow-sm border border-slate-100 flex flex-col items-center justify-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         <p className="text-slate-400 text-[9px] md:text-[10px] font-black uppercase tracking-widest mb-4">{item.label}</p>
                         <h2 className={`text-3xl md:text-5xl font-black ${item.color}`}>{item.value}</h2>
                     </div>
@@ -63,7 +63,7 @@ const MyTasks = () => {
             {/* All Tasks Section */}
             <div className="bg-white rounded-3xl md:rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                 {/* Section Header */}
-                <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div className="p-4 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <h3 className="text-xl font-black text-slate-800 tracking-tight">All Tasks</h3>
 
                     <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -96,7 +96,7 @@ const MyTasks = () => {
                 )}
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center">
                     {tasks.length === 0 ? (
                         <div className="space-y-4 animate-in fade-in zoom-in duration-700">
                             <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] border border-slate-100 flex items-center justify-center text-slate-200 mx-auto shadow-inner">

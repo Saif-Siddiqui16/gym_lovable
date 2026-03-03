@@ -105,7 +105,7 @@ const CollectPayment = () => {
     };
 
     return (
-        <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen font-sans">
+        <div className="p-0 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen font-sans">
             <div className="max-w-4xl mx-auto">
                 <div className="mb-8">
                     <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
@@ -121,7 +121,7 @@ const CollectPayment = () => {
                     {/* Main Form */}
                     <div className="lg:col-span-2 space-y-6">
                         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
-                            <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                            <form onSubmit={handleSubmit} className="p-4 sm:p-8 space-y-6">
                                 {/* Invoice Selection */}
                                 <div className="space-y-2">
                                     <label className="text-sm font-black text-slate-700 flex items-center gap-2 uppercase tracking-wider">
@@ -169,7 +169,7 @@ const CollectPayment = () => {
                                 </div>
 
                                 {/* Payment Details Section */}
-                                <div className="p-6 bg-violet-50/50 rounded-2xl border border-violet-100 space-y-6">
+                                <div className="p-4 sm:p-6 bg-violet-50/50 rounded-2xl border border-violet-100 space-y-6">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {/* Payment Amount */}
                                         <div className="space-y-2">

@@ -69,7 +69,7 @@ const TaskStatus = () => {
     const paginatedTasks = tasks.slice(startIndex, startIndex + itemsPerPage);
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-taskstatus">
+        <div className="p-0 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-taskstatus">
             <div className="mb-8">
                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">Task Status Overview</h1>
                 <p className="text-sm text-gray-500 mt-1">Track real-time progress of all operational duties.</p>
@@ -78,7 +78,7 @@ const TaskStatus = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 staffdashboard-taskstatus-card active:scale-[0.98] cursor-pointer group">
+                    <div key={idx} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-xl hover:-translate-y-1 hover:scale-[1.02] transition-all duration-300 staffdashboard-taskstatus-card active:scale-[0.98] cursor-pointer group">
                         <div className={`p-4 rounded-xl ${stat.bg} ${stat.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-300`}>
                             <stat.icon size={24} />
                         </div>
@@ -92,7 +92,7 @@ const TaskStatus = () => {
 
             {/* Main Table Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div className="p-4 sm:p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div className="flex items-center gap-3">
                         <Filter size={18} className="text-indigo-600" />
                         <CustomDropdown

@@ -189,6 +189,7 @@ import BranchList from './pages/branchadmin/branch-management/BranchList';
 // Module: Settings Expansion
 import WebhookSettings from './modules/settings/pages/WebhookSettings';
 import ApiKeySettings from './modules/settings/pages/ApiKeySettings';
+import BranchAdminBenefits from './modules/settings/pages/BranchAdminBenefits';
 
 import { ROLES } from './config/roles';
 import './styles/GlobalDesign.css';
@@ -430,6 +431,7 @@ export default function App() {
                 <Route path="/branchadmin/settings/payments" element={<PaymentGateway />} />
                 <Route path="/branchadmin/settings/invoice" element={<InvoiceSettings />} />
                 <Route path="/branchadmin/settings/referrals" element={<ReferralSettings />} />
+                <Route path="/branchadmin/settings/benefits" element={<BranchAdminBenefits />} />
                 <Route path="/branchadmin/settings/templates" element={<MessageTemplates />} />
                 <Route path="/branchadmin/settings/plan-benefit-templates" element={<PlanBenefitTemplates />} />
                 <Route path="/branchadmin/settings/expenses" element={<ExpenseSettings />} />

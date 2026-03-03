@@ -8,12 +8,12 @@ const LeadsPipeline = () => {
     const [showAddDrawer, setShowAddDrawer] = useState(false);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 md:p-8 space-y-8 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 md:p-8 space-y-8 animate-fadeIn">
 
             {/* Header Section */}
             <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-2xl opacity-10 pointer-events-none"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-8">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-2 sm:p-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-lg shadow-violet-200">
@@ -37,7 +37,7 @@ const LeadsPipeline = () => {
             </div>
 
             {/* Stats Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 px-1 md:px-0">
                 <StatsCard title="Total Leads" value="0" icon={Users} color="primary" isEarningsLayout={true} />
                 <StatsCard title="New" value="0" icon={UserPlus} color="info" isEarningsLayout={true} />
                 <StatsCard title="Contacted" value="0" icon={Phone} color="warning" isEarningsLayout={true} />
@@ -46,7 +46,7 @@ const LeadsPipeline = () => {
             </div>
 
             {/* Lead Sources Section */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-8">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-2 sm:p-8">
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
                         <BarChart3 size={20} />
@@ -66,7 +66,7 @@ const LeadsPipeline = () => {
 
             {/* All Leads Section */}
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                <div className="p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30">
+                <div className="p-2 sm:p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
                             <Users size={20} />

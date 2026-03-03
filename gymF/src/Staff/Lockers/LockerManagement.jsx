@@ -40,7 +40,7 @@ const LockerManagement = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 space-y-8 animate-fadeIn text-slate-900">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 sm:p-8 space-y-8 animate-fadeIn text-slate-900">
             {/* Premium Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                 <div className="flex items-center gap-4">
@@ -76,7 +76,7 @@ const LockerManagement = () => {
                     { label: 'Assigned', value: stats.assigned, subValue: `${stats.occupancy} occupancy`, icon: User, color: 'text-slate-500', bg: 'bg-slate-50/50' },
                     { label: 'Maintenance', value: stats.maintenance, icon: Key, color: 'text-amber-600', bg: 'bg-amber-100/50' }
                 ].map((item, idx) => (
-                    <div key={idx} className="bg-white rounded-[2.5rem] p-7 shadow-sm border border-slate-100 flex justify-between items-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                    <div key={idx} className="bg-white rounded-[2.5rem] p-5 sm:p-7 shadow-sm border border-slate-100 flex justify-between items-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                         <div>
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{item.label}</p>
                             <div className="flex items-baseline gap-2">
@@ -150,12 +150,12 @@ const LockerManagement = () => {
 
                 {/* Locker Map Card */}
                 <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
-                    <div className="p-8 border-b border-slate-50 flex justify-between items-center">
+                    <div className="p-5 sm:p-8 border-b border-slate-50 flex justify-between items-center">
                         <h3 className="text-xl font-black text-slate-800 tracking-tight">Locker Map</h3>
                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lockers.length} lockers</span>
                     </div>
 
-                    <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-4">
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4">
                         {lockers.length === 0 ? (
                             <>
                                 <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
@@ -180,7 +180,7 @@ const LockerManagement = () => {
                     </div>
 
                     {/* Legend */}
-                    <div className="p-8 bg-slate-50/50 flex flex-wrap gap-6 border-t border-slate-50">
+                    <div className="p-5 sm:p-8 bg-slate-50/50 flex flex-wrap gap-6 border-t border-slate-50">
                         {[
                             { label: 'Available', color: 'bg-green-400' },
                             { label: 'Assigned', color: 'bg-slate-400' },

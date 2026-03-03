@@ -251,7 +251,7 @@ const WorkoutPlans = ({ role }) => {
             <div className="max-w-7xl mx-auto">
 
                 {/* Header with Switcher and Actions */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                     <div className="flex items-center gap-2 p-1 md:p-1.5 bg-white border border-gray-100 rounded-2xl w-full md:w-fit shadow-sm overflow-x-auto no-scrollbar scrollbar-hide">
                         <button
                             className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-xs font-bold bg-[#F3F4F6] text-[#1A1A1A] transition-all shadow-sm whitespace-nowrap"
@@ -268,26 +268,7 @@ const WorkoutPlans = ({ role }) => {
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3 md:gap-4 self-end md:self-auto">
-                        <div className="relative group hidden lg:block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                            <input
-                                type="text"
-                                placeholder="Search..."
-                                className="w-64 h-11 pl-10 pr-4 bg-white border border-gray-100 rounded-xl outline-none focus:border-indigo-200 transition-all text-sm font-medium"
-                            />
-                        </div>
-                        <button className="p-2 md:p-2.5 bg-white border border-gray-100 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm">
-                            <Moon size={18} />
-                        </button>
-                        <button className="p-2 md:p-2.5 bg-white border border-gray-100 rounded-xl text-gray-500 hover:bg-gray-50 transition-all shadow-sm relative">
-                            <Bell size={18} />
-                            <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
-                        <div className="w-10 h-10 rounded-xl bg-[#F97316] flex items-center justify-center text-white font-black text-xs shadow-lg shadow-orange-100 cursor-pointer hover:scale-105 transition-all">
-                            DT
-                        </div>
-                    </div>
+
                 </div>
 
                 {/* Plan Info Card */}

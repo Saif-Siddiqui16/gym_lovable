@@ -125,7 +125,7 @@ const ClassesList = () => {
     return (
         <div className="min-h-screen bg-[#F8F9FC] p-6 lg:p-8">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">Classes</h1>
                     <p className="text-slate-500 text-sm font-medium mt-1">Manage group classes and bookings</p>

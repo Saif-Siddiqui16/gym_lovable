@@ -97,7 +97,7 @@ const MyProfile = () => {
     ];
 
     return (
-        <div className="p-6 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen font-sans animate-fadeIn">
+        <div className="p-0 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen font-sans animate-fadeIn">
             <div className="max-w-5xl mx-auto space-y-8">
 
                 {/* Profile Header Card */}
@@ -105,7 +105,7 @@ const MyProfile = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-600 opacity-95"></div>
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
 
-                    <div className="relative px-8 pb-8 pt-32">
+                    <div className="relative px-4 sm:px-8 pb-8 pt-32">
                         <div className="flex flex-col md:flex-row md:items-end gap-8 -mt-20">
                             <div className="relative group/avatar">
                                 <div className="w-40 h-40 rounded-[32px] bg-white p-2 shadow-2xl transform group-hover/avatar:scale-105 transition-transform duration-300 rotate-3 group-hover/avatar:rotate-0">
@@ -164,7 +164,7 @@ const MyProfile = () => {
 
                     {/* Form Area */}
                     <div className="lg:col-span-3">
-                        <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl p-8 md:p-10 animate-in slide-in-from-right duration-500 relative overflow-hidden">
+                        <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl p-4 sm:p-10 animate-in slide-in-from-right duration-500 relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-64 h-64 bg-violet-50 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 opacity-50 pointer-events-none"></div>
 
                             {message.text && (
@@ -255,7 +255,7 @@ const MyProfile = () => {
 
                             {activeTab === 'security' && (
                                 <div className="space-y-8 relative z-10">
-                                    <div className="p-8 rounded-[32px] bg-red-50 border border-red-100 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                                    <div className="p-5 sm:p-8 rounded-[32px] bg-red-50 border border-red-100 flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                                         <div className="w-16 h-16 bg-red-100 rounded-2xl flex items-center justify-center text-red-600 shrink-0">
                                             <Lock size={32} strokeWidth={2.5} />
                                         </div>
@@ -270,7 +270,7 @@ const MyProfile = () => {
 
                                     <div className="space-y-4">
                                         <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest px-1">Account Security</h4>
-                                        <div className="p-6 rounded-[28px] border-2 border-slate-100 bg-white hover:border-violet-100 transition-colors space-y-4">
+                                        <div className="p-4 sm:p-6 rounded-[28px] border-2 border-slate-100 bg-white hover:border-violet-100 transition-colors space-y-4">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center gap-4">
                                                     <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
