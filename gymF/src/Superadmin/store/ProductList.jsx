@@ -70,41 +70,48 @@ const ProductList = () => {
     };
 
     const stats = [
-        { title: 'Total Products', value: products.length, icon: <Box size={24} />, bgColor: 'bg-[#1e293b]', iconBg: 'bg-white/10' },
-        { title: 'Low Stock', value: products.filter(p => p.stock < 10).length, icon: <AlertTriangle size={24} />, bgColor: 'bg-[#fbbf24]', iconBg: 'bg-black/10' },
-        { title: 'Stock Value', value: `₹${products.reduce((acc, p) => acc + (parseFloat(p.price) * p.stock), 0).toLocaleString()}`, icon: <TrendingUp size={24} />, bgColor: 'bg-[#10b981]', iconBg: 'bg-white/10' },
-        { title: 'Categories', value: categories.length, icon: <Tag size={24} />, bgColor: 'bg-[#3b82f6]', iconBg: 'bg-white/10' }
+        { title: 'Total Products', value: products.length, icon: <Box size={24} />, iconGradient: 'bg-gradient-to-br from-violet-500 to-purple-600' },
+        { title: 'Low Stock', value: products.filter(p => p.stock < 10).length, icon: <AlertTriangle size={24} />, iconGradient: 'bg-gradient-to-br from-amber-500 to-orange-600' },
+        { title: 'Stock Value', value: `₹${products.reduce((acc, p) => acc + (parseFloat(p.price) * p.stock), 0).toLocaleString()}`, icon: <TrendingUp size={24} />, iconGradient: 'bg-gradient-to-br from-emerald-500 to-emerald-600' },
+        { title: 'Categories', value: categories.length, icon: <Tag size={24} />, iconGradient: 'bg-gradient-to-br from-blue-500 to-indigo-600' }
     ];
 
     return (
-        <div className="bg-[#f9fafb] p-4 sm:p-8 min-h-screen">
+        <div className="bg-gradient-to-br from-slate-50 via-white to-violet-50/20 p-4 sm:p-8 min-h-screen">
             {/* Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-[#1e293b] flex items-center gap-3">
-                        <Box className="text-[#1e293b]" size={32} />
-                        Products & Inventory
-                    </h1>
-                    <p className="text-slate-500 text-sm mt-1">Manage your product catalog and stock levels</p>
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                        <Box size={28} />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                            Products & Inventory
+                        </h1>
+                        <p className="text-slate-500 text-sm mt-1 font-medium">Manage your product catalog and stock levels</p>
+                    </div>
                 </div>
                 <button
                     onClick={handleAdd}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-[#0f172a] text-white rounded-lg text-sm font-semibold hover:bg-[#1e293b] transition-all duration-300 shadow-md"
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-violet-600 text-white rounded-xl text-sm font-black shadow-lg shadow-violet-200 hover:bg-violet-700 hover:scale-[1.02] active:scale-98 transition-all duration-300"
                 >
                     <Plus size={18} /> Add Product
                 </button>
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 {stats.map((stat, idx) => (
-                    <div key={idx} className={`${stat.bgColor} p-6 rounded-2xl shadow-sm relative overflow-hidden group hover:scale-[1.02] transition-all duration-300`}>
-                        <div className="relative z-10">
-                            <p className="text-white/80 text-xs font-bold uppercase tracking-wider mb-2">{stat.title}</p>
-                            <h3 className="text-white text-3xl font-black">{stat.value}</h3>
-                        </div>
-                        <div className={`absolute right-4 top-1/2 -translate-y-1/2 ${stat.iconBg} p-4 rounded-xl text-white opacity-80 group-hover:scale-110 transition-transform`}>
-                            {stat.icon}
+                    <div key={idx} className="group relative bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5 overflow-hidden">
+                        <div className="relative flex items-start justify-between">
+                            <div>
+                                <p className="text-sm font-semibold text-slate-600 mb-2">{stat.title}</p>
+                                <h3 className="text-3xl font-black text-slate-900 mb-2">{stat.value}</h3>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global Overview</p>
+                            </div>
+                            <div className={`w-14 h-14 rounded-xl ${stat.iconGradient} flex items-center justify-center text-white shadow-lg transition-transform duration-300 group-hover:scale-110`}>
+                                {stat.icon}
+                            </div>
                         </div>
                     </div>
                 ))}
@@ -259,7 +266,7 @@ const ProductList = () => {
                         <p className="text-slate-400 text-sm mt-1 mb-8">Get started by adding your first product catalog</p>
                         <button
                             onClick={handleAdd}
-                            className="bg-[#0f172a] text-white px-8 py-3 rounded-lg font-bold text-sm shadow-lg hover:bg-slate-800 transition-all flex items-center gap-2"
+                            className="bg-violet-600 text-white px-8 py-3 rounded-xl font-black text-sm shadow-lg shadow-violet-200 hover:bg-violet-700 hover:scale-105 transition-all flex items-center gap-2"
                         >
                             <Plus size={18} /> Add Product
                         </button>

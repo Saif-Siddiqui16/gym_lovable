@@ -25,7 +25,7 @@ const BlockedEntryAlerts = () => {
     };
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-blockedalerts">
+        <div className="p-0 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-blockedalerts">
             <div className="mb-8 animate-fade-in-down">
                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">Blocked Entry Alerts</h1>
                 <p className="text-sm text-gray-500 mt-1">Monitor recently rejected entries for manual intervention.</p>

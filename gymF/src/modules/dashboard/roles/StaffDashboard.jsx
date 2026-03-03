@@ -32,13 +32,13 @@ const StaffDashboard = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-8 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 sm:p-8 animate-fadeIn">
             {/* Header section */}
             <div className="mb-6 sm:mb-10 relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl sm:rounded-3xl blur-2xl opacity-10"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 p-5 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 p-2 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-1">
-                        <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">Hello, Demo!</h1>
+                        <h1 className="text-xl sm:text-4xl font-black text-slate-900 tracking-tight">Hello, Demo!</h1>
                         <p className="text-slate-500 font-black text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">
                             Main Branch • Sunday, 01 Mar 2026
                         </p>
@@ -59,12 +59,12 @@ const StaffDashboard = () => {
                     </div>
                     <h2 className="text-xs font-black text-slate-900 uppercase tracking-[0.2em]">Quick Actions</h2>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6 px-1 md:px-0">
                     {quickActions.map((action, idx) => (
                         <button
                             key={idx}
                             onClick={() => action.path ? navigate(action.path) : action.icon && typeof action.icon === 'string' && navigate(action.icon)}
-                            className="bg-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-violet-500/10 hover:border-violet-200 transition-all duration-300 group flex flex-col items-center text-center gap-3 sm:gap-4"
+                            className="bg-white p-2 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-violet-500/10 hover:border-violet-200 transition-all duration-300 group flex flex-col items-center text-center gap-2 sm:gap-4"
                         >
                             <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${action.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm`}>
                                 {action.customIcon ? <action.customIcon size={20} className="sm:w-6 sm:h-6" /> : action.icon && typeof action.icon !== 'string' && <action.icon size={20} className="sm:w-6 sm:h-6" />}
@@ -114,7 +114,7 @@ const StaffDashboard = () => {
                 {/* Left Column */}
                 <div className="space-y-8">
                     {/* Recent Check-ins */}
-                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-8">
+                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Recent Check-ins</h3>
                             <button
@@ -147,7 +147,7 @@ const StaffDashboard = () => {
                     </Card>
 
                     {/* Follow-Up Leads */}
-                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-8">
+                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Follow-Up Leads</h3>
                             <button
@@ -179,7 +179,7 @@ const StaffDashboard = () => {
                 {/* Right Column */}
                 <div className="space-y-8">
                     {/* Expiring Soon */}
-                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-8">
+                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Expiring Soon</h3>
                             <button
@@ -210,7 +210,7 @@ const StaffDashboard = () => {
                     </Card>
 
                     {/* My Pending Tasks */}
-                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-8">
+                    <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
                             <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">My Pending Tasks</h3>
                             <button

@@ -15,7 +15,7 @@ const StatsCard = ({ title, value, icon: Icon, trend, subtitle, color = 'primary
     const currentStyle = colorClasses[color] || colorClasses.primary;
 
     return (
-        <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-slate-200 cursor-pointer p-6 h-full min-h-[120px] flex flex-col justify-center !rounded-2xl">
+        <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-slate-200 cursor-pointer p-3 sm:p-6 h-full min-h-[120px] flex flex-col justify-center !rounded-2xl">
             <div className="flex justify-between items-start relative z-10 w-full gap-3">
                 <div className="flex flex-col flex-1 min-w-0">
                     <div className="text-slate-400 font-bold text-[10px] md:text-xs mb-1.5 uppercase tracking-widest truncate">

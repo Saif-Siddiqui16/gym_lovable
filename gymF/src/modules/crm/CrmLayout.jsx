@@ -15,7 +15,7 @@ const CrmLayout = () => {
     const isTrainerLeads = location.pathname === '/crm/my-leads';
 
     return (
-        <div className="saas-container bg-gradient-to-br from-slate-50 via-white to-violet-50/30">
+        <div className="saas-container p-0 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30">
             <div className="max-w-[1400px] mx-auto">
                 {/* SAFELY COMMENTED OUT: CRM & Sales Header with tabs
                 <header className="mb-8 relative">

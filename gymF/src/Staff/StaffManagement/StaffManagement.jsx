@@ -3,9 +3,9 @@ import { Users, CheckCircle, Clock, Briefcase } from 'lucide-react';
 
 const StaffManagement = ({ role, branchId }) => {
     return (
-        <div className="bg-gradient-to-br from-gray-50 via-white to-violet-50/30 min-h-screen p-6 md:p-8 font-sans pb-24 text-slate-800">
+        <div className="bg-gradient-to-br from-gray-50 via-white to-violet-50/30 min-h-screen p-0 md:p-8 font-sans pb-24 text-slate-800">
             {/* Header section matching exact text */}
-            <div className="max-w-7xl mx-auto mb-8">
+            <div className="max-w-full mx-auto mb-8">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
@@ -17,9 +17,9 @@ const StaffManagement = ({ role, branchId }) => {
             </div>
 
             {/* Stats Cards Exact text */}
-            <div className="max-w-7xl mx-auto mb-10">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+            <div className="max-w-full mx-auto mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="bg-white rounded-2xl p-2 sm:p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center">
                             <Users size={24} />
                         </div>
@@ -28,7 +28,7 @@ const StaffManagement = ({ role, branchId }) => {
                             <h3 className="text-2xl font-black text-slate-800">0</h3>
                         </div>
                     </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div className="bg-white rounded-2xl p-2 sm:p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center">
                             <CheckCircle size={24} />
                         </div>
@@ -37,7 +37,7 @@ const StaffManagement = ({ role, branchId }) => {
                             <h3 className="text-2xl font-black text-slate-800">0</h3>
                         </div>
                     </div>
-                    <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+                    <div className="bg-white rounded-2xl p-2 sm:p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                         <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center">
                             <Clock size={24} />
                         </div>
@@ -86,7 +86,7 @@ const StaffManagement = ({ role, branchId }) => {
                         </div>
 
                         {/* Mobile View */}
-                        <div className="md:hidden p-6 space-y-4">
+                        <div className="md:hidden p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center py-12">
                                 <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Clock size={32} />
@@ -133,7 +133,7 @@ const StaffManagement = ({ role, branchId }) => {
                         </div>
 
                         {/* Mobile View */}
-                        <div className="md:hidden p-6 space-y-4">
+                        <div className="md:hidden p-4 space-y-4">
                             <div className="flex flex-col items-center justify-center py-12">
                                 <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <Briefcase size={32} />

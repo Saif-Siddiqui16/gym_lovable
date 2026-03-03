@@ -241,10 +241,10 @@ const PTSessions = () => {
     return (
         <div className="saas-container p-4 md:p-6 space-y-6">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-center md:text-left">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 text-center md:text-left">
                 <div>
                     <h1 className="text-xl md:text-2xl font-black text-slate-800 tracking-tight">PT Sessions</h1>
-                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-widest">Manage personal training packages and sessions</p>
+                    <p className="text-slate-500 text-[10px] md:text-sm font-medium uppercase tracking-widest mt-1">Manage personal training packages and sessions</p>
                 </div>
             </div>
 

@@ -20,12 +20,12 @@ const StaffMemberList = () => {
     });
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 md:p-8 space-y-8 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 md:p-8 space-y-8 animate-fadeIn">
 
             {/* Header Section */}
             <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-2xl opacity-10 pointer-events-none"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-8">
+                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-2 sm:p-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
                             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-lg shadow-violet-200">
@@ -58,7 +58,7 @@ const StaffMemberList = () => {
             </div>
 
             {/* Search Section */}
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 flex flex-col md:flex-row gap-4 items-center">
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 sm:p-6 flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input
@@ -89,7 +89,7 @@ const StaffMemberList = () => {
             </div>
 
             {/* Empty State / Table Placeholder */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-20 flex flex-col items-center justify-center text-center gap-6">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10 sm:p-20 flex flex-col items-center justify-center text-center gap-6">
                 <div className="w-24 h-24 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200 shadow-inner">
                     <User size={48} />
                 </div>

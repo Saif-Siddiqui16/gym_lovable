@@ -101,7 +101,7 @@ const SessionCalendar = () => {
         <div className="saas-container p-4 md:p-6 space-y-6">
 
             {/* Page Header */}
-            <div>
+            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
                 <h1 className="text-2xl font-bold text-slate-800">Schedule PT Session</h1>
                 <p className="text-slate-500 text-sm mt-1">Book a personal training session with your client</p>
             </div>

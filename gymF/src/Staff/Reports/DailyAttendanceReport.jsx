@@ -39,7 +39,7 @@ const DailyAttendanceReport = () => {
     };
 
     return (
-        <div className="p-6 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-reports">
+        <div className="p-0 md:p-8 bg-gray-50 min-h-screen font-sans staffdashboard-reports">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
                     <h1 className="text-xl font-bold text-gray-900 tracking-tight">Daily Attendance Report</h1>
@@ -56,7 +56,7 @@ const DailyAttendanceReport = () => {
             {/* Stats Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {attendanceStats.map((stat, idx) => (
-                    <div key={idx} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all duration-300">
+                    <div key={idx} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all duration-300">
                         <div className={`p-4 rounded-xl ${stat.bg} ${stat.color}`}>
                             <stat.icon size={24} />
                         </div>
@@ -70,7 +70,7 @@ const DailyAttendanceReport = () => {
 
             {/* Table Card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100" style={{ overflow: 'visible', zIndex: 10, position: 'relative' }}>
-                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
+                <div className="p-4 sm:p-6 border-b border-gray-50 flex flex-col md:flex-row gap-4 justify-between items-center">
                     <div className="flex items-center gap-3 w-full md:w-auto">
                         <div className="relative">
                             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />

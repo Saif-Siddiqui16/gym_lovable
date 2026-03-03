@@ -71,11 +71,11 @@ const MemberCheckIn = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-6 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 sm:p-6 animate-fadeIn">
             {/* Premium Header */}
             <div className="mb-8 relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl blur-2xl opacity-10 animate-pulse"></div>
-                <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-6">
+                <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-2 sm:p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                         <div className="flex items-center gap-4">
                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-110 hover:rotate-6">
@@ -102,7 +102,7 @@ const MemberCheckIn = () => {
                 <div className="group relative bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden hover:shadow-2xl hover:border-violet-100 transition-all duration-300">
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-50/20 to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
-                    <div className="relative z-10 p-8">
+                    <div className="relative z-10 p-5 sm:p-8">
                         <div className="relative" ref={searchRef}>
                             <form onSubmit={handleSearch} className="flex gap-4">
                                 <div className="relative flex-1 group/input">
@@ -175,7 +175,7 @@ const MemberCheckIn = () => {
 
                 {/* Member Result Card */}
                 {foundMember && (
-                    <div className={`relative p-8 rounded-3xl shadow-2xl border-2 overflow-hidden transition-all duration-500 animate-in zoom-in-95 ${isExpired ? 'bg-white border-red-200 shadow-red-100' : 'bg-white border-emerald-200 shadow-emerald-100'
+                    <div className={`relative p-5 sm:p-8 rounded-3xl shadow-2xl border-2 overflow-hidden transition-all duration-500 animate-in zoom-in-95 ${isExpired ? 'bg-white border-red-200 shadow-red-100' : 'bg-white border-emerald-200 shadow-emerald-100'
                         }`}>
                         {/* Background Decoration */}
                         <div className={`absolute top-0 right-0 w-64 h-64 opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 ${isExpired ? 'bg-red-500' : 'bg-emerald-500'
@@ -183,8 +183,8 @@ const MemberCheckIn = () => {
 
                         <div className="relative z-10 flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
                             <div className={`w-28 h-28 rounded-3xl flex items-center justify-center text-4xl font-black shadow-xl transform hover:scale-105 transition-transform duration-300 ${isExpired
-                                    ? 'bg-gradient-to-br from-red-100 to-red-200 text-red-600 shadow-red-200'
-                                    : 'bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-600 shadow-emerald-200'
+                                ? 'bg-gradient-to-br from-red-100 to-red-200 text-red-600 shadow-red-200'
+                                : 'bg-gradient-to-br from-emerald-100 to-emerald-200 text-emerald-600 shadow-emerald-200'
                                 }`}>
                                 {(foundMember?.name || '?').charAt(0)}
                             </div>
@@ -198,8 +198,8 @@ const MemberCheckIn = () => {
                                             {foundMember.id}
                                         </span>
                                         <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-wide border ${isExpired
-                                                ? 'bg-red-50 text-red-600 border-red-100'
-                                                : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                                            ? 'bg-red-50 text-red-600 border-red-100'
+                                            : 'bg-emerald-50 text-emerald-600 border-emerald-100'
                                             }`}>
                                             {foundMember.status}
                                         </span>

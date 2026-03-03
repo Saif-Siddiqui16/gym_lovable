@@ -72,15 +72,15 @@ const AssignedMembers = () => {
     return (
         <div className="p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto flex flex-col gap-6 animate-in fade-in duration-500">
             {/* Header Area */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Assigned Members</h1>
                     <p className="text-gray-500 text-sm mt-1">Manage and track progress of your {members.length} active trainees</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="bg-blue-50 px-4 py-2 rounded-xl flex items-center gap-2 border border-blue-100">
-                        <Trophy size={18} className="text-blue-500" />
-                        <span className="text-sm font-bold text-blue-700">Top Performer: Emma</span>
+                    <div className="bg-violet-50 px-4 py-2 rounded-xl flex items-center gap-2 border border-violet-100">
+                        <Trophy size={18} className="text-violet-500" />
+                        <span className="text-sm font-bold text-violet-700">Top Performer: Emma</span>
                     </div>
                 </div>
             </div>

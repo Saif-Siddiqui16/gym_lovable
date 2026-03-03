@@ -100,8 +100,8 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
             <div className="flex items-center gap-2 sm:gap-4">
                 {/* Branch Selector */}
                 {role === ROLES.BRANCH_ADMIN && (
-                    <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
-                        <Building size={16} className="text-slate-400" />
+                    <div className="flex items-center gap-2 bg-slate-50 px-2 md:px-3 py-1.5 rounded-lg border border-slate-200 max-w-[120px] sm:max-w-none">
+                        <Building size={16} className="text-slate-400 shrink-0" />
                         <select
                             value={selectedBranch || 'all'}
                             onChange={(e) => setSelectedBranch(e.target.value)}

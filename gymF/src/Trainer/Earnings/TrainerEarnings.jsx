@@ -121,7 +121,7 @@ const TrainerEarnings = () => {
             <PrintablePayslip />
 
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-6 md:pb-8 border-b-2 border-slate-100 print:hidden px-1">
+            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 print:hidden">
                 <div className="space-y-2">
                     <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight">
                         My Earnings
