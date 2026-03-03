@@ -5,8 +5,8 @@ export const createStaffAPI = async (staffData) => {
     return response.data;
 };
 
-export const fetchStaffAPI = async () => {
-    const response = await apiClient.get('/admin/staff');
+export const fetchStaffAPI = async (branchId) => {
+    const response = await apiClient.get('/admin/staff', { params: { branchId } });
     return response.data;
 };
 
@@ -75,5 +75,15 @@ export const updateStaffAPI = async (id, staffData) => {
 
 export const deleteStaffAPI = async (id) => {
     const response = await apiClient.delete(`/admin/staff/${id}`);
+    return response.data;
+};
+
+export const fetchAvailableUsersAPI = async (branchId) => {
+    const response = await apiClient.get('/admin/staff/available-users', { params: { branchId } });
+    return response.data;
+};
+
+export const linkStaffAPI = async (linkData) => {
+    const response = await apiClient.post('/admin/staff/link', linkData);
     return response.data;
 };

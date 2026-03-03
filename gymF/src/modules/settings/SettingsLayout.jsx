@@ -22,7 +22,7 @@ const SettingsLayout = ({ role }) => {
     const menuItems = [
         { name: 'Organization', path: `/branchadmin/settings/general`, icon: Building2 },
         { name: 'Branches', path: `/branchadmin/settings/branches`, icon: MapPin },
-        { name: 'Benefits', path: `/branchadmin/settings/benefits`, icon: Gift },
+        { name: 'Amenities', path: `/branchadmin/settings/amenities`, icon: Gift },
         { name: 'Referrals', path: `/branchadmin/settings/referrals`, icon: Users },
         { name: 'Templates', path: `/branchadmin/settings/templates`, icon: FileText },
         { name: 'Plan & Benefit Templates', path: `/branchadmin/settings/plan-benefit-templates`, icon: Sparkles },
@@ -34,13 +34,13 @@ const SettingsLayout = ({ role }) => {
     ];
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-[#F8FAFC]">
+        <div className="flex flex-col lg:flex-row min-h-full bg-gradient-to-br from-slate-50 via-white to-violet-50/30 font-black">
             {/* Sidebar */}
-            <div className="w-full lg:w-72 bg-white border-r border-slate-200 flex-shrink-0 lg:sticky lg:top-0 lg:h-screen overflow-y-auto no-scrollbar">
-                <div className="p-6 mb-2">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20 transition-all duration-300 hover:scale-110">
-                            <Settings size={20} />
+            <div className="w-full lg:w-80 bg-white/80 backdrop-blur-md border-r border-slate-100 flex-shrink-0 lg:p-8 lg:min-h-full shadow-sm">
+                <div className="p-6 lg:p-0 mb-8 lg:mb-10">
+                    <div className="flex items-center gap-4 mb-2">
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 transition-all duration-300 hover:scale-110 hover:rotate-6">
+                            <Settings size={24} strokeWidth={3} />
                         </div>
                         <div>
                             <h1 className="text-xl font-semibold text-slate-800 tracking-tight">Settings</h1>

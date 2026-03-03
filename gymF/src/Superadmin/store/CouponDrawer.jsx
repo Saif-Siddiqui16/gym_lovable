@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Percent, DollarSign, Calendar, Info, Zap, Hash, Target, CheckCircle2 } from 'lucide-react';
 import { createCoupon, updateCoupon } from '../../api/storeApi';
 import { toast } from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const CouponDrawer = ({ isOpen, onClose, coupon, mode = 'add', onSuccess }) => {
+    const { selectedBranch } = useBranchContext();
     const [formData, setFormData] = useState({
         code: '',
         description: '',
@@ -49,9 +51,14 @@ const CouponDrawer = ({ isOpen, onClose, coupon, mode = 'add', onSuccess }) => {
         e.preventDefault();
         setLoading(true);
         try {
+            const branchLabel = selectedBranch === 'all'
+                ? 'all branches'
+                : (branches.find(b => b.id.toString() === selectedBranch.toString())?.name || 'branch');
+
+            toast.dismiss();
             if (mode === 'add') {
-                await createCoupon(formData);
-                toast.success('Coupon created successfully');
+                await createCoupon({ ...formData, branchId: selectedBranch });
+                toast.success(`Coupon created successfully for ${branchLabel}`);
             } else {
                 await updateCoupon(coupon.id, formData);
                 toast.success('Coupon updated successfully');

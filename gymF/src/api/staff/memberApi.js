@@ -1,8 +1,8 @@
 import apiClient from '../apiClient';
 
-export const getMembers = async () => {
+export const getMembers = async (params = {}) => {
     try {
-        const response = await apiClient.get('/staff/members');
+        const response = await apiClient.get('/staff/members', { params });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || 'Failed to fetch members';

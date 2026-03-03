@@ -113,5 +113,15 @@ export const membershipApi = {
         } catch (error) {
             throw error;
         }
+    },
+
+    // --- Amenities (for plan benefits) ---
+    getAmenities: async () => {
+        try {
+            const response = await apiClient.get('/amenities');
+            return response.data;
+        } catch (error) {
+            throw error;
+        }
     }
 };

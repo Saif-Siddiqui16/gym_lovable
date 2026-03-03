@@ -3,8 +3,10 @@ import { Search, Layers, Plus, Edit2, Trash2, Image as ImageIcon } from 'lucide-
 import CategoryDrawer from './CategoryDrawer';
 import { getCategories, createCategory, updateCategory, deleteCategory } from '../../api/storeApi';
 import toast from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const ProductCategories = () => {
+    const { selectedBranch, branches } = useBranchContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -15,7 +17,8 @@ const ProductCategories = () => {
     const fetchCategories = async () => {
         try {
             setLoading(true);
-            const data = await getCategories({ search: searchTerm });
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
+            const data = await getCategories({ search: searchTerm, branchId: branchParam });
             setCategories(data);
         } catch (error) {
             toast.error(error);
@@ -29,7 +32,7 @@ const ProductCategories = () => {
             fetchCategories();
         }, 500);
         return () => clearTimeout(delaySearch);
-    }, [searchTerm]);
+    }, [searchTerm, selectedBranch]);
 
     const handleEdit = (category) => {
         setSelectedCategory(category);
@@ -57,9 +60,15 @@ const ProductCategories = () => {
 
     const handleDrawerSubmit = async (formData) => {
         try {
+            const targetBranch = formData.branchId || selectedBranch;
+            const branchLabel = targetBranch === 'all'
+                ? 'all branches'
+                : (branches.find(b => b.id.toString() === targetBranch.toString())?.name || 'branch');
+
+            toast.dismiss();
             if (drawerMode === 'add') {
-                await createCategory(formData);
-                toast.success('Category added successfully');
+                await createCategory({ ...formData, branchId: targetBranch });
+                toast.success(`Category added successfully for ${branchLabel}`);
             } else {
                 await updateCategory(selectedCategory.id, formData);
                 toast.success('Category updated successfully');
@@ -132,6 +141,10 @@ const ProductCategories = () => {
                                 </div>
                             </div>
                             <div className="p-6">
+                                <div className="flex items-center gap-1.5 mb-1 text-[#7c3aed]">
+                                    <div className="w-1 h-1 rounded-full bg-current"></div>
+                                    <span className="text-[9px] font-black uppercase tracking-widest leading-none">{cat.tenant?.name || 'Main Branch'}</span>
+                                </div>
                                 <h3 className="text-lg font-black text-slate-900 mb-2 truncate group-hover:text-orange-600 transition-colors">{cat.name}</h3>
                                 <p className="text-slate-500 text-xs font-medium line-clamp-2 h-8 mb-6">{cat.description || 'No description available.'}</p>
 

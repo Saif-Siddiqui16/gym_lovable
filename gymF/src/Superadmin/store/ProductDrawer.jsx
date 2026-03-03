@@ -5,8 +5,9 @@ import { useBranchContext } from '../../context/BranchContext';
 import toast from 'react-hot-toast';
 
 const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => {
-    const { branches } = useBranchContext();
+    const { branches, selectedBranch } = useBranchContext();
     const [categories, setCategories] = useState([]);
+    const [loadingCategories, setLoadingCategories] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         sku: '',
@@ -18,39 +19,51 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
         status: 'Active',
         image: '',
         description: '',
-        branch: 'All Branches'
+        branchId: selectedBranch || 'all'
     });
 
     useEffect(() => {
         const fetchCategories = async () => {
             try {
-                const data = await getCategories();
+                setLoadingCategories(true);
+                const branchParam = formData.branchId === 'all' ? 'all' : formData.branchId;
+                const data = await getCategories({ branchId: branchParam });
                 setCategories(data);
-                if (data.length > 0 && !formData.category && mode === 'add') {
+
+                // ONLY auto-select category in 'add' mode if nothing is selected
+                if (mode === 'add' && data.length > 0 && !formData.category) {
                     setFormData(prev => ({ ...prev, category: data[0].name }));
                 }
             } catch (error) {
                 console.error("Failed to load categories");
+                setCategories([]);
+            } finally {
+                setLoadingCategories(false);
             }
         };
         if (isOpen) fetchCategories();
-    }, [isOpen]);
+    }, [isOpen, formData.branchId]);
 
     useEffect(() => {
-        if (product && mode === 'edit') {
+        if (product && mode === 'edit' && isOpen) {
             setFormData({
-                ...product,
-                price: parseFloat(product.price),
-                costPrice: parseFloat(product.costPrice || 0),
-                taxRate: parseFloat(product.taxRate || 0).toString(),
-                branch: product.branch || 'All Branches',
-                description: product.description || ''
+                name: product.name || '',
+                sku: product.sku || '',
+                category: product.category || '',
+                price: product.price ? parseFloat(product.price.toString()) : '',
+                costPrice: product.costPrice ? parseFloat(product.costPrice.toString()) : '',
+                taxRate: product.taxRate ? parseFloat(product.taxRate.toString()) : '0',
+                branchId: product.tenantId || product.branchId || 'all',
+                description: product.description || '',
+                stock: product.stock !== undefined ? product.stock.toString() : '',
+                status: product.status || 'Active',
+                image: product.image || ''
             });
-        } else {
+        } else if (isOpen && mode === 'add') {
             setFormData({
                 name: '',
                 sku: `PRD-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`,
-                category: categories.length > 0 ? categories[0].name : '',
+                category: '',
                 price: '',
                 costPrice: '',
                 taxRate: '0',
@@ -58,10 +71,10 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
                 status: 'Active',
                 image: '',
                 description: '',
-                branch: 'All Branches'
+                branchId: selectedBranch || 'all'
             });
         }
-    }, [product, mode, isOpen, categories]);
+    }, [product, mode, isOpen, selectedBranch]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -74,12 +87,17 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
                 stock: parseInt(formData.stock)
             };
 
+            const branchLabel = formData.branchId === 'all'
+                ? 'all branches'
+                : (branches.find(b => b.id.toString() === formData.branchId.toString())?.name || 'branch');
+
+            toast.dismiss();
             if (mode === 'add') {
                 await addStoreProduct(dataToSubmit);
-                toast.success('Product added successfully');
+                toast.success(`Product added successfully for ${branchLabel}`);
             } else {
                 await updateStoreProduct(product.id, dataToSubmit);
-                toast.success('Product updated successfully');
+                toast.success(`Product updated successfully`);
             }
             if (onSubmit) {
                 await onSubmit();
@@ -133,6 +151,28 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
 
                             {/* Form content */}
                             <form onSubmit={handleSubmit} className="flex-1 p-6 space-y-6">
+                                {/* Branch Selection (Moved to top) */}
+                                <div className="space-y-1.5 focus-within:scale-[1.01] transition-transform">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed] ml-1">Assign to Branch</label>
+                                    <div className="relative group">
+                                        <select
+                                            disabled={mode === 'edit'}
+                                            value={formData.branchId}
+                                            onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+                                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-[#7c3aed] focus:ring-4 focus:ring-violet-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="all">All Managed Branches</option>
+                                            {branches.map(branch => (
+                                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#7c3aed] transition-colors">
+                                            <ChevronDown size={18} />
+                                        </div>
+                                    </div>
+                                    {mode === 'edit' && <p className="text-[9px] text-slate-400 font-bold italic ml-1">Branch cannot be changed during edit</p>}
+                                </div>
+
                                 {/* Product Image */}
                                 <div className="space-y-1.5 flex flex-col items-center">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 self-start ml-1">Product Image</label>
@@ -191,20 +231,21 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
                                         />
                                     </div>
                                     <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Category</label>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.category}
-                                                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-violet-500 transition-all appearance-none cursor-pointer"
-                                            >
-                                                <option value="" disabled>Select category</option>
-                                                {categories.map(cat => (
-                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        </div>
+                                        <label className="text-xs font-bold text-slate-700">Category</label>
+                                        <select
+                                            disabled={loadingCategories}
+                                            value={formData.category}
+                                            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[#0f172a] disabled:opacity-50"
+                                        >
+                                            <option value="" disabled>{loadingCategories ? 'Loading...' : 'Select category'}</option>
+                                            {categories.map(cat => (
+                                                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                                            ))}
+                                            {!loadingCategories && categories.length === 0 && (
+                                                <option value="" disabled>No categories for this branch</option>
+                                            )}
+                                        </select>
                                     </div>
                                 </div>
 
@@ -245,22 +286,6 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
                                             onChange={(e) => setFormData({ ...formData, taxRate: e.target.value })}
                                             className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-violet-500 transition-all"
                                         />
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Branch</label>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.branch}
-                                                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-violet-500 transition-all appearance-none cursor-pointer"
-                                            >
-                                                <option value="All Branches">All Branches</option>
-                                                {branches.map(branch => (
-                                                    <option key={branch.id} value={branch.name}>{branch.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        </div>
                                     </div>
                                 </div>
 

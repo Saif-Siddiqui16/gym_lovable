@@ -30,17 +30,21 @@ const Login = () => {
         return '/dashboard';
     };
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        const mockData = {
-            id: '1',
-            name: 'Demo User',
-            email: email,
-            role: selectedRole,
-            token: 'demo-token'
-        };
-        login(mockData);
-        navigate(getRoleDashboard(selectedRole));
+        setLoading(true);
+        setError('');
+
+        try {
+            const data = await loginUser(email, password, selectedRole);
+            login(data);
+            navigate(getRoleDashboard(data.role));
+        } catch (err) {
+            console.error('Login failed:', err);
+            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSignup = (e) => {

@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { X, Layers, ImagePlus, CheckCircle, XCircle } from 'lucide-react';
+import { X, Layers, ImagePlus, CheckCircle, XCircle, ChevronDown } from 'lucide-react';
+import { useBranchContext } from '../../context/BranchContext';
 
 const CategoryDrawer = ({ isOpen, onClose, category, mode = 'add', onSubmit }) => {
+    const { branches, selectedBranch } = useBranchContext();
     const [formData, setFormData] = useState({
         name: '',
         description: '',
         image: '',
         sortOrder: 0,
-        status: 'Active'
+        status: 'Active',
+        branchId: selectedBranch || 'all'
     });
 
     useEffect(() => {
         if (category && mode === 'edit') {
             setFormData({
                 ...category,
-                sortOrder: category.sortOrder || 0
+                sortOrder: category.sortOrder || 0,
+                branchId: category.tenantId || category.branchId || 'all'
             });
-        } else {
+        } else if (isOpen) {
             setFormData({
                 name: '',
                 description: '',
                 image: '',
                 sortOrder: 0,
-                status: 'Active'
+                status: 'Active',
+                branchId: selectedBranch || 'all'
             });
         }
-    }, [category, mode, isOpen]);
+    }, [category, mode, isOpen, selectedBranch]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -78,6 +83,28 @@ const CategoryDrawer = ({ isOpen, onClose, category, mode = 'add', onSubmit }) =
 
                             {/* Form */}
                             <form onSubmit={handleSubmit} className="flex-1 p-6 space-y-6">
+                                {/* Branch Selection */}
+                                <div className="space-y-1.5">
+                                    <label className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed] ml-1">Assign to Branch</label>
+                                    <div className="relative group">
+                                        <select
+                                            disabled={mode === 'edit'}
+                                            value={formData.branchId}
+                                            onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+                                            className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:outline-none focus:border-[#7c3aed] focus:ring-4 focus:ring-violet-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                        >
+                                            <option value="all">All Managed Branches</option>
+                                            {branches.map(branch => (
+                                                <option key={branch.id} value={branch.id}>{branch.name}</option>
+                                            ))}
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-[#7c3aed] transition-colors">
+                                            <ChevronDown size={18} />
+                                        </div>
+                                    </div>
+                                    {mode === 'edit' && <p className="text-[9px] text-slate-400 font-bold italic ml-1 select-none">Branch cannot be changed during edit</p>}
+                                </div>
+
                                 {/* Image Upload */}
                                 <div className="space-y-1.5 flex flex-col items-center">
                                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 self-start ml-1">Category Image</label>

@@ -139,9 +139,14 @@ const MemberList = () => {
         }
         try {
             const memberPayload = { ...newMemberData };
-            if (selectedBranch && selectedBranch !== 'all') {
+
+            // Explicitly handle 'all' branches or specific branch selection
+            if (selectedBranch === 'all') {
+                memberPayload.branchId = 'all';
+            } else if (selectedBranch) {
                 memberPayload.branchId = selectedBranch;
             }
+
             await createMember(memberPayload);
             setIsAddDrawerOpen(false);
             setNewMemberData(initialNewMemberData);
@@ -322,21 +327,14 @@ const MemberList = () => {
                                                 <span className="text-sm font-bold text-slate-900 group-hover:text-violet-700 transition-colors">{member.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500" data-label="Member ID">
-                                            <span className="text-xs font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded-md">{member.memberId}</span>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600" data-label="Branch">{member.branch || 'Main Branch'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap" data-label="Status">
-                                            <button onClick={() => {
-                                                const newStatus = member.status === 'Active' ? 'Inactive' : 'Active';
-                                                setMembers(prev => prev.map(m => m.id === member.id ? { ...m, status: newStatus } : m));
-                                            }}>{getStatusBadge(member.status)}</button>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-slate-700" data-label="Plan">{member.plan || '—'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600" data-label="Days Left">{member.daysLeft ?? '—'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500" data-label="Joined">{member.joinDate || '—'}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right" data-label="Actions">
-                                            <div className="flex justify-end gap-1 opacity-100 transition-all duration-200">
+                                        <td className="px-6 py-4"><span className="text-xs font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded-md">{member.memberId}</span></td>
+                                        <td className="px-6 py-4 text-sm text-slate-600">{member.branch || 'Main Branch'}</td>
+                                        <td className="px-6 py-4"><button onClick={() => handleToggleStatus(member.id)}>{getStatusBadge(member.status)}</button></td>
+                                        <td className="px-6 py-4 text-sm font-semibold text-slate-700">{member.plan || '—'}</td>
+                                        <td className="px-6 py-4 text-sm text-slate-600">{member.daysLeft ?? '—'}</td>
+                                        <td className="px-6 py-4 text-sm text-slate-500">{member.joinDate || '—'}</td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
                                                 <button onClick={() => handleView(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all" title="View"><Eye size={16} /></button>
                                                 <button onClick={() => handleEdit(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Edit"><Edit size={16} /></button>
                                                 <button onClick={() => handleDelete(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all" title="Delete"><Trash2 size={16} /></button>

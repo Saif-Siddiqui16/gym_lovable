@@ -4,9 +4,9 @@ import {
     Search, Plus, Filter, Calendar, User, Users,
     Dumbbell, Clock, X, ChevronDown, CheckCircle2,
     MoreHorizontal, LayoutGrid, List as ListIcon,
-    AlertCircle
+    AlertCircle, Edit2, Trash2
 } from 'lucide-react';
-import { getClasses, createClass, updateClass } from '../../../api/manager/classesApi';
+import { getClasses, createClass, updateClass, deleteClass } from '../../../api/manager/classesApi';
 import { getAllStaff } from '../../../api/manager/managerApi';
 import { useAuth } from '../../../context/AuthContext';
 import { useBranchContext } from '../../../context/BranchContext';
@@ -26,6 +26,9 @@ const ClassesList = () => {
     const [contentTab, setContentTab] = useState('Schedule'); // Schedule, Attendance
     const [typeFilter, setTypeFilter] = useState('All');
     const [trainerFilter, setTrainerFilter] = useState('All');
+    const [activeActionId, setActiveActionId] = useState(null);
+    const [deletingId, setDeletingId] = useState(null);
+    const [editingClassId, setEditingClassId] = useState(null);
 
     // Side Panel State
     const [showPanel, setShowPanel] = useState(false);
@@ -68,7 +71,7 @@ const ClassesList = () => {
         }
     };
 
-    const handleCreateClass = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             setSubmitting(true);
@@ -77,14 +80,20 @@ const ClassesList = () => {
                 branchId: selectedBranch, // 'all' or specific ID
                 maxCapacity: parseInt(formData.capacity)
             };
-            await createClass(payload);
-            toast.success(selectedBranch === 'all' ? 'Class created for all branches!' : 'Class created successfully!');
+
+            if (editingClassId) {
+                await updateClass(editingClassId, payload);
+                toast.success('Class updated successfully!');
+            } else {
+                await createClass(payload);
+                toast.success(selectedBranch === 'all' ? 'Class created for all branches!' : 'Class created successfully!');
+            }
             setShowPanel(false);
             resetForm();
             loadClasses();
         } catch (error) {
-            console.error('Error creating class:', error);
-            toast.error('Failed to create class');
+            console.error('Error saving class:', error);
+            toast.error('Failed to save class');
         } finally {
             setSubmitting(false);
         }
@@ -101,6 +110,57 @@ const ClassesList = () => {
             trainerId: '',
             description: ''
         });
+        setEditingClassId(null);
+    };
+
+    const handleEditClick = (cls) => {
+        let parsedDate = '';
+        let parsedTime = '';
+
+        if (cls.schedule && typeof cls.schedule === 'string') {
+            if (cls.schedule.includes(' at ')) {
+                const parts = cls.schedule.split(' at ');
+                parsedDate = parts[0];
+                parsedTime = parts[1];
+            } else {
+                parsedDate = cls.schedule;
+            }
+        }
+
+        let dur = 60;
+        if (cls.duration) {
+            dur = parseInt(String(cls.duration).replace(/\D/g, '')) || 60;
+        }
+
+        setFormData({
+            name: cls.name || '',
+            type: cls.requiredBenefit || '',
+            capacity: cls.capacity || 20,
+            date: parsedDate,
+            time: parsedTime,
+            duration: dur,
+            trainerId: cls.trainerId || '',
+            description: cls.description || ''
+        });
+        setEditingClassId(cls.id);
+        setActiveActionId(null);
+        setShowPanel(true);
+    };
+
+    const handleDeleteClass = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this class? This action cannot be undone.')) return;
+        try {
+            setDeletingId(id);
+            await deleteClass(id);
+            toast.success('Class deleted successfully!');
+            setActiveActionId(null);
+            loadClasses();
+        } catch (error) {
+            console.error('Error deleting class:', error);
+            toast.error('Failed to delete class');
+        } finally {
+            setDeletingId(null);
+        }
     };
 
     // Filter Logic
@@ -111,13 +171,36 @@ const ClassesList = () => {
         const matchesType = typeFilter === 'All' || cls.requiredBenefit === typeFilter;
         const matchesTrainer = trainerFilter === 'All' || cls.trainerId?.toString() === trainerFilter;
 
-        // Tab Filtering (Simplistic for now)
-        if (activeTab === 'Upcoming') {
-            return matchesSearch && matchesType && matchesTrainer && cls.status === 'Scheduled';
-        } else if (activeTab === 'Past') {
-            return matchesSearch && matchesType && matchesTrainer && cls.status === 'Completed';
+        let classDate = null;
+        if (cls.schedule) {
+            let dateStr = cls.schedule;
+            if (typeof dateStr === 'string' && dateStr.includes(' at ')) {
+                const parts = dateStr.split(' at ');
+                classDate = new Date(`${parts[0]}T${parts[1]}`);
+            } else {
+                classDate = new Date(cls.schedule);
+            }
         }
-        return matchesSearch && matchesType && matchesTrainer;
+
+        const now = new Date();
+        now.setHours(0, 0, 0, 0); // Optionally reset to start of day, or keep exact time. Let's keep exact time to be strict: const now = new Date();
+
+        let matchesTab = true;
+        if (activeTab === 'Upcoming') {
+            if (classDate && !isNaN(classDate.getTime())) {
+                matchesTab = classDate >= new Date();
+            } else {
+                matchesTab = cls.status === 'Scheduled'; // fallback
+            }
+        } else if (activeTab === 'Past') {
+            if (classDate && !isNaN(classDate.getTime())) {
+                matchesTab = classDate < new Date();
+            } else {
+                matchesTab = cls.status === 'Completed'; // fallback
+            }
+        }
+
+        return matchesSearch && matchesType && matchesTrainer && matchesTab;
     });
 
     const classTypes = ['Yoga', 'HIIT', 'Spin', 'Pilates', 'Zumba', 'Strength'];
@@ -236,8 +319,13 @@ const ClassesList = () => {
                             <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Loading classes...</p>
                         </div>
                     ) : filteredClasses.length > 0 ? (
+<<<<<<< HEAD
+                        <div className="w-full overflow-visible pb-32">
+                            <table className="w-full min-w-[800px]">
+=======
                         <div className="saas-table-wrapper border-0 rounded-none">
                             <table className="saas-table saas-table-responsive">
+>>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Info</th>
@@ -297,10 +385,45 @@ const ClassesList = () => {
                                                     </span>
                                                 </div>
                                             </td>
+<<<<<<< HEAD
+                                            <td className="py-4 px-2 text-right relative">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); setActiveActionId(activeActionId === cls.id ? null : cls.id); }}
+                                                    className={`p-2 rounded-lg transition-colors ${activeActionId === cls.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
+                                                >
+=======
                                             <td className="py-4 px-6 text-right" data-label="Action">
                                                 <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
+>>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                                     <MoreHorizontal size={18} />
                                                 </button>
+
+                                                {/* Action Dropdown */}
+                                                {activeActionId === cls.id && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-[40]" onClick={() => setActiveActionId(null)} />
+                                                        <div className="absolute right-2 top-14 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-[50] py-1 flex flex-col overflow-hidden origin-top-right animate-scale-in">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleEditClick(cls); }}
+                                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
+                                                            >
+                                                                <Edit2 size={14} className="text-slate-400" /> Edit Class
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleDeleteClass(cls.id); }}
+                                                                disabled={deletingId === cls.id}
+                                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                                            >
+                                                                {deletingId === cls.id ? (
+                                                                    <div className="w-3.5 h-3.5 border-2 border-red-200 border-t-red-600 rounded-full animate-spin" />
+                                                                ) : (
+                                                                    <Trash2 size={14} className="text-red-400" />
+                                                                )}
+                                                                Delete Class
+                                                            </button>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     ))}
@@ -315,7 +438,7 @@ const ClassesList = () => {
                             <p className="text-sm font-bold text-slate-700 mb-1">No upcoming classes scheduled.</p>
                             <p className="text-xs text-slate-400 mb-6">Get started by scheduling your first group class.</p>
                             <button
-                                onClick={() => setShowPanel(true)}
+                                onClick={() => { setEditingClassId(null); resetForm(); setShowPanel(true); }}
                                 className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
                             >
                                 <Plus size={16} />
@@ -335,8 +458,8 @@ const ClassesList = () => {
                             {/* Panel Header */}
                             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                                 <div>
-                                    <h2 className="text-xl font-black text-slate-900">Create New Class</h2>
-                                    <p className="text-xs font-medium text-slate-500 mt-1">Schedule a new group class</p>
+                                    <h2 className="text-xl font-black text-slate-900">{editingClassId ? 'Edit Class' : 'Create New Class'}</h2>
+                                    <p className="text-xs font-medium text-slate-500 mt-1">{editingClassId ? 'Update existing class details' : 'Schedule a new group class'}</p>
                                 </div>
                                 <button
                                     onClick={() => setShowPanel(false)}
@@ -348,7 +471,7 @@ const ClassesList = () => {
                             </div>
 
                             {/* Panel Form */}
-                            <form onSubmit={handleCreateClass} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
                                 {/* Class Name */}
                                 <div className="space-y-1.5">
                                     <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Name *</label>
@@ -465,7 +588,7 @@ const ClassesList = () => {
                                         className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                                     >
                                         {submitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                                        Create Class
+                                        {editingClassId ? 'Update Class' : 'Create Class'}
                                     </button>
                                 </div>
                             </form>

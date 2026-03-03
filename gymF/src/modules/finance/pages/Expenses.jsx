@@ -3,10 +3,13 @@ import { Plus, Filter, FileText, Calendar, DollarSign, Search, Receipt, Trending
 import RightDrawer from '../../../components/common/RightDrawer';
 import '../../../styles/GlobalDesign.css';
 import { fetchExpenses, addExpense } from '../../../api/finance/financeApi';
+import { useBranchContext } from '../../../context/BranchContext';
+import { ChevronDown } from 'lucide-react';
 
 const CATEGORIES = ['Rent', 'Maintenance', 'Salary', 'Utilities', 'Marketing', 'Supplies', 'Others'];
 
 const Expenses = () => {
+    const { selectedBranch, branches } = useBranchContext();
     const [expenses, setExpenses] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
@@ -19,17 +22,22 @@ const Expenses = () => {
         amount: '',
         date: new Date().toISOString().split('T')[0],
         notes: '',
-        status: 'Pending'
+        status: 'Pending',
+        branchId: selectedBranch || 'all'
     });
 
     useEffect(() => {
+        setNewExpense(prev => ({ ...prev, branchId: selectedBranch || 'all' }));
+    }, [selectedBranch]);
+
+    useEffect(() => {
         loadExpenses();
-    }, []);
+    }, [selectedBranch]);
 
     const loadExpenses = async () => {
         try {
             setLoading(true);
-            const data = await fetchExpenses();
+            const data = await fetchExpenses(selectedBranch);
             setExpenses(data);
         } catch (error) {
             console.error('Failed to fetch expenses', error);
@@ -66,7 +74,8 @@ const Expenses = () => {
                 amount: '',
                 date: new Date().toISOString().split('T')[0],
                 notes: '',
-                status: 'Pending'
+                status: 'Pending',
+                branchId: selectedBranch || 'all'
             });
         } catch (error) {
             console.error('Failed to add expense', error);
@@ -206,6 +215,9 @@ const Expenses = () => {
                                                 <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-100">
                                                     {expense.category}
                                                 </span>
+                                                <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+                                                    {expense.tenant?.name || 'Main'}
+                                                </span>
                                                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                                                     {new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                 </span>
@@ -253,6 +265,7 @@ const Expenses = () => {
                             <thead>
                                 <tr className="bg-slate-50/50 border-b border-slate-100">
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Date</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Branch</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Expense Title</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Category</th>
                                     <th className="px-8 py-5 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Notes</th>
@@ -268,6 +281,11 @@ const Expenses = () => {
                                                 <Calendar size={14} className="text-violet-500" />
                                                 {new Date(expense.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase tracking-widest">
+                                                {expense.tenant?.name || 'Main'}
+                                            </span>
                                         </td>
                                         <td className="px-8 py-5">
                                             <div className="text-sm font-black text-slate-900 group-hover:text-violet-600 transition-colors">
@@ -319,6 +337,22 @@ const Expenses = () => {
                 maxWidth="max-w-md"
             >
                 <form onSubmit={handleAddExpense} className="p-8 space-y-6">
+                    {/* Branch Selection */}
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Branch *</label>
+                        <div className="relative group">
+                            <select
+                                required
+                                value={newExpense.branchId}
+                                onChange={(e) => setNewExpense({ ...newExpense, branchId: e.target.value })}
+                                className="w-full px-5 py-4 border-2 border-slate-100 rounded-[24px] focus:border-violet-500 outline-none font-bold text-gray-900 transition-all bg-slate-50/50 appearance-none cursor-pointer"
+                            >
+                                <option value="all">Select Branch</option>
+                                {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                            </select>
+                            <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        </div>
+                    </div>
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-1">Expense Title</label>
                         <input

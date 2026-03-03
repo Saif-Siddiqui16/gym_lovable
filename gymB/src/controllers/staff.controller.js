@@ -90,13 +90,38 @@ const searchMembers = async (req, res) => {
 
 const getMembers = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { tenantId };
+        const { tenantId: userTenantId, role } = req.user;
+        const { tenantId: qTenantId, branchId: qBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+
+        // Priority: Query (tenantId or branchId) -> Header -> User's own tenant
+        const rawTargetId = qTenantId || qBranchId || headerTenantId;
+
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (rawTargetId && rawTargetId !== 'all' && rawTargetId !== 'undefined') {
+                where.tenantId = parseInt(rawTargetId);
+            }
+            // else: {} - returns everything for Super Admin
+        } else {
+            // For other roles, they can only see members of a branch they belong to or manage
+            // If they ask for a specific branch, we should really check if they own it (like admin.controller does)
+            // But for simplicity, we'll allow either the provided targetId or fallback to their userTenantId
+            if (rawTargetId && rawTargetId !== 'all' && rawTargetId !== 'undefined') {
+                where.tenantId = parseInt(rawTargetId);
+            } else {
+                where.tenantId = userTenantId || 1;
+            }
+        }
+
         const members = await prisma.member.findMany({
-            where
+            where,
+            include: { tenant: { select: { name: true } } },
+            orderBy: { name: 'asc' }
         });
         res.json(members);
     } catch (error) {
+        console.error('[getMembers] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

@@ -5,10 +5,41 @@ const prisma = require('../config/prisma');
 
 const getAllMembers = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const { search, status } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const { search, status, branchId: queryBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
 
-        const where = role === 'SUPER_ADMIN' ? {} : { tenantId };
+        const effectiveBranchId = queryBranchId || headerTenantId;
+        console.log(`[getAllMembers] User: ${email}, Role: ${role}, Root Tenant: ${userTenantId}`);
+        console.log(`[getAllMembers] Query ID: ${queryBranchId}, Header ID: ${headerTenantId}, Effective: ${effectiveBranchId}`);
+
+        const where = {};
+
+        if (role === 'SUPER_ADMIN') {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
+            }
+        } else {
+            // Logic for BRANCH_ADMIN and MANAGER
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
+            } else {
+                // Determine all branches this user can access
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                const managedBranchIds = branches.map(b => b.id);
+                where.tenantId = { in: managedBranchIds };
+                console.log(`[getAllMembers] Found managed branches: ${managedBranchIds}`);
+            }
+        }
 
         if (status && status !== 'All') {
             where.status = status;
@@ -16,18 +47,20 @@ const getAllMembers = async (req, res) => {
 
         if (search) {
             where.OR = [
-                { name: { contains: search } }, // Case insensitive usually requires mode: 'insensitive' in Postgres, but MySQL default collation is often CI. Prisma client handles this? 
-                // For safety in Prisma with SQLite/Postgres we use mode: 'insensitive', but here likely MySQL. 
-                // Let's assume generic 'contains'.
-                { memberId: { contains: search } }
+                { name: { contains: search } },
+                { memberId: { contains: search } },
+                { phone: { contains: search } }
             ];
         }
+
+        console.log('[getAllMembers] Target Where:', JSON.stringify(where, null, 2));
 
         const members = await prisma.member.findMany({
             where,
             include: {
                 trainer: { select: { name: true } },
                 plan: { select: { name: true } },
+                tenant: { select: { name: true } }
             },
             orderBy: { joinDate: 'desc' }
         });
@@ -40,13 +73,15 @@ const getAllMembers = async (req, res) => {
             plan: m.plan?.name || 'No Plan',
             planId: m.planId,
             status: m.status,
-            joinDate: m.joinDate,
-            expiryDate: m.expiryDate,
-            trainer: m.trainer?.name || 'Unassigned'
+            joinDate: m.joinDate ? new Date(m.joinDate).toLocaleDateString('en-IN') : '—',
+            expiryDate: m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-IN') : '—',
+            trainer: m.trainer?.name || 'Unassigned',
+            branch: m.tenant?.name || 'Main Branch'
         }));
 
         res.json(formattedMembers);
     } catch (error) {
+        console.error('GetAllMembers Controller Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -55,11 +90,14 @@ const cloudinary = require('../utils/cloudinary');
 
 const addMember = async (req, res) => {
     try {
-        const { tenantId } = req.user;
-        const { name, email, phone, planId, avatar, benefits } = req.body; // avatar is base64 string, benefits is array
+        const { tenantId: userTenantId, email: userEmail, name: userName } = req.user;
+        const {
+            name, email, phone, planId, avatar, benefits, branchId,
+            dob, source, referralCode, idType, idNumber, address,
+            emergencyName, emergencyPhone, fitnessGoal, healthConditions
+        } = req.body;
 
         let avatarUrl = null;
-
         if (avatar && avatar.startsWith('data:image')) {
             try {
                 const uploadResponse = await cloudinary.uploader.upload(avatar, {
@@ -69,56 +107,136 @@ const addMember = async (req, res) => {
                 avatarUrl = uploadResponse.secure_url;
             } catch (uploadError) {
                 console.error('Cloudinary upload failure:', uploadError);
-                // We might want to continue creating member even if image fails, or throw error
-                // For now logging it.
             }
         }
 
-        const newMember = await prisma.member.create({
-            data: {
-                memberId: `MEM-${Date.now()}`,
-                tenantId,
-                name,
-                email,
-                phone,
-                planId: planId ? parseInt(planId) : null,
-                status: 'Active',
-                avatar: avatarUrl,
-                // Add other fields from body if necessary (gender, etc)
-                // Assuming schema supports them or will ignore if not mapped
-                // Let's add common fields if passed
-                gender: req.body.gender,
-                joinDate: req.body.startDate ? new Date(req.body.startDate) : undefined,
-                medicalHistory: req.body.medicalHistory,
-                fitnessGoal: req.body.fitnessGoal,
-                emergencyName: req.body.emergencyName,
-                emergencyPhone: req.body.emergencyPhone,
-                benefits: benefits || []
-            }
-        });
+        // Logic to determine target branches
+        let targetBranchIds = [];
+        const effectiveBranchId = branchId || req.headers['x-tenant-id'];
 
-        // Auto-generate invoice if a plan is selected
-        if (planId) {
-            const plan = await prisma.membershipPlan.findUnique({
-                where: { id: parseInt(planId) }
+        if (effectiveBranchId === 'all') {
+            const branches = await prisma.tenant.findMany({
+                where: {
+                    OR: [
+                        { id: userTenantId },
+                        { owner: userEmail },
+                        { owner: userName }
+                    ]
+                },
+                select: { id: true }
             });
-            if (plan) {
-                await prisma.invoice.create({
-                    data: {
-                        tenantId,
-                        invoiceNumber: `INV-${Date.now()}`,
-                        memberId: newMember.id,
-                        amount: plan.price,
-                        paymentMode: 'Cash',
-                        status: 'Unpaid',
-                        dueDate: new Date()
-                    }
-                });
-            }
+            targetBranchIds = branches.map(b => b.id);
+        } else if (effectiveBranchId) {
+            targetBranchIds = [parseInt(effectiveBranchId)];
+        } else {
+            targetBranchIds = [userTenantId];
         }
 
-        res.status(201).json(newMember);
+        if (targetBranchIds.length === 0) {
+            return res.status(400).json({ message: 'No valid branches found' });
+        }
+
+        const createdMembers = [];
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = await bcrypt.hash('123456', 10);
+
+        for (const tId of targetBranchIds) {
+            // memberId is @unique in schema, so must be unique across all records
+            // We'll generate it but also check if it somehow exists
+            const uniqueMemberId = `MEM-${Date.now()}-${tId}`;
+
+            // Handle unique user record per branch.
+            // In Prisma schema User email is @unique GLOBALLY.
+            const memberEmailForUser = (effectiveBranchId === 'all' && email)
+                ? email.replace('@', `+b${tId}@`)
+                : (email || `m${Date.now()}@branch${tId}.com`);
+
+            // Check if User already exists with this email
+            const existingUser = await prisma.user.findUnique({
+                where: { email: memberEmailForUser }
+            });
+
+            if (existingUser) {
+                if (effectiveBranchId === 'all') {
+                    console.log(`[AddMember] User with email ${memberEmailForUser} already exists. Skipping branch ${tId}.`);
+                    continue;
+                } else {
+                    return res.status(400).json({ message: `A user with email ${memberEmailForUser} already exists.` });
+                }
+            }
+
+            // 1. Create User
+            const newUser = await prisma.user.create({
+                data: {
+                    name,
+                    email: memberEmailForUser,
+                    password: hashedPassword,
+                    phone,
+                    role: 'MEMBER',
+                    tenantId: tId,
+                    status: 'Active',
+                    avatar: avatarUrl,
+                    address: address || null
+                }
+            });
+
+            // 2. Create Member linked to User
+            const newMember = await prisma.member.create({
+                data: {
+                    memberId: uniqueMemberId,
+                    userId: newUser.id,
+                    tenantId: tId,
+                    name,
+                    email: memberEmailForUser,
+                    phone,
+                    planId: planId ? parseInt(planId) : null,
+                    status: 'Active',
+                    avatar: avatarUrl,
+                    gender: req.body.gender,
+                    joinDate: req.body.startDate ? new Date(req.body.startDate) : new Date(),
+                    medicalHistory: healthConditions || req.body.medicalHistory,
+                    fitnessGoal,
+                    emergencyName,
+                    emergencyPhone,
+                    benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : (benefits || null),
+                    dob,
+                    source: source || 'Walk-in',
+                    referralCode,
+                    idType,
+                    idNumber,
+                    address
+                }
+            });
+
+            // 3. Auto-generate invoice if a plan is selected
+            if (planId) {
+                const plan = await prisma.membershipPlan.findFirst({
+                    where: { id: parseInt(planId), tenantId: tId }
+                });
+                if (plan) {
+                    await prisma.invoice.create({
+                        data: {
+                            tenantId: tId,
+                            invoiceNumber: `INV-${Date.now()}-${tId}`,
+                            memberId: newMember.id,
+                            amount: plan.price,
+                            paymentMode: 'Cash',
+                            status: 'Unpaid',
+                            dueDate: new Date()
+                        }
+                    });
+                }
+            }
+            createdMembers.push(newMember);
+        }
+
+        if (createdMembers.length === 0 && targetBranchIds.length > 0) {
+            return res.status(400).json({ message: "Member already exists in selected branch(es)." });
+        }
+
+        res.status(201).json(effectiveBranchId === 'all' ? createdMembers : createdMembers[0]);
     } catch (error) {
+        console.error('Full Add Member Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -155,7 +273,7 @@ const updateMember = async (req, res) => {
             fitnessGoal,
             emergencyName,
             emergencyPhone,
-            benefits: benefits || []
+            benefits: Array.isArray(benefits) ? JSON.stringify(benefits) : (benefits || null)
         };
 
         if (planId) updateData.planId = parseInt(planId);
@@ -212,13 +330,31 @@ const toggleMemberStatus = async (req, res) => {
 
 const getAllStaff = async (req, res) => {
     try {
-        const { tenantId } = req.user;
-        const staff = await prisma.user.findMany({
-            where: {
-                tenantId: req.user.role === 'SUPER_ADMIN' ? undefined : req.user.tenantId,
-                role: { in: ['STAFF', 'TRAINER', 'MANAGER'] }
+        const { branchId } = req.query;
+        const { tenantId: userTenantId = 1, role, email, name: userName } = req.user;
+        let where = { role: { in: ['STAFF', 'TRAINER', 'MANAGER'] } };
+
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
             }
-        });
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
+        }
+
+        const staff = await prisma.user.findMany({ where });
         res.json(staff);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -238,6 +374,95 @@ const getStaffById = async (req, res) => {
     }
 };
 
+const getAvailableUsersForStaff = async (req, res) => {
+    try {
+        const { branchId } = req.query;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        let targetTenantIds = [];
+
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all' && branchId !== 'undefined') {
+                targetTenantIds = [parseInt(branchId)];
+            } else {
+                targetTenantIds = [userTenantId];
+            }
+        } else {
+            if (branchId && branchId !== 'all' && branchId !== 'undefined') {
+                targetTenantIds = [parseInt(branchId)];
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+                const branches = await prisma.tenant.findMany({ where: { OR: orConditions }, select: { id: true } });
+                targetTenantIds = branches.map(b => b.id);
+            }
+        }
+
+        // Get all users in the target tenants who are not already staff/trainers/admins/managers
+        const users = await prisma.user.findMany({
+            where: {
+                tenantId: { in: targetTenantIds },
+                role: { notIn: ['BRANCH_ADMIN', 'SUPER_ADMIN', 'MANAGER', 'TRAINER', 'STAFF'] },
+                status: 'Active'
+            }
+        });
+
+        // Filter out users who have a Member record
+        const unlinkedUsers = [];
+        for (const user of users) {
+            const memberRecord = await prisma.member.findUnique({
+                where: { userId: user.id }
+            });
+            if (!memberRecord) {
+                unlinkedUsers.push(user);
+            }
+        }
+
+        res.json(unlinkedUsers);
+    } catch (error) {
+        console.error('[getAvailableUsersForStaff] Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const linkStaff = async (req, res) => {
+    try {
+        const { userId, branchId, role, department, position, joiningDate, salaryType, baseSalary, bankName, accountNumber, taxId } = req.body;
+
+        if (!userId || !branchId || !role) {
+            return res.status(400).json({ message: 'User ID, Branch, and Role are required' });
+        }
+
+        let mappedRole = role.toUpperCase();
+        if (role === 'Admin') mappedRole = 'BRANCH_ADMIN';
+        if (['Receptionist', 'Sales', 'Sales Professional'].includes(role)) mappedRole = 'STAFF';
+
+        const updatedUser = await prisma.user.update({
+            where: { id: parseInt(userId) },
+            data: {
+                role: mappedRole,
+                tenantId: parseInt(branchId),
+                department,
+                joinedDate: joiningDate ? new Date(joiningDate) : new Date(),
+                baseSalary: baseSalary ? parseFloat(baseSalary) : null,
+                accountNumber,
+                config: JSON.stringify({
+                    position,
+                    salaryType,
+                    bankName,
+                    taxId
+                })
+            }
+        });
+
+        res.json({ message: 'User linked as staff successfully', staff: updatedUser });
+    } catch (error) {
+        console.error('[linkStaff] Error:', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 const createStaff = async (req, res) => {
     try {
         const { tenantId } = req.user;
@@ -245,7 +470,8 @@ const createStaff = async (req, res) => {
             name, email, phone, dob, department, role,
             joiningDate, status, baseSalary, commission, accountNumber, ifsc,
             trainerConfig, salesConfig, managerConfig, documents,
-            idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio
+            idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio,
+            position, bankName, taxId
         } = req.body;
 
         // Combine role configs into one config object based on the role
@@ -267,7 +493,19 @@ const createStaff = async (req, res) => {
 
         // Handle "All Branches" creation for staff
         if (req.body.branchId === 'all' || req.body.tenantId === 'all') {
-            const branches = await prisma.tenant.findMany();
+            const { role: userRole, email: userEmail, name: userName, tenantId: userTenantId } = req.user;
+
+            let branchQuery = {};
+            if (userRole !== 'SUPER_ADMIN') {
+                let orConditions = [{ id: userTenantId }];
+                if (userEmail) orConditions.push({ owner: userEmail });
+                if (userName) orConditions.push({ owner: userName });
+
+                branchQuery = {
+                    where: { OR: orConditions }
+                };
+            }
+            const branches = await prisma.tenant.findMany(branchQuery);
             const createdStaff = await Promise.all(branches.map(async (b) => {
                 const bEmail = email.includes('@') ? email.replace('@', `+b${b.id}@`) : `${email}_b${b.id}`;
                 try {
@@ -278,25 +516,29 @@ const createStaff = async (req, res) => {
                             password: hashedPassword,
                             phone,
                             role: mappedRole,
-                            tenantId: b.id,
+                            tenant: { connect: { id: b.id } },
                             status: status || 'Active',
                             department,
                             joinedDate: joiningDate ? new Date(joiningDate) : new Date(),
                             baseSalary: baseSalary ? parseFloat(baseSalary) : null,
-                            commission: commission ? parseFloat(commission) : 0,
                             accountNumber,
                             ifsc,
-                            config: config || {},
-                            documents: documents || {},
-                            // New fields
-                            idType,
-                            idNumber,
-                            specialization,
-                            certifications,
-                            salaryType,
-                            hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
-                            ptSharePercent: ptSharePercent ? parseFloat(ptSharePercent) : null,
-                            bio
+                            config: JSON.stringify({
+                                ...config,
+                                idType,
+                                idNumber,
+                                specialization,
+                                certifications,
+                                salaryType,
+                                hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+                                ptSharePercent: ptSharePercent ? parseFloat(ptSharePercent) : null,
+                                bio,
+                                commission: commission ? parseFloat(commission) : 0,
+                                position,
+                                bankName,
+                                taxId
+                            }),
+                            documents: documents ? JSON.stringify(documents) : null
                         }
                     });
                 } catch (e) {
@@ -314,25 +556,29 @@ const createStaff = async (req, res) => {
                 password: hashedPassword,
                 phone,
                 role: mappedRole,
-                tenantId: req.body.tenantId ? parseInt(req.body.tenantId) : tenantId,
+                tenant: { connect: { id: req.body.tenantId ? parseInt(req.body.tenantId) : tenantId } },
                 status: status || 'Active',
                 department,
                 joinedDate: joiningDate ? new Date(joiningDate) : new Date(),
                 baseSalary: baseSalary ? parseFloat(baseSalary) : null,
-                commission: commission ? parseFloat(commission) : 0,
                 accountNumber,
                 ifsc,
-                config: config || {},
-                documents: documents || {},
-                // New fields
-                idType,
-                idNumber,
-                specialization,
-                certifications,
-                salaryType,
-                hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
-                ptSharePercent: ptSharePercent ? parseFloat(ptSharePercent) : null,
-                bio
+                config: JSON.stringify({
+                    ...config,
+                    idType,
+                    idNumber,
+                    specialization,
+                    certifications,
+                    salaryType,
+                    hourlyRate: hourlyRate ? parseFloat(hourlyRate) : null,
+                    ptSharePercent: ptSharePercent ? parseFloat(ptSharePercent) : null,
+                    bio,
+                    commission: commission ? parseFloat(commission) : 0,
+                    position,
+                    bankName,
+                    taxId
+                }),
+                documents: documents ? JSON.stringify(documents) : null,
             }
         });
 
@@ -560,8 +806,47 @@ const getLiveCheckIn = async (req, res) => {
 
 const getTasks = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { creator: { tenantId } };
+        const { id: userId, tenantId: userTenantId, role, email, name: userName } = req.user;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { branchId: queryBranchId, status: queryStatus } = req.query;
+
+        const resolveBranchId = () => {
+            if (queryBranchId && queryBranchId !== 'undefined' && queryBranchId !== 'null' && queryBranchId !== 'all') return queryBranchId;
+            if (headerTenantId && headerTenantId !== 'undefined' && headerTenantId !== 'null' && headerTenantId !== 'all') return headerTenantId;
+            return null;
+        };
+        const branchId = resolveBranchId();
+
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId) where.tenantId = parseInt(branchId);
+        } else if (role === 'BRANCH_ADMIN' || role === 'MANAGER') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [];
+                if (userTenantId) orConditions.push({ id: userTenantId });
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                // Fetch tasks for all managed branches
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: orConditions.length > 0 ? orConditions : undefined
+                    },
+                    select: { id: true }
+                });
+                const managedIds = branches.map(b => b.id);
+                where.tenantId = { in: managedIds };
+            }
+        } else {
+            where.tenantId = userTenantId;
+        }
+
+        if (queryStatus && queryStatus !== 'All') {
+            where.status = queryStatus;
+        }
+
         const tasks = await prisma.task.findMany({
             where,
             include: {
@@ -574,28 +859,70 @@ const getTasks = async (req, res) => {
         const formatted = tasks.map(t => ({
             id: t.id,
             title: t.title,
-            assignedTo: t.assignedTo?.name || 'Unknown',
+            assignedTo: t.assignedTo?.name || 'Unassigned',
             assignedToId: t.assignedToId,
             priority: t.priority,
-            dueDate: t.dueDate.toISOString().split('T')[0],
+            dueDate: t.dueDate?.toISOString().split('T')[0] || 'N/A',
             status: t.status,
-            creator: t.creator?.name || 'Admin'
+            creator: t.creator?.name || 'Admin',
+            description: t.description || '',
+            tenantId: t.tenantId
         }));
 
         res.json({ data: formatted, total: formatted.length });
     } catch (error) {
+        console.error('Error fetching tasks:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
 const getTaskStats = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { creator: { tenantId } };
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { branchId: queryBranchId } = req.query;
+
+        const resolveBranchId = () => {
+            if (queryBranchId && queryBranchId !== 'undefined' && queryBranchId !== 'null' && queryBranchId !== 'all') return queryBranchId;
+            if (headerTenantId && headerTenantId !== 'undefined' && headerTenantId !== 'null' && headerTenantId !== 'all') return headerTenantId;
+            return null;
+        };
+        const branchId = resolveBranchId();
+
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId) where.tenantId = parseInt(branchId);
+        } else if (role === 'BRANCH_ADMIN' || role === 'MANAGER') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [];
+                if (userTenantId) orConditions.push({ id: userTenantId });
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: orConditions.length > 0 ? orConditions : undefined
+                    },
+                    select: { id: true }
+                });
+                const managedIds = branches.map(b => b.id);
+                where.tenantId = { in: managedIds };
+            }
+        } else {
+            where.tenantId = userTenantId;
+        }
+
         const total = await prisma.task.count({ where });
         const pending = await prisma.task.count({ where: { ...where, status: 'Pending' } });
-        res.json({ total, pending, inProgress: 0, completed: 0 });
+        const inProgress = await prisma.task.count({ where: { ...where, status: 'In Progress' } });
+        const completed = await prisma.task.count({ where: { ...where, status: 'Completed' } });
+        const overdue = await prisma.task.count({ where: { ...where, status: 'Overdue' } });
+
+        res.json({ total, pending, inProgress, completed, overdue });
     } catch (error) {
+        console.error('Error fetching task stats:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -634,16 +961,41 @@ const updateTask = async (req, res) => {
 
 const createTask = async (req, res) => {
     try {
-        const { title, assignedToId, priority, dueDate, status } = req.body;
-        const { id: creatorId } = req.user;
+        const { title, description, assignedToId, priority, dueDate, status, tenantId: bodyTenantId } = req.body;
+        const { id: creatorId, tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        let tenantIdToUse = userTenantId;
+
+        if (role === 'SUPER_ADMIN') {
+            tenantIdToUse = bodyTenantId ? parseInt(bodyTenantId) : null;
+        } else if ((role === 'BRANCH_ADMIN' || role === 'MANAGER') && bodyTenantId) {
+            // Validate that the user actually owns/manages this branch
+            const targetBranch = await prisma.tenant.findFirst({
+                where: {
+                    id: parseInt(bodyTenantId),
+                    OR: [
+                        { id: userTenantId },
+                        { owner: email },
+                        { owner: userName }
+                    ]
+                }
+            });
+            if (targetBranch) {
+                tenantIdToUse = targetBranch.id;
+            } else {
+                return res.status(403).json({ message: 'Forbidden: You do not have access to this branch' });
+            }
+        }
 
         const newTask = await prisma.task.create({
             data: {
                 title,
+                description,
                 priority: priority || 'Medium',
                 dueDate: new Date(dueDate),
-                assignedToId: parseInt(assignedToId),
+                assignedToId: assignedToId ? parseInt(assignedToId) : null,
                 creatorId,
+                tenantId: tenantIdToUse,
                 status: status || 'Pending'
             },
             include: { assignedTo: true }
@@ -652,6 +1004,26 @@ const createTask = async (req, res) => {
         res.status(201).json(newTask);
     } catch (error) {
         console.error("Task Creation Error:", error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getTaskById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const task = await prisma.task.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                assignedTo: { select: { id: true, name: true, role: true } },
+                creator: { select: { id: true, name: true, role: true } },
+                tenant: { select: { id: true, name: true } }
+            }
+        });
+
+        if (!task) return res.status(404).json({ message: 'Task not found' });
+
+        res.json(task);
+    } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
@@ -807,35 +1179,132 @@ const giftDays = async (req, res) => {
 
 const getAllPlans = async (req, res) => {
     try {
-        const where = req.user.role === 'SUPER_ADMIN' ? {} : { tenantId: req.user.tenantId };
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const { branchId: queryBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const effectiveBranchId = queryBranchId || headerTenantId;
+
+        const where = {};
+
+        if (role === 'SUPER_ADMIN') {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
+            }
+        } else {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
+            } else {
+                // Show plans from all managed branches
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                const managedBranchIds = branches.map(b => b.id);
+                where.tenantId = { in: managedBranchIds };
+            }
+        }
+
         const plans = await prisma.membershipPlan.findMany({
-            where
+            where,
+            include: {
+                _count: { select: { members: true } },
+                tenant: { select: { id: true, name: true } }
+            },
+            orderBy: { createdAt: 'desc' }
         });
-        res.json(plans);
+
+        // Format for frontend
+        const formatted = plans.map(p => ({
+            id: p.id,
+            tenantId: p.tenantId,
+            name: p.name,
+            description: p.description,
+            price: parseFloat(p.price),
+            duration: p.duration,
+            durationType: p.durationType,
+            status: p.status,
+            benefits: p.benefits,
+            cancellationWindow: p.cancellationWindow,
+            creditsPerBooking: p.creditsPerBooking,
+            maxBookingsPerDay: p.maxBookingsPerDay,
+            maxBookingsPerWeek: p.maxBookingsPerWeek,
+            memberCount: p._count?.members || 0,
+            branch: p.tenant?.name || '—',
+            createdAt: p.createdAt
+        }));
+
+        res.json(formatted);
     } catch (error) {
+        console.error('[getAllPlans] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
 const createPlan = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         const planData = req.body;
+        const effectiveBranchId = planData.branchId || req.headers['x-tenant-id'] || 'single';
 
-        const newPlan = await prisma.membershipPlan.create({
-            data: {
-                ...planData,
-                tenantId,
-                price: parseFloat(planData.price),
-                duration: parseInt(planData.duration),
-                creditsPerBooking: planData.creditsPerBooking ? parseInt(planData.creditsPerBooking) : undefined,
-                maxBookingsPerDay: planData.maxBookingsPerDay ? parseInt(planData.maxBookingsPerDay) : undefined,
-                maxBookingsPerWeek: planData.maxBookingsPerWeek ? parseInt(planData.maxBookingsPerWeek) : undefined,
-                cancellationWindow: planData.cancellationWindow ? parseInt(planData.cancellationWindow) : undefined
-            }
-        });
-        res.status(201).json(newPlan);
+        // Determine target branches
+        let targetBranchIds = [];
+        if (effectiveBranchId === 'all') {
+            const branches = await prisma.tenant.findMany({
+                where: {
+                    OR: [
+                        { id: userTenantId },
+                        { owner: email },
+                        { owner: userName }
+                    ]
+                },
+                select: { id: true }
+            });
+            targetBranchIds = branches.map(b => b.id);
+        } else if (effectiveBranchId !== 'single') {
+            targetBranchIds = [parseInt(effectiveBranchId)];
+        } else {
+            targetBranchIds = [userTenantId];
+        }
+
+        if (targetBranchIds.length === 0) {
+            return res.status(400).json({ message: 'No valid branches found' });
+        }
+
+        // Serialize benefits array to JSON string for DB storage
+        const benefitsStr = Array.isArray(planData.benefits)
+            ? JSON.stringify(planData.benefits)
+            : (planData.benefits || null);
+
+        const createdPlans = [];
+        for (const tId of targetBranchIds) {
+            const newPlan = await prisma.membershipPlan.create({
+                data: {
+                    tenantId: tId,
+                    name: planData.name,
+                    description: planData.description || null,
+                    price: parseFloat(planData.price) || 0,
+                    duration: parseInt(planData.duration) || 30,
+                    durationType: planData.durationType || 'Days',
+                    status: planData.active ? 'Active' : 'Active',
+                    benefits: benefitsStr,
+                    cancellationWindow: planData.maxFreezeDays ? parseInt(planData.maxFreezeDays) : 0,
+                    creditsPerBooking: planData.creditsPerBooking ? parseInt(planData.creditsPerBooking) : 1,
+                    maxBookingsPerDay: planData.maxBookingsPerDay ? parseInt(planData.maxBookingsPerDay) : 1,
+                    maxBookingsPerWeek: planData.maxBookingsPerWeek ? parseInt(planData.maxBookingsPerWeek) : 7
+                }
+            });
+            createdPlans.push(newPlan);
+        }
+
+        res.status(201).json(effectiveBranchId === 'all' ? createdPlans : createdPlans[0]);
     } catch (error) {
+        console.error('[createPlan] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -845,20 +1314,32 @@ const updatePlan = async (req, res) => {
         const { id } = req.params;
         const planData = req.body;
 
+        // Serialize benefits if array
+        const benefitsStr = Array.isArray(planData.benefits)
+            ? JSON.stringify(planData.benefits)
+            : (planData.benefits !== undefined ? planData.benefits : undefined);
+
+        const updateData = {};
+        if (planData.name !== undefined) updateData.name = planData.name;
+        if (planData.description !== undefined) updateData.description = planData.description;
+        if (planData.price !== undefined) updateData.price = parseFloat(planData.price);
+        if (planData.duration !== undefined) updateData.duration = parseInt(planData.duration);
+        if (planData.durationType !== undefined) updateData.durationType = planData.durationType;
+        if (planData.status !== undefined) updateData.status = planData.status;
+        if (benefitsStr !== undefined) updateData.benefits = benefitsStr;
+        if (planData.maxFreezeDays !== undefined) updateData.cancellationWindow = parseInt(planData.maxFreezeDays);
+        if (planData.cancellationWindow !== undefined) updateData.cancellationWindow = parseInt(planData.cancellationWindow);
+        if (planData.creditsPerBooking !== undefined) updateData.creditsPerBooking = parseInt(planData.creditsPerBooking);
+        if (planData.maxBookingsPerDay !== undefined) updateData.maxBookingsPerDay = parseInt(planData.maxBookingsPerDay);
+        if (planData.maxBookingsPerWeek !== undefined) updateData.maxBookingsPerWeek = parseInt(planData.maxBookingsPerWeek);
+
         const updated = await prisma.membershipPlan.update({
             where: { id: parseInt(id) },
-            data: {
-                ...planData,
-                price: planData.price ? parseFloat(planData.price) : undefined,
-                duration: planData.duration ? parseInt(planData.duration) : undefined,
-                creditsPerBooking: planData.creditsPerBooking ? parseInt(planData.creditsPerBooking) : undefined,
-                maxBookingsPerDay: planData.maxBookingsPerDay ? parseInt(planData.maxBookingsPerDay) : undefined,
-                maxBookingsPerWeek: planData.maxBookingsPerWeek ? parseInt(planData.maxBookingsPerWeek) : undefined,
-                cancellationWindow: planData.cancellationWindow ? parseInt(planData.cancellationWindow) : undefined
-            }
+            data: updateData
         });
         res.json(updated);
     } catch (error) {
+        console.error('[updatePlan] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -880,14 +1361,29 @@ const deletePlan = async (req, res) => {
 const getAllClasses = async (req, res) => {
     try {
         const { branchId } = req.query;
-        let where = req.user.role === 'SUPER_ADMIN' ? {} : { tenantId: req.user.tenantId };
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        let where = {};
 
-        if (req.user.role === 'SUPER_ADMIN' && branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (req.user.role === 'BRANCH_ADMIN' && branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (req.user.role === 'MANAGER' && branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const classes = await prisma.class.findMany({
@@ -899,22 +1395,27 @@ const getAllClasses = async (req, res) => {
         });
 
         // Format for frontend
-        const formatted = classes.map(cls => ({
-            id: cls.id,
-            name: cls.name,
-            description: cls.description,
-            trainerName: cls.trainer?.name || 'Unassigned',
-            trainerId: cls.trainerId,
-            schedule: cls.schedule && cls.schedule.date
-                ? `${cls.schedule.date} at ${cls.schedule.time}`
-                : (typeof cls.schedule === 'string' ? cls.schedule : 'TBA'),
-            duration: cls.duration || '60 mins',
-            capacity: cls.maxCapacity,
-            enrolled: cls.bookings.length,
-            status: cls.status,
-            location: cls.location || 'N/A',
-            requiredBenefit: cls.requiredBenefit
-        }));
+        const formatted = classes.map(cls => {
+            let parsedSchedule = cls.schedule;
+            try { if (typeof cls.schedule === 'string') parsedSchedule = JSON.parse(cls.schedule); } catch (e) { }
+
+            return {
+                id: cls.id,
+                name: cls.name,
+                description: cls.description,
+                trainerName: cls.trainer?.name || 'Unassigned',
+                trainerId: cls.trainerId,
+                schedule: parsedSchedule && parsedSchedule.date
+                    ? `${parsedSchedule.date} at ${parsedSchedule.time}`
+                    : (typeof parsedSchedule === 'string' ? parsedSchedule : 'TBA'),
+                duration: cls.duration || '60 mins',
+                capacity: cls.maxCapacity,
+                enrolled: cls.bookings.length,
+                status: cls.status,
+                location: cls.location || 'N/A',
+                requiredBenefit: cls.requiredBenefit
+            };
+        });
 
         res.json(formatted);
     } catch (error) {
@@ -931,6 +1432,7 @@ const createClass = async (req, res) => {
         if (date && time) {
             finalSchedule = { date, time, type };
         }
+        const scheduleStr = typeof finalSchedule === 'string' ? finalSchedule : JSON.stringify(finalSchedule);
 
         const finalType = type || req.body.requiredBenefit;
 
@@ -954,7 +1456,7 @@ const createClass = async (req, res) => {
                     name,
                     description,
                     trainerId: trainerId ? parseInt(trainerId) : null,
-                    schedule: finalSchedule,
+                    schedule: scheduleStr,
                     maxCapacity: parseInt(maxCapacity),
                     status: status || 'Scheduled',
                     duration: duration ? String(duration) : '60',
@@ -974,7 +1476,7 @@ const createClass = async (req, res) => {
                 name,
                 description,
                 trainerId: trainerId ? parseInt(trainerId) : null,
-                schedule: finalSchedule,
+                schedule: scheduleStr,
                 maxCapacity: parseInt(maxCapacity),
                 status: status || 'Scheduled',
                 duration: duration ? String(duration) : '60',
@@ -990,7 +1492,13 @@ const createClass = async (req, res) => {
 const updateClass = async (req, res) => {
     try {
         const { id } = req.params;
-        const { name, description, trainerId, schedule, maxCapacity, status, duration, requiredBenefit } = req.body;
+        const { name, description, trainerId, schedule, date, time, type, maxCapacity, status, duration, requiredBenefit } = req.body;
+
+        let finalSchedule = schedule || undefined;
+        if (date && time) {
+            finalSchedule = { date, time, type };
+        }
+        const scheduleStr = finalSchedule ? (typeof finalSchedule === 'string' ? finalSchedule : JSON.stringify(finalSchedule)) : undefined;
 
         const updated = await prisma.class.update({
             where: { id: parseInt(id) },
@@ -998,11 +1506,11 @@ const updateClass = async (req, res) => {
                 name,
                 description,
                 trainerId: trainerId ? parseInt(trainerId) : null,
-                schedule,
+                schedule: scheduleStr,
                 maxCapacity: maxCapacity ? parseInt(maxCapacity) : undefined,
                 status,
-                duration,
-                requiredBenefit
+                duration: duration ? String(duration) : undefined,
+                requiredBenefit: type || requiredBenefit
             }
         });
         res.json(updated);
@@ -1026,13 +1534,16 @@ const getClassById = async (req, res) => {
 
         if (!cls) return res.status(404).json({ message: 'Class not found' });
 
+        let parsedSchedule = cls.schedule;
+        try { if (typeof cls.schedule === 'string') parsedSchedule = JSON.parse(cls.schedule); } catch (e) { }
+
         const formatted = {
             id: cls.id,
             name: cls.name,
             description: cls.description,
             trainerName: cls.trainer?.name || 'Unassigned',
             trainerId: cls.trainerId,
-            schedule: cls.schedule,
+            schedule: parsedSchedule,
             duration: cls.duration || '60 mins',
             capacity: cls.maxCapacity,
             enrolled: cls.bookings.length,
@@ -1458,11 +1969,29 @@ const renewMembership = async (req, res) => {
 
 const getTrainerStats = async (req, res) => {
     try {
-        const { tenantId = 1 } = req.user;
+        const { tenantId: userTenantId = 1, role, email, name: userName } = req.user;
         const branchId = req.query.branchId;
-        const where = {
-            tenantId: (branchId && branchId !== 'all') ? parseInt(branchId) : (req.user.role === 'SUPER_ADMIN' ? undefined : tenantId)
-        };
+
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                let orConditions = [{ id: userTenantId }];
+                if (email) orConditions.push({ owner: email });
+                if (userName) orConditions.push({ owner: userName });
+
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: orConditions },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
+        }
 
         const activeTrainers = await prisma.user.count({
             where: { ...where, role: 'TRAINER', status: 'Active' }
@@ -1506,6 +2035,8 @@ module.exports = {
     getAllStaff,
     getStaffById,
     createStaff,
+    getAvailableUsersForStaff,
+    linkStaff,
     fetchBranchDashboardCards,
     getBookings,
     getBookingStats,
@@ -1527,6 +2058,7 @@ module.exports = {
     updateTaskStatus,
     updateTask,
     createTask,
+    getTaskById,
     deleteTask,
     assignTask,
     getBookingReport,

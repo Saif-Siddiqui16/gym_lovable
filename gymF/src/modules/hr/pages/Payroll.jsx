@@ -1,43 +1,56 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Users, CheckCircle, FileText, Banknote, Edit2, Trash2, MoreHorizontal, Clock, Briefcase } from 'lucide-react';
-import { fetchStaffAPI } from '../../../api/admin/adminApi';
+import { Plus, Search, Users, CheckCircle, FileText, Banknote, Edit2, Trash2, MoreHorizontal, Clock, Briefcase, Eye } from 'lucide-react';
+import { fetchStaffAPI, deleteStaffAPI } from '../../../api/admin/adminApi';
+import { useBranchContext } from '../../../context/BranchContext';
+import toast from 'react-hot-toast';
 
 const Payroll = () => {
     const navigate = useNavigate();
+    const { selectedBranch } = useBranchContext();
     const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('Employees');
+    const [openMenuId, setOpenMenuId] = useState(null);
 
     useEffect(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const data = await fetchStaffAPI();
-                if (Array.isArray(data) && data.length > 0) {
+                const data = await fetchStaffAPI(selectedBranch);
+                if (Array.isArray(data)) {
                     setStaffList(data);
                 } else {
-                    // Fallback to mock data so UI is visible during demo
-                    setStaffList([
-                        { id: 1, name: 'Sarah Connor', email: 'sarah@gym.com', department: 'Management', role: 'MANAGER', baseSalary: 45000, status: 'Active' },
-                        { id: 2, name: 'Mike Tyson', email: 'mike@gym.com', department: 'Training', role: 'TRAINER', baseSalary: 35000, status: 'Active' },
-                        { id: 3, name: 'John Doe', email: 'john@gym.com', department: 'Operations', role: 'STAFF', baseSalary: 25000, status: 'Inactive' }
-                    ]);
+                    setStaffList([]);
                 }
             } catch (error) {
                 console.error("Error loading staff:", error);
-                // Also fallback to mock data on error for demo purposes
-                setStaffList([
-                    { id: 1, name: 'Sarah Connor', email: 'sarah@gym.com', department: 'Management', role: 'MANAGER', baseSalary: 45000, status: 'Active' },
-                    { id: 2, name: 'Mike Tyson', email: 'mike@gym.com', department: 'Training', role: 'TRAINER', baseSalary: 35000, status: 'Active' },
-                    { id: 3, name: 'John Doe', email: 'john@gym.com', department: 'Operations', role: 'STAFF', baseSalary: 25000, status: 'Inactive' }
-                ]);
+                toast.error("Failed to load staff list");
             } finally {
                 setLoading(false);
             }
         };
         loadData();
+    }, [selectedBranch]);
+
+    const handleDeleteStaff = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+        try {
+            await deleteStaffAPI(id);
+            toast.success('Staff deleted successfully');
+            setStaffList(prev => prev.filter(s => s.id !== id));
+        } catch (error) {
+            console.error('Delete error:', error);
+            toast.error('Failed to delete staff');
+        }
+    };
+
+    // Close menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = () => setOpenMenuId(null);
+        window.addEventListener('click', handleClickOutside);
+        return () => window.removeEventListener('click', handleClickOutside);
     }, []);
 
     const filteredStaff = staffList.filter(s =>
@@ -49,7 +62,7 @@ const Payroll = () => {
     const activeCount = staffList.filter(s => s.status === 'Active').length;
     // mock values for contracts and payroll as they aren't explicitly in staff data for now, just static or derived
     const mockActiveContracts = staffList.length > 0 ? staffList.length - 1 : 0;
-    const mockMonthlyPayroll = staffList.length * 25000;
+    const mockMonthlyPayroll = staffList.reduce((acc, s) => acc + (parseFloat(s.baseSalary) || 0), 0);
 
     return (
         <div className="bg-gradient-to-br from-gray-50 via-white to-violet-50/30 min-h-screen p-6 md:p-8 font-sans pb-24">
@@ -240,6 +253,16 @@ const Payroll = () => {
                                                         </span>
                                                     </div>
                                                 </td>
+<<<<<<< HEAD
+                                                <td className="px-8 py-6 text-right relative">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setOpenMenuId(openMenuId === staff.id ? null : staff.id);
+                                                        }}
+                                                        className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
+                                                    >
+=======
                                                 <td className="px-6 py-4 text-sm font-bold text-slate-800" data-label="Salary">
                                                     ₹{staff.baseSalary ? staff.baseSalary.toLocaleString() : '25,000'}
                                                 </td>
@@ -253,8 +276,32 @@ const Payroll = () => {
                                                 </td>
                                                 <td className="px-6 py-4 text-right" data-label="Actions">
                                                     <button className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">
+>>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                                         <MoreHorizontal size={18} />
                                                     </button>
+
+                                                    {openMenuId === staff.id && (
+                                                        <div className="absolute right-8 top-16 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
+                                                            <button
+                                                                onClick={() => navigate(`/hr/staff/edit/${staff.id}`)}
+                                                                className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                                            >
+                                                                <Eye size={16} /> View Profile
+                                                            </button>
+                                                            <button
+                                                                onClick={() => navigate(`/hr/staff/edit/${staff.id}`)}
+                                                                className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors"
+                                                            >
+                                                                <Edit2 size={16} /> Edit Profile
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteStaff(staff.id)}
+                                                                className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-rose-600 hover:bg-rose-50 transition-colors"
+                                                            >
+                                                                <Trash2 size={16} /> Delete Staff
+                                                            </button>
+                                                        </div>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))

@@ -1,11 +1,145 @@
-import React, { useState } from 'react';
-import { Users, UserPlus, Phone, TrendingUp, CheckCircle, Search, Filter, BarChart3, Mail, MoreHorizontal } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Users, UserPlus, Phone, TrendingUp, CheckCircle, Search, Filter, BarChart3, Mail, MoreHorizontal, Loader2, Trash2, Edit3, X } from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
 import StatsCard from '../../../modules/dashboard/components/StatsCard';
+import apiClient from '../../../api/apiClient';
+import { useBranchContext } from '../../../context/BranchContext';
 
 const LeadsPipeline = () => {
+    const { selectedBranch } = useBranchContext();
+    const [leads, setLeads] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [showAddDrawer, setShowAddDrawer] = useState(false);
+    const [isEdit, setIsEdit] = useState(false);
+    const [selectedLeadId, setSelectedLeadId] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [activeMenu, setActiveMenu] = useState(null);
+    const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+
+    // Form state
+    const [formData, setFormData] = useState({
+        name: '',
+        phone: '',
+        email: '',
+        source: 'Walk-in',
+        notes: '',
+        status: 'New'
+    });
+
+    useEffect(() => {
+        fetchLeads();
+    }, [selectedBranch]);
+
+    const fetchLeads = async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.get('/crm/leads');
+            setLeads(Array.isArray(response.data) ? response.data : []);
+        } catch (error) {
+            console.error('Fetch leads error:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddLead = async (e) => {
+        e.preventDefault();
+        try {
+            setSubmitting(true);
+            if (isEdit && selectedLeadId) {
+                await apiClient.patch(`/crm/leads/${selectedLeadId}`, formData);
+            } else {
+                await apiClient.post('/crm/leads', formData);
+            }
+            setShowAddDrawer(false);
+            setFormData({ name: '', phone: '', email: '', source: 'Walk-in', notes: '', status: 'New' });
+            fetchLeads();
+        } catch (error) {
+            console.error('Save lead error:', error);
+            alert(error.response?.data?.message || 'Failed to save lead');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDeleteLead = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this lead?')) return;
+        try {
+            await apiClient.delete(`/crm/leads/${id}`);
+            fetchLeads();
+        } catch (error) {
+            console.error('Delete error:', error);
+        }
+    };
+
+    const handleStatusUpdate = async (id, status) => {
+        try {
+            await apiClient.patch(`/crm/leads/${id}/status`, { status });
+            fetchLeads();
+            setActiveMenu(null);
+        } catch (error) {
+            console.error('Status update error:', error);
+        }
+    };
+
+    const openEditDrawer = (lead) => {
+        setFormData({
+            name: lead.name,
+            phone: lead.phone,
+            email: lead.email || '',
+            source: lead.source || 'Walk-in',
+            notes: lead.notes || '',
+            status: lead.status
+        });
+        setSelectedLeadId(lead.id);
+        setIsEdit(true);
+        setShowAddDrawer(true);
+        setActiveMenu(null);
+    };
+
+    const openAddDrawer = () => {
+        setFormData({ name: '', phone: '', email: '', source: 'Walk-in', notes: '', status: 'New' });
+        setIsEdit(false);
+        setShowAddDrawer(true);
+    };
+
+    const toggleMenu = (e, leadId) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const menuWidth = 224; // w-56
+        const menuHeight = 320; // approximate height
+
+        let top = rect.bottom + 8;
+        let left = rect.right - menuWidth;
+
+        // If menu would go off bottom of screen, show it above the button
+        if (top + menuHeight > window.innerHeight) {
+            top = rect.top - menuHeight - 8;
+        }
+
+        setMenuPosition({ top, left });
+        setActiveMenu(activeMenu === leadId ? null : leadId);
+    };
+
+    const stats = {
+        total: leads.length,
+        new: leads.filter(l => l.status === 'New').length,
+        contacted: leads.filter(l => l.status === 'Contacted').length,
+        interested: leads.filter(l => l.status === 'Interested').length,
+        converted: leads.filter(l => l.status === 'Converted').length
+    };
+
+    const filteredLeads = leads.filter(l =>
+        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.phone.includes(searchTerm)
+    );
+
+    const sourceStats = [
+        { name: 'Walk-in', icon: Users, color: 'violet', count: leads.filter(l => l.source === 'Walk-in').length },
+        { name: 'Online', icon: Search, color: 'blue', count: leads.filter(l => l.source === 'Online').length },
+        { name: 'Referral', icon: Mail, color: 'emerald', count: leads.filter(l => l.source === 'Referral').length },
+        { name: 'Social Media', icon: TrendingUp, color: 'pink', count: leads.filter(l => l.source === 'Social Media').length },
+    ];
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 md:p-8 space-y-8 animate-fadeIn">
@@ -27,7 +161,7 @@ const LeadsPipeline = () => {
                             </div>
                         </div>
                         <button
-                            onClick={() => setShowAddDrawer(true)}
+                            onClick={openAddDrawer}
                             className="flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:scale-105 transition-all"
                         >
                             <UserPlus size={18} /> Add Lead
@@ -37,12 +171,12 @@ const LeadsPipeline = () => {
             </div>
 
             {/* Stats Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-6 px-1 md:px-0">
-                <StatsCard title="Total Leads" value="0" icon={Users} color="primary" isEarningsLayout={true} />
-                <StatsCard title="New" value="0" icon={UserPlus} color="info" isEarningsLayout={true} />
-                <StatsCard title="Contacted" value="0" icon={Phone} color="warning" isEarningsLayout={true} />
-                <StatsCard title="Interested" value="0" icon={TrendingUp} color="success" isEarningsLayout={true} />
-                <StatsCard title="Converted" value="0" icon={CheckCircle} color="secondary" isEarningsLayout={true} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+                <StatsCard title="Total Leads" value={stats.total.toString()} icon={Users} color="primary" isEarningsLayout={true} />
+                <StatsCard title="New" value={stats.new.toString()} icon={UserPlus} color="info" isEarningsLayout={true} />
+                <StatsCard title="Contacted" value={stats.contacted.toString()} icon={Phone} color="warning" isEarningsLayout={true} />
+                <StatsCard title="Interested" value={stats.interested.toString()} icon={TrendingUp} color="success" isEarningsLayout={true} />
+                <StatsCard title="Converted" value={stats.converted.toString()} icon={CheckCircle} color="secondary" isEarningsLayout={true} />
             </div>
 
             {/* Lead Sources Section */}
@@ -56,12 +190,51 @@ const LeadsPipeline = () => {
                         <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-0.5">Where your prospects are coming from</p>
                     </div>
                 </div>
-                <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-200 mb-4">
-                        <Search size={32} />
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <Loader2 className="w-8 h-8 text-violet-600 animate-spin" />
                     </div>
-                    <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">No leads yet</p>
-                </div>
+                ) : leads.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {sourceStats.map((source) => {
+                            const percentage = leads.length > 0 ? Math.round((source.count / leads.length) * 100) : 0;
+                            return (
+                                <div key={source.name} className="relative group p-6 rounded-3xl border border-slate-100 hover:border-violet-200 hover:shadow-xl hover:shadow-violet-50 transition-all duration-300 bg-white">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className={`w-12 h-12 rounded-2xl bg-${source.color}-50 text-${source.color}-600 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                                            <source.icon size={24} />
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-2xl font-black text-slate-900 leading-none">{source.count}</span>
+                                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Leads</span>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                                            <span>{source.name}</span>
+                                            <span>{percentage}%</span>
+                                        </div>
+                                        <div className="h-2 w-full bg-slate-50 rounded-full overflow-hidden">
+                                            <div
+                                                className={`h-full bg-${source.color}-500 rounded-full transition-all duration-1000 ease-out`}
+                                                style={{ width: `${percentage}%` }}
+                                            ></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-16 bg-slate-50/50 rounded-3xl border-2 border-dashed border-slate-100">
+                        <div className="text-center">
+                            <div className="w-16 h-16 rounded-2xl bg-white shadow-sm flex items-center justify-center text-slate-200 mx-auto mb-4">
+                                <Search size={32} />
+                            </div>
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">No leads to display</p>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* All Leads Section */}
@@ -81,6 +254,8 @@ const LeadsPipeline = () => {
                         <input
                             type="text"
                             placeholder="Search leads..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full h-12 pl-12 pr-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-white"
                         />
                     </div>
@@ -98,20 +273,145 @@ const LeadsPipeline = () => {
                                 <th className="text-right py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100">
-                            <tr>
-                                <td colSpan="6" className="px-8 py-24 text-center pointer-events-none" data-label="Status">
-                                    <div className="flex flex-col items-center gap-4">
-                                        <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200">
-                                            <Users size={40} />
+                        <tbody>
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="6" className="px-8 py-24 text-center">
+                                        <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : filteredLeads.length > 0 ? (
+                                filteredLeads.map((lead) => (
+                                    <tr key={lead.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                        <td className="px-8 py-4 font-bold text-slate-900">{lead.name}</td>
+                                        <td className="px-8 py-4 text-slate-600 text-sm">
+                                            <div className="flex flex-col">
+                                                <span>{lead.phone}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold">{lead.email || 'No email'}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-4">
+                                            <div className="flex flex-col gap-1">
+                                                <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest w-fit ${lead.status === 'New' ? 'bg-blue-50 text-blue-600' :
+                                                    lead.status === 'Converted' ? 'bg-green-50 text-green-600' :
+                                                        lead.status === 'Contacted' ? 'bg-orange-50 text-orange-600' :
+                                                            'bg-slate-100 text-slate-600'
+                                                    }`}>
+                                                    {lead.status}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td className="px-8 py-4 text-slate-600 text-sm font-bold uppercase tracking-widest text-[10px]">{lead.source}</td>
+                                        <td className="px-8 py-4 text-slate-500 text-[10px] font-bold">
+                                            {new Date(lead.createdAt).toLocaleDateString()}
+                                        </td>
+                                        <td className="px-8 py-4 text-right">
+                                            <button
+                                                onClick={(e) => toggleMenu(e, lead.id)}
+                                                className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeMenu === lead.id
+                                                    ? 'bg-violet-600 text-white shadow-xl shadow-violet-200 rotate-90 scale-110'
+                                                    : 'text-slate-400 hover:text-violet-600 hover:bg-violet-50'
+                                                    }`}
+                                            >
+                                                <MoreHorizontal size={22} />
+                                            </button>
+
+                                            {activeMenu === lead.id && (
+                                                <>
+                                                    {/* Backdrop for closing */}
+                                                    <div
+                                                        className="fixed inset-0 z-[1000]"
+                                                        onClick={() => setActiveMenu(null)}
+                                                    ></div>
+
+                                                    <div
+                                                        className="fixed w-56 bg-white/80 backdrop-blur-xl border border-white/40 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-[1001] p-2 animate-scaleIn overflow-hidden ring-1 ring-black/5"
+                                                        style={{ top: menuPosition.top, left: menuPosition.left }}
+                                                    >
+                                                        {/* Header */}
+                                                        <div className="flex items-center gap-3 p-3 mb-2 bg-gradient-to-r from-violet-50/50 to-transparent rounded-2xl">
+                                                            <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-100">
+                                                                <BarChart3 size={14} />
+                                                            </div>
+                                                            <div className="flex flex-col">
+                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Lead</span>
+                                                                <span className="text-xs font-black text-slate-800 tracking-tight">Management</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Quick Actions */}
+                                                        <div className="space-y-1">
+                                                            <button
+                                                                onClick={() => openEditDrawer(lead)}
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-slate-600 hover:bg-white hover:text-violet-600 rounded-xl transition-all group hover:shadow-sm"
+                                                            >
+                                                                <div className="w-6 h-6 rounded-lg bg-slate-50 group-hover:bg-violet-50 flex items-center justify-center transition-colors">
+                                                                    <Edit3 size={12} />
+                                                                </div>
+                                                                Edit Profile
+                                                            </button>
+
+                                                            <div className="h-px bg-slate-100/50 mx-2 my-1"></div>
+
+                                                            <div className="px-3 py-2">
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] block mb-2 px-1">Update Status</span>
+                                                                <div className="grid grid-cols-1 gap-1">
+                                                                    {[
+                                                                        { label: 'Contacted', color: 'orange', icon: Phone },
+                                                                        { label: 'Interested', color: 'emerald', icon: TrendingUp },
+                                                                        { label: 'Converted', color: 'blue', icon: CheckCircle },
+                                                                        { label: 'Lost', color: 'rose', icon: X }
+                                                                    ].filter(s => s.label !== lead.status).map((s) => (
+                                                                        <button
+                                                                            key={s.label}
+                                                                            onClick={() => handleStatusUpdate(lead.id, s.label)}
+                                                                            className="flex items-center gap-3 w-full px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:bg-white hover:shadow-sm rounded-xl transition-all group"
+                                                                        >
+                                                                            <div className={`w-6 h-6 rounded-lg bg-slate-50 group-hover:bg-${s.color}-50 flex items-center justify-center transition-colors`}>
+                                                                                <s.icon size={12} className={`text-slate-300 group-hover:text-${s.color}-500`} />
+                                                                            </div>
+                                                                            <span className={`group-hover:text-${s.color}-600 transition-colors`}>{s.label}</span>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+
+                                                            <div className="h-px bg-slate-100/50 mx-2 my-1"></div>
+
+                                                            <button
+                                                                onClick={() => {
+                                                                    handleDeleteLead(lead.id);
+                                                                    setActiveMenu(null);
+                                                                }}
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-rose-500 hover:bg-rose-50/50 rounded-xl transition-all group"
+                                                            >
+                                                                <div className="w-6 h-6 rounded-lg bg-rose-50 group-hover:bg-rose-100 flex items-center justify-center transition-colors text-rose-400 group-hover:text-rose-600">
+                                                                    <Trash2 size={12} />
+                                                                </div>
+                                                                Remove Lead
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="6" className="px-8 py-24 text-center">
+                                        <div className="flex flex-col items-center gap-4">
+                                            <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200">
+                                                <Users size={40} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-lg font-black text-slate-900 tracking-tight">No leads found</h3>
+                                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">Start growing your gym by adding your first lead</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-lg font-black text-slate-900 tracking-tight">No leads found</h3>
-                                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-2">Start growing your gym by adding your first lead</p>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -121,8 +421,8 @@ const LeadsPipeline = () => {
             <RightDrawer
                 isOpen={showAddDrawer}
                 onClose={() => setShowAddDrawer(false)}
-                title="Add New Lead"
-                subtitle="Create a new lead for follow-up"
+                title={isEdit ? "Edit Lead" : "Add New Lead"}
+                subtitle={isEdit ? "Update lead information" : "Create a new lead for follow-up"}
                 maxWidth="max-w-md"
                 footer={
                     <div className="flex gap-3 w-full justify-end">
@@ -132,8 +432,13 @@ const LeadsPipeline = () => {
                         >
                             Cancel
                         </button>
-                        <button className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:scale-105 transition-all font-sans">
-                            Add Lead
+                        <button
+                            disabled={submitting}
+                            onClick={handleAddLead}
+                            className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:scale-105 transition-all font-sans disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {submitting && <Loader2 size={16} className="animate-spin" />}
+                            {submitting ? (isEdit ? 'Updating...' : 'Adding...') : (isEdit ? 'Update Lead' : 'Add Lead')}
                         </button>
                     </div>
                 }
@@ -145,6 +450,8 @@ const LeadsPipeline = () => {
                             <input
                                 type="text"
                                 placeholder="Enter full name"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                 className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50"
                             />
                         </div>
@@ -153,6 +460,8 @@ const LeadsPipeline = () => {
                             <input
                                 type="tel"
                                 placeholder="+91 98765 43210"
+                                value={formData.phone}
+                                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                                 className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50"
                             />
                         </div>
@@ -161,17 +470,23 @@ const LeadsPipeline = () => {
                             <input
                                 type="email"
                                 placeholder="email@example.com"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50"
                             />
                         </div>
                         <div>
                             <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Source</label>
                             <div className="relative">
-                                <select className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50 appearance-none cursor-pointer">
-                                    <option>Walk-in</option>
-                                    <option>Online</option>
-                                    <option>Referral</option>
-                                    <option>Social Media</option>
+                                <select
+                                    value={formData.source}
+                                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                                    className="w-full h-12 px-4 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50 appearance-none cursor-pointer"
+                                >
+                                    <option value="Walk-in">Walk-in</option>
+                                    <option value="Online">Online</option>
+                                    <option value="Referral">Referral</option>
+                                    <option value="Social Media">Social Media</option>
                                 </select>
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
                                     <Filter size={14} />
@@ -183,6 +498,8 @@ const LeadsPipeline = () => {
                             <textarea
                                 placeholder="Any additional notes..."
                                 rows={4}
+                                value={formData.notes}
+                                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                                 className="w-full px-4 py-3 rounded-xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm font-semibold transition-all outline-none bg-slate-50/50 resize-none"
                             />
                         </div>

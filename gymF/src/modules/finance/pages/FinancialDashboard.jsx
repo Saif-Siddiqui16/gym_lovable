@@ -14,7 +14,9 @@ import {
     Filter,
     X,
     Upload,
-    CheckCircle2
+    CheckCircle2,
+    ChevronDown,
+    History
 } from 'lucide-react';
 import { fetchFinanceStats, addExpense } from '../../../api/finance/financeApi';
 import { useBranchContext } from '../../../context/BranchContext';
@@ -22,7 +24,7 @@ import toast from 'react-hot-toast';
 import RightDrawer from '../../../components/common/RightDrawer';
 
 const FinancialDashboard = () => {
-    const { selectedBranch } = useBranchContext();
+    const { selectedBranch, branches } = useBranchContext();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('income'); // income, expenses
@@ -35,8 +37,14 @@ const FinancialDashboard = () => {
         amount: '',
         description: '',
         vendor: '',
+        donor: '',
+        branchId: selectedBranch || 'all',
         date: new Date().toISOString().split('T')[0]
     });
+
+    useEffect(() => {
+        setExpenseForm(prev => ({ ...prev, branchId: selectedBranch || 'all' }));
+    }, [selectedBranch]);
 
     const loadData = async () => {
         try {
@@ -67,6 +75,8 @@ const FinancialDashboard = () => {
                 amount: '',
                 description: '',
                 vendor: '',
+                donor: '',
+                branchId: selectedBranch || 'all',
                 date: new Date().toISOString().split('T')[0]
             });
             loadData(); // Refresh overview
@@ -91,203 +101,237 @@ const FinancialDashboard = () => {
     };
 
     return (
-        <div className="bg-[#f8fafc] min-h-screen p-4 sm:p-8">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Finance Dashboard</h1>
-                    <p className="text-slate-500 text-sm font-medium">Track income, expenses and financial health</p>
-                </div>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button
-                        onClick={() => setIsExpenseDrawerOpen(true)}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-[#7c3aed] text-white rounded-xl text-sm font-bold shadow-lg shadow-violet-200 hover:bg-[#6d28d9] transition-all"
-                    >
-                        <Plus size={18} /> Add Expense
-                    </button>
-                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
-                        <Download size={18} /> Export CSV
-                    </button>
-                    <div className="relative group">
-                        <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <button className="flex items-center justify-center gap-2 pl-10 pr-4 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
-                            Feb 1 - Feb 28, 2026 <X size={14} className="ml-2 text-slate-300" />
+        <div className="bg-[#f8fafc] min-h-screen p-4 sm:p-10 pb-20">
+            <div className="max-w-screen-2xl mx-auto space-y-10">
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Finance Dashboard</h1>
+                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Core Financial Intelligence</p>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <button
+                            onClick={() => setIsExpenseDrawerOpen(true)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-[#7c3aed] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-violet-200 hover:bg-[#6d28d9] hover:-translate-y-0.5 transition-all"
+                        >
+                            <Plus size={18} /> Add Expense
+                        </button>
+                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">
+                            <Download size={18} /> Export
                         </button>
                     </div>
                 </div>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Revenue Report Chart Section */}
-                <div className="lg:col-span-8 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col">
-                    <div className="flex justify-between items-center mb-8">
-                        <div>
-                            <h3 className="text-lg font-black text-slate-900">Revenue Report</h3>
-                            <p className="text-slate-400 text-xs font-bold">Monthly earnings vs expenses</p>
-                        </div>
-                    </div>
-
-                    <div className="flex-1 min-h-[300px] flex items-end justify-between gap-4 px-4 pb-8">
-                        {monthlyData.map((m, idx) => {
-                            const maxVal = Math.max(...monthlyData.map(d => Math.max(d.income, d.expenses))) || 1;
-                            const incomePercent = (m.income / maxVal) * 100;
-                            const expensePercent = (m.expenses / maxVal) * 100;
-
-                            return (
-                                <div key={idx} className="flex-1 flex flex-col items-center gap-4 group">
-                                    <div className="w-full flex justify-center gap-1 h-[200px] items-end">
-                                        {/* Income Bar */}
-                                        <div
-                                            className="w-3 bg-violet-500 rounded-full transition-all duration-700 hover:w-4 cursor-help relative"
-                                            style={{ height: `${Math.max(5, incomePercent)}%` }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 transition-all">
-                                                ₹{m.income.toLocaleString()}
-                                            </div>
-                                        </div>
-                                        {/* Expense Bar */}
-                                        <div
-                                            className="w-3 bg-slate-200 rounded-full transition-all duration-700 hover:w-4 cursor-help relative"
-                                            style={{ height: `${Math.max(5, expensePercent)}%` }}
-                                        >
-                                            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 transition-all">
-                                                ₹{m.expenses.toLocaleString()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.month}</span>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    {/* Revenue Report Chart Section */}
+                    <div className="lg:col-span-8 bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 flex flex-col">
+                        <div className="flex justify-between items-center mb-10">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm">
+                                    <BarChart3 size={24} />
                                 </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                {/* Right Summary Card (Budget 2026) */}
-                <div className="lg:col-span-4 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 flex flex-col">
-                    <div className="mb-8">
-                        <h3 className="text-lg font-black text-slate-900">2026 Budget</h3>
-                        <p className="text-slate-400 text-xs font-bold">Financial summary</p>
-                    </div>
-
-                    <div className="mb-12">
-                        <h1 className="text-4xl font-black text-slate-900 mb-2">₹{summary.totalIncome.toLocaleString()}</h1>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Income</p>
-                    </div>
-
-                    <div className="w-full h-px bg-slate-100 mb-12 relative overflow-hidden">
-                        <div className="absolute left-0 top-0 h-full bg-violet-600 transition-all duration-1000" style={{ width: '100%' }}></div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 mb-8">
-                        <div className="bg-[#f0fdf4] p-4 rounded-2xl border border-emerald-100 text-center">
-                            <h4 className="text-emerald-700 text-base font-black">₹{summary.netProfit.toLocaleString()}</h4>
-                            <p className="text-[#15803d] text-[10px] font-bold uppercase tracking-widest mt-1">Net Profit</p>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Revenue Report</h3>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Monthly earnings vs expenses</p>
+                                </div>
+                            </div>
                         </div>
-                        <div className="bg-[#fef2f2] p-4 rounded-2xl border border-red-100 text-center">
-                            <h4 className="text-red-700 text-base font-black">₹{summary.totalExpenses.toLocaleString()}</h4>
-                            <p className="text-red-700 text-[10px] font-bold uppercase tracking-widest mt-1">Expenses</p>
-                        </div>
-                    </div>
 
-                    <div className="mt-auto">
-                        <div className="flex items-center gap-2 text-emerald-600">
-                            <ArrowUpRight size={18} />
-                            <span className="text-sm font-black">{summary.margin}% margin</span>
-                        </div>
-                    </div>
-                </div>
+                        <div className="flex-1 min-h-[350px] flex items-end justify-between gap-6 px-4 pb-10">
+                            {monthlyData.map((m, idx) => {
+                                const maxVal = Math.max(...monthlyData.map(d => Math.max(d.income, d.expenses))) || 1;
+                                const incomePercent = (m.income / maxVal) * 100;
+                                const expensePercent = (m.expenses / maxVal) * 100;
 
-                {/* Bottom Left Panel: Recent Transactions Table */}
-                <div className="lg:col-span-4 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden h-[500px]">
-                    <div className="p-8 pb-4">
-                        <h3 className="text-lg font-black text-slate-900">Recent Transactions</h3>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto px-4 pb-8 scrollbar-hide">
-                        {transactions.length > 0 ? (
-                            <div className="space-y-4">
-                                {transactions.map((txn, idx) => (
-                                    <div key={idx} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-violet-600 shadow-sm transition-colors border border-slate-100">
-                                                <ReceiptText size={18} />
+                                return (
+                                    <div key={idx} className="flex-1 flex flex-col items-center gap-6 group">
+                                        <div className="w-full flex justify-center gap-2 h-[220px] items-end">
+                                            {/* Income Bar */}
+                                            <div
+                                                className="w-4 bg-[#7c3aed] rounded-full transition-all duration-700 hover:w-6 hover:shadow-lg hover:shadow-violet-200 cursor-help relative group/bar"
+                                                style={{ height: `${Math.max(5, incomePercent)}%` }}
+                                            >
+                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-xl opacity-0 group-hover/bar:opacity-100 whitespace-nowrap z-20 transition-all shadow-xl">
+                                                    ₹{m.income.toLocaleString()}
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs font-black text-slate-900">{txn.member}</p>
-                                                <p className="text-[10px] text-slate-400 font-bold">{txn.type}</p>
+                                            {/* Expense Bar */}
+                                            <div
+                                                className="w-4 bg-slate-100 rounded-full transition-all duration-700 hover:w-6 hover:shadow-lg hover:shadow-slate-200 cursor-help relative group/bar"
+                                                style={{ height: `${Math.max(5, expensePercent)}%` }}
+                                            >
+                                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-xl opacity-0 group-hover/bar:opacity-100 whitespace-nowrap z-20 transition-all shadow-xl">
+                                                    ₹{m.expenses.toLocaleString()}
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-xs font-black text-slate-900">₹{txn.amount.toLocaleString()}</p>
-                                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{txn.date}</p>
-                                        </div>
+                                        <span className="text-[11px] font-black text-slate-500 uppercase tracking-[0.2em]">{m.month}</span>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="h-full flex flex-col items-center justify-center opacity-30 text-center px-8">
-                                <ReceiptText size={48} className="text-slate-400 mb-4" />
-                                <p className="text-slate-500 font-black italic">No transactions yet</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Bottom Right Panel: Tabbed Income/Expenses */}
-                <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden h-[500px]">
-                    <div className="px-8 pt-8 flex items-center gap-4 mb-6">
-                        <button
-                            onClick={() => setActiveTab('income')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'income' ? 'bg-violet-50 text-violet-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <ArrowUpRight size={16} /> Income ({transactions.filter(t => t.amount > 0).length})
-                        </button>
-                        <button
-                            onClick={() => setActiveTab('expenses')}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${activeTab === 'expenses' ? 'bg-red-50 text-red-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                            <ArrowDownRight size={16} /> Expenses (0)
-                        </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
-                    <div className="flex-1 overflow-auto px-8 pb-8">
-                        <h4 className="text-sm font-black text-slate-900 mb-2">Income Transactions</h4>
-                        <p className="text-slate-400 text-xs font-bold mb-6">All income including memberships, POS sales, and other payments</p>
+                    {/* Right Summary Card (Budget 2026) */}
+                    <div className="lg:col-span-4 bg-white rounded-[2.5rem] p-10 shadow-sm border border-slate-100 flex flex-col">
+                        <div className="mb-10 flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-violet-50 flex items-center justify-center text-violet-600 shadow-sm">
+                                <PieChart size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-slate-900 tracking-tight">2026 Budget</h3>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">Financial summary</p>
+                            </div>
+                        </div>
 
-                        <table className="w-full">
-                            <thead>
-                                <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
-                                    <th className="pb-4 pr-4">Date</th>
-                                    <th className="pb-4 pr-4">Type</th>
-                                    <th className="pb-4 pr-4">Member</th>
-                                    <th className="pb-4 pr-4 text-center">Invoice</th>
-                                    <th className="pb-4 pr-4 text-center">Method</th>
-                                    <th className="pb-4 text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {transactions.length > 0 ? transactions.map((txn, idx) => (
-                                    <tr key={idx} className="border-b border-slate-50 last:border-none group hover:bg-slate-50 transition-colors">
-                                        <td className="py-4 pr-4 text-[10px] font-bold text-slate-500">{txn.date}</td>
-                                        <td className="py-4 pr-4 text-xs font-black text-slate-900">{txn.type}</td>
-                                        <td className="py-4 pr-4 text-xs font-bold text-slate-700">{txn.member}</td>
-                                        <td className="py-4 pr-4 text-center">
-                                            <span className="text-[10px] font-black text-slate-400 group-hover:text-violet-600 underline cursor-pointer">{txn.id}</span>
-                                        </td>
-                                        <td className="py-4 pr-4 text-center">
-                                            <span className="inline-block px-2 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black text-slate-500 uppercase tracking-tighter">
-                                                {txn.method}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 text-right text-xs font-black text-slate-900">₹{txn.amount.toLocaleString()}</td>
+                        <div className="mb-12">
+                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em] mb-3">Total Income</p>
+                            <h1 className="text-5xl font-black text-slate-900 tracking-tighter">₹{summary.totalIncome.toLocaleString()}</h1>
+                        </div>
+
+                        <div className="w-full h-2 bg-slate-50 rounded-full mb-12 relative overflow-hidden">
+                            <div className="absolute left-0 top-0 h-full bg-[#7c3aed] transition-all duration-1000" style={{ width: '100%' }}></div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6 mb-10">
+                            <div className="bg-[#f0fdf4] p-5 rounded-[2rem] border border-emerald-100 text-center group cursor-pointer hover:shadow-lg hover:shadow-emerald-50 transition-all">
+                                <h4 className="text-emerald-700 text-xl font-black">₹{summary.netProfit.toLocaleString()}</h4>
+                                <p className="text-[#15803d] text-[9px] font-black uppercase tracking-widest mt-2">Net Profit</p>
+                            </div>
+                            <div className="bg-[#fef2f2] p-5 rounded-[2rem] border border-red-100 text-center group cursor-pointer hover:shadow-lg hover:shadow-red-50 transition-all">
+                                <h4 className="text-red-700 text-xl font-black">₹{summary.totalExpenses.toLocaleString()}</h4>
+                                <p className="text-red-700 text-[9px] font-black uppercase tracking-widest mt-2">Expenses</p>
+                            </div>
+                        </div>
+
+                        <div className="mt-auto pt-6 border-t border-slate-50 flex items-center justify-between">
+                            <div className="flex items-center gap-2.5 text-emerald-600 bg-emerald-50 px-4 py-2 rounded-xl border border-emerald-100">
+                                <ArrowUpRight size={18} />
+                                <span className="text-xs font-black uppercase tracking-widest">{summary.margin}% margin</span>
+                            </div>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Healthy Growth</p>
+                        </div>
+                    </div>
+
+                    {/* Bottom Left: Recent (Top 5) */}
+                    <div className="lg:col-span-4 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden h-[600px]">
+                        <div className="p-10 pb-6 flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 shadow-sm">
+                                <History size={20} />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 tracking-tight">Recent</h3>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto px-6 pb-10 scrollbar-hide">
+                            {transactions.length > 0 ? (
+                                <div className="space-y-4">
+                                    {transactions.slice(0, 5).map((txn, idx) => (
+                                        <div key={idx} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl hover:bg-slate-50 transition-all border border-transparent hover:border-slate-100 group">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-slate-300 group-hover:text-violet-600 shadow-sm transition-colors border border-slate-100">
+                                                    <ReceiptText size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-slate-900">{txn.member}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold">{txn.type}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-xs font-black ${txn.flow === 'in' ? 'text-slate-900' : 'text-red-600'}`}>
+                                                    {txn.flow === 'in' ? '+' : '-'}₹{txn.amount.toLocaleString()}
+                                                </p>
+                                                <div className="flex items-center gap-1 justify-end mt-0.5">
+                                                    <div className="w-1 h-1 rounded-full bg-violet-400"></div>
+                                                    <p className="text-[9px] text-[#7c3aed] font-black uppercase tracking-widest leading-none whitespace-nowrap">{txn.branch}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="h-full flex flex-col items-center justify-center opacity-30 text-center px-8">
+                                    <ReceiptText size={48} className="text-slate-400 mb-4" />
+                                    <p className="text-slate-500 font-black italic">No transactions yet</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Bottom Right: Detailed Tabs */}
+                    <div className="lg:col-span-8 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col overflow-hidden h-[600px]">
+                        <div className="px-10 pt-10 flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setActiveTab('income')}
+                                    className={`flex items-center gap-2.5 px-6 py-3 rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'income' ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'bg-slate-50 text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <ArrowUpRight size={16} /> Income ({transactions.filter(t => t.flow === 'in').length})
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('expenses')}
+                                    className={`flex items-center gap-2.5 px-6 py-3 rounded-[1.25rem] text-[11px] font-black uppercase tracking-widest transition-all ${activeTab === 'expenses' ? 'bg-red-600 text-white shadow-lg shadow-red-200' : 'bg-slate-50 text-slate-400 hover:text-slate-600'}`}
+                                >
+                                    <ArrowDownRight size={16} /> Expenses ({transactions.filter(t => t.flow === 'out').length})
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 overflow-auto px-10 pb-10">
+                            <div>
+                                <h4 className="text-xl font-black text-slate-900 tracking-tight">{activeTab === 'income' ? 'Income Transactions' : 'Expense Records'}</h4>
+                                <p className="text-slate-400 text-xs font-bold mt-1 mb-10">{activeTab === 'income' ? 'All income including memberships, POS sales, and other payments' : 'All recorded operational and vendor expenses'}</p>
+                            </div>
+
+                            <table className="w-full">
+                                <thead>
+                                    <tr className="text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 border-b border-slate-100">
+                                        <th className="pb-5 pr-4 text-center">Date</th>
+                                        <th className="pb-5 pr-4">Type</th>
+                                        <th className="pb-5 pr-4">Branch</th>
+                                        <th className="pb-5 pr-4">Entity</th>
+                                        <th className="pb-5 pr-4 text-center">Reference</th>
+                                        <th className="pb-5 pr-4 text-center">Status</th>
+                                        <th className="pb-5 text-right">Amount</th>
                                     </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan="6" className="py-24 text-center text-slate-400 font-bold italic opacity-40">No income transactions found</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {transactions.filter(t => t.flow === (activeTab === 'income' ? 'in' : 'out')).length > 0 ? (
+                                        transactions.filter(t => t.flow === (activeTab === 'income' ? 'in' : 'out')).map((txn, idx) => (
+                                            <tr key={idx} className="border-b border-slate-50 last:border-none group hover:bg-slate-50/80 transition-all">
+                                                <td className="py-5 pr-4 text-[10px] font-bold text-slate-500 whitespace-nowrap text-center">{txn.date}</td>
+                                                <td className="py-5 pr-4">
+                                                    <span className={`text-[11px] font-black uppercase tracking-widest ${txn.flow === 'in' ? 'text-slate-900' : 'text-red-600'}`}>{txn.type}</span>
+                                                </td>
+                                                <td className="py-5 pr-4">
+                                                    <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">{txn.branch}</span>
+                                                </td>
+                                                <td className="py-5 pr-4 text-xs font-bold text-slate-700">{txn.member}</td>
+                                                <td className="py-5 pr-4 text-center">
+                                                    <span className="text-[10px] font-black text-slate-400 group-hover:text-violet-600 underline cursor-pointer">{txn.id}</span>
+                                                </td>
+                                                <td className="py-5 pr-4 text-center">
+                                                    <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${txn.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                                        {txn.status || 'Paid'}
+                                                    </span>
+                                                </td>
+                                                <td className={`py-5 text-right text-sm font-black ${txn.flow === 'in' ? 'text-slate-900' : 'text-red-600'}`}>
+                                                    {txn.flow === 'in' ? '+' : '-'} ₹{txn.amount.toLocaleString()}
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="7" className="py-32 text-center">
+                                                <div className="flex flex-col items-center justify-center opacity-20">
+                                                    <ReceiptText size={64} className="mb-4" />
+                                                    <p className="text-sm font-black italic uppercase tracking-widest">No records found</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -300,6 +344,27 @@ const FinancialDashboard = () => {
                 subtitle="Record a new expense for approval"
             >
                 <form onSubmit={handleAddExpense} className="space-y-8 p-1">
+                    {/* Branch Selection */}
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-[#7c3aed] ml-1">Branch *</label>
+                        <div className="relative group">
+                            <select
+                                required
+                                value={expenseForm.branchId}
+                                onChange={(e) => setExpenseForm({ ...expenseForm, branchId: e.target.value })}
+                                className="w-full px-4 py-3 bg-violet-50/50 border-2 border-violet-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 transition-all appearance-none cursor-pointer"
+                            >
+                                <option value="all">Select Branch</option>
+                                {branches.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-violet-400 group-hover:text-violet-600 transition-colors">
+                                <ChevronDown size={16} />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* File Upload Area */}
                     <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Receipt (Optional)</label>
@@ -327,7 +392,7 @@ const FinancialDashboard = () => {
                                 <option value="Rent">Rent</option>
                                 <option value="Supplies">Supplies</option>
                                 <option value="Salary">Salary</option>
-                                <option value="Interat/Network">Internet/Network</option>
+                                <option value="Internet/Network">Internet/Network</option>
                             </select>
                         </div>
                         <div className="space-y-3">

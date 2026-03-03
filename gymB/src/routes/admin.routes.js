@@ -13,6 +13,8 @@ const {
     getAllStaff,
     getStaffById,
     createStaff,
+    getAvailableUsersForStaff,
+    linkStaff,
     fetchBranchDashboardCards,
     getBookings,
     getBookingStats,
@@ -34,6 +36,7 @@ const {
     updateTaskStatus,
     updateTask,
     createTask,
+    getTaskById,
     deleteTask,
     assignTask,
     getBookingReport,
@@ -112,6 +115,7 @@ router.delete('/attendance/:id', deleteCheckIn);
 // Tasks
 router.get('/tasks', getTasks);
 router.get('/tasks/stats', getTaskStats);
+router.get('/tasks/:id', getTaskById);
 router.patch('/tasks/:id/status', updateTaskStatus);
 router.patch('/tasks/:id', updateTask);
 router.post('/tasks', createTask);
@@ -123,14 +127,15 @@ router.get('/reports/bookings', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGE
 router.get('/reports/attendance', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getAttendanceReport);
 router.get('/dashboard-cards', fetchBranchDashboardCards);
 router.get('/staff', getAllStaff);
+router.get('/staff/available-users', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getAvailableUsersForStaff);
+router.get('/staff/trainer-stats', getTrainerStats);
 router.get('/staff/:id', getStaffById);
 router.post('/staff', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), checkSaaSLimit('staff'), createStaff);
+router.post('/staff/link', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), linkStaff);
 router.get('/requests/trainers', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getTrainerRequests);
 router.patch('/requests/trainers/:id', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateTrainerRequest);
 router.patch('/staff/:id', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateStaffMember);
 router.delete('/staff/:id', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), deleteStaffMember);
-router.get('/staff/trainer-stats', getTrainerStats);
-
 
 // Leave Requests (Staff/HR)
 router.get('/leave-requests', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getLeaveRequests);

@@ -213,6 +213,7 @@ const Payments = () => {
                         <thead className="bg-slate-50/50">
                             <tr className="text-left text-[10px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
                                 <th className="px-8 py-5">Member</th>
+                                <th className="px-8 py-5">Branch</th>
                                 <th className="px-8 py-5">Transaction Code</th>
                                 <th className="px-8 py-5">Date & Time</th>
                                 <th className="px-8 py-5">Method</th>
@@ -233,6 +234,11 @@ const Payments = () => {
                                                 </div>
                                                 <span className="text-sm font-black text-slate-900">{txn.member}</span>
                                             </div>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className="text-[10px] font-black text-[#7c3aed] bg-violet-50 px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">
+                                                {txn.branch}
+                                            </span>
                                         </td>
                                         <td className="px-8 py-6">
                                             <span className="text-[10px] font-black text-slate-500 bg-slate-100 px-3 py-1 rounded-lg uppercase tracking-widest">{txn.id}</span>

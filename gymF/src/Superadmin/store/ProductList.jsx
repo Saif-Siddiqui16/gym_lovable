@@ -3,8 +3,10 @@ import { Search, Filter, Box, Plus, Edit2, Trash2, AlertTriangle, TrendingUp, Ta
 import ProductDrawer from './ProductDrawer';
 import { getStoreProducts, deleteStoreProduct, getCategories } from '../../api/storeApi';
 import toast from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const ProductList = () => {
+    const { selectedBranch } = useBranchContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -18,9 +20,10 @@ const ProductList = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
             const [prodData, catData] = await Promise.all([
-                getStoreProducts({ search: searchTerm, category: filterCategory }),
-                getCategories()
+                getStoreProducts({ search: searchTerm, category: filterCategory, branchId: branchParam }),
+                getCategories({ branchId: branchParam })
             ]);
             setProducts(prodData);
             setCategories(catData);
@@ -36,7 +39,7 @@ const ProductList = () => {
             fetchData();
         }, 500);
         return () => clearTimeout(delaySearch);
-    }, [searchTerm, filterCategory]);
+    }, [searchTerm, filterCategory, selectedBranch]);
 
     const handleEdit = (product) => {
         setSelectedProduct(product);
@@ -179,10 +182,11 @@ const ProductList = () => {
                                 <tr className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest text-left">
                                     <th className="px-6 py-4">Product</th>
                                     <th className="px-6 py-4">SKU</th>
+                                    <th className="px-6 py-4">Branch</th>
                                     <th className="px-6 py-4">Category</th>
-                                    <th className="px-6 py-4">Price</th>
-                                    <th className="px-6 py-4">Cost</th>
+                                    <th className="px-6 py-4">Cost/Price</th>
                                     <th className="px-6 py-4">Margin</th>
+                                    <th className="px-6 py-4">Tax</th>
                                     <th className="px-6 py-4 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -208,14 +212,29 @@ const ProductList = () => {
                                             <span className="text-[11px] font-black text-slate-500 uppercase tracking-widest">{p.sku || 'N/A'}</span>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <span className="px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[10px] font-black uppercase">{p.category || 'Uncategorized'}</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#7c3aed]"></div>
+                                                <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest">{p.tenant?.name || 'Main Branch'}</span>
+                                            </div>
                                         </td>
-                                        <td className="px-6 py-4 text-sm font-black text-slate-900">₹{parseFloat(p.price).toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-sm font-bold text-slate-500">₹{parseFloat(p.costPrice || 0).toLocaleString()}</td>
                                         <td className="px-6 py-4">
-                                            <span className="text-[11px] font-black text-emerald-600">
-                                                {p.costPrice ? `${(((p.price - p.costPrice) / p.price) * 100).toFixed(0)}%` : '0%'}
+                                            <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-500 text-[9px] font-black uppercase border border-slate-100">{p.category || 'Uncategorised'}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-black text-slate-900">
+                                            <div className="flex flex-col">
+                                                <span>₹{parseFloat(p.price).toLocaleString()}</span>
+                                                <span className="text-[10px] text-slate-400 font-bold">Cost: ₹{parseFloat(p.costPrice || 0).toLocaleString()}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`text-[11px] font-black ${p.costPrice && p.price > p.costPrice ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                {p.costPrice && p.price > 0
+                                                    ? `${(((parseFloat(p.price) - parseFloat(p.costPrice)) / parseFloat(p.price)) * 100).toFixed(0)}%`
+                                                    : '0%'}
                                             </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-[11px] font-black text-slate-500">{p.taxRate || 0}%</span>
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

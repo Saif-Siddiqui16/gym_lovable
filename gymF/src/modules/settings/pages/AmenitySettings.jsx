@@ -19,10 +19,12 @@ import {
     Save,
     X,
     MoreVertical,
-    Check
+    Check,
+    MapPin
 } from 'lucide-react';
 import amenityApi from '../../../api/amenityApi';
 import { toast } from 'react-hot-toast';
+import { useBranchContext } from '../../../context/BranchContext';
 
 const ICON_OPTIONS = [
     { name: 'Wifi', icon: Wifi },
@@ -53,9 +55,11 @@ const AmenitySettings = () => {
         gender: 'UNISEX'
     });
 
+    const { selectedBranch } = useBranchContext();
+
     useEffect(() => {
         fetchAmenities();
-    }, []);
+    }, [selectedBranch]);
 
     const fetchAmenities = async () => {
         try {
@@ -133,7 +137,7 @@ const AmenitySettings = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
+        <div className="min-h-full bg-slate-50/50 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-500">
             {/* Header section */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                 <div>
@@ -174,7 +178,7 @@ const AmenitySettings = () => {
                     ))}
                 </div>
             ) : filteredAmenities.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
                     {filteredAmenities.map((amenity) => (
                         <div
                             key={amenity.id}
@@ -214,8 +218,9 @@ const AmenitySettings = () => {
                                     }`}>
                                     {amenity.gender === 'MALE' ? '♂ MALE' : amenity.gender === 'FEMALE' ? '♀ FEMALE' : '⚧ UNISEX'}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-bold uppercase">
-                                    Gym Scope 📍
+                                <span className="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold uppercase truncate max-w-[120px]">
+                                    <MapPin size={10} />
+                                    {amenity.tenant?.name || 'Local Branch'}
                                 </span>
                             </div>
                         </div>
@@ -253,92 +258,94 @@ const AmenitySettings = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Amenity Name</label>
-                                <input
-                                    required
-                                    type="text"
-                                    placeholder="e.g. Luxury Sauna"
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold"
-                                    value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                />
-                            </div>
+                        <div className="overflow-y-auto max-h-[calc(100vh-160px)] custom-scrollbar">
+                            <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Amenity Name</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        placeholder="e.g. Luxury Sauna"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold"
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Description</label>
-                                <textarea
-                                    rows="3"
-                                    placeholder="Brief details about the facility..."
-                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-medium resize-none"
-                                    value={formData.description}
-                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                />
-                            </div>
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Description</label>
+                                    <textarea
+                                        rows="3"
+                                        placeholder="Brief details about the facility..."
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-medium resize-none"
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                    />
+                                </div>
 
-                            <div>
-                                <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Choose Icon</label>
-                                <div className="grid grid-cols-6 gap-2">
-                                    {ICON_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.name}
-                                            type="button"
-                                            onClick={() => setFormData({ ...formData, icon: opt.name })}
-                                            className={`p-3 rounded-xl flex items-center justify-center transition-all ${formData.icon === opt.name
-                                                ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 ring-2 ring-violet-600 ring-offset-2'
-                                                : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                                                }`}
+                                <div>
+                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Choose Icon</label>
+                                    <div className="grid grid-cols-6 gap-2">
+                                        {ICON_OPTIONS.map((opt) => (
+                                            <button
+                                                key={opt.name}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, icon: opt.name })}
+                                                className={`p-3 rounded-xl flex items-center justify-center transition-all ${formData.icon === opt.name
+                                                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 ring-2 ring-violet-600 ring-offset-2'
+                                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                                    }`}
+                                            >
+                                                <opt.icon size={20} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Gender Scope</label>
+                                        <select
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
+                                            value={formData.gender}
+                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
                                         >
-                                            <opt.icon size={20} />
-                                        </button>
-                                    ))}
+                                            <option value="UNISEX">Unisex</option>
+                                            <option value="MALE">Male Only</option>
+                                            <option value="FEMALE">Female Only</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex-1">
+                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Status</label>
+                                        <select
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
+                                            value={formData.status}
+                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        >
+                                            <option value="Active">Active</option>
+                                            <option value="Inactive">Inactive</option>
+                                        </select>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="flex items-center gap-4">
-                                <div className="flex-1">
-                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Gender Scope</label>
-                                    <select
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
-                                        value={formData.gender}
-                                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all"
                                     >
-                                        <option value="UNISEX">Unisex</option>
-                                        <option value="MALE">Male Only</option>
-                                        <option value="FEMALE">Female Only</option>
-                                    </select>
-                                </div>
-                                <div className="flex-1">
-                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Status</label>
-                                    <select
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
-                                        value={formData.status}
-                                        onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        className="flex-1 px-6 py-3 bg-violet-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all"
                                     >
-                                        <option value="Active">Active</option>
-                                        <option value="Inactive">Inactive</option>
-                                    </select>
+                                        <Save size={18} />
+                                        {editingAmenity ? 'Save Changes' : 'Create Amenity'}
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div className="pt-4 flex gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    className="flex-1 px-6 py-3 bg-violet-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all"
-                                >
-                                    <Save size={18} />
-                                    {editingAmenity ? 'Save Changes' : 'Create Amenity'}
-                                </button>
-                            </div>
-                        </form>
+                            </form>
+                        </div>
                     </div>
                 </div>
             )}

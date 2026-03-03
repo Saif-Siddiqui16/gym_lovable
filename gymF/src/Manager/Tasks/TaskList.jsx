@@ -1,13 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ListTodo, Clock, Loader2, AlertCircle, CheckCircle2, Filter, Building2, FileText, UserPlus, Calendar } from 'lucide-react';
+import { Plus, ListTodo, Clock, Loader2, AlertCircle, CheckCircle2, Filter, Building2, FileText, UserPlus, Calendar, Eye } from 'lucide-react';
 import RightDrawer from '../../components/common/RightDrawer';
 import CustomDropdown from '../../components/common/CustomDropdown';
+import { useBranchContext } from '../../context/BranchContext';
+import { getAllStaff, createTask, getTasks, getTaskStats, deleteTask, updateTask } from '../../api/manager/managerApi';
+import { toast } from 'react-hot-toast';
 
 const TaskList = () => {
     const navigate = useNavigate();
+    const { branches, loadingBranches, selectedBranch } = useBranchContext();
+    console.log('TaskList branches from context:', branches);
+    console.log('TaskList loading state:', loadingBranches);
+    console.log('TaskList selected branch:', selectedBranch);
     const [activeTab, setActiveTab] = useState('All');
     const [isNewTaskDrawerOpen, setIsNewTaskDrawerOpen] = useState(false);
+    const [editingTaskId, setEditingTaskId] = useState(null);
+    const [tasks, setTasks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        overdue: 0
+    });
+    const [staffList, setStaffList] = useState([]);
+    const [loadingStaff, setLoadingStaff] = useState(false);
+
     const [formData, setFormData] = useState({
         branch: '',
         title: '',
@@ -17,31 +37,71 @@ const TaskList = () => {
         assignTo: ''
     });
 
-    // Mock data for dropdowns
-    const branchOptions = [
-        { label: 'Main Branch', value: 'main' },
-        { label: 'Downtown Gym', value: 'downtown' },
-        { label: 'Westside Fitness', value: 'westside' }
-    ];
+    useEffect(() => {
+        fetchData();
+    }, []);
 
-    const staffOptions = [
-        { label: 'John Doe (Trainer)', value: '1' },
-        { label: 'Jane Smith (Staff)', value: '2' },
-        { label: 'Mike Wilson (Manager)', value: '3' }
-    ];
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [tasksRes, statsRes] = await Promise.all([
+                getTasks({ limit: 100 }),
+                getTaskStats()
+            ]);
+            setTasks(tasksRes.data || []);
+            if (statsRes) {
+                setStats({
+                    total: statsRes.total || 0,
+                    pending: statsRes.pending || 0,
+                    inProgress: statsRes.inProgress || 0,
+                    completed: statsRes.completed || 0,
+                    overdue: statsRes.overdue || 0
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+            toast.error('Failed to load tasks');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch staff when branch changes
+    useEffect(() => {
+        if (formData.branch) {
+            fetchStaff(formData.branch);
+        } else {
+            setStaffList([]);
+        }
+    }, [formData.branch]);
+
+    const fetchStaff = async (branchId) => {
+        setLoadingStaff(true);
+        try {
+            const data = await getAllStaff(branchId);
+            const formatted = data.map(s => ({
+                label: `${s.name} (${s.role})`,
+                value: s.id.toString()
+            }));
+            setStaffList(formatted);
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+            toast.error('Failed to load staff for this branch');
+        } finally {
+            setLoadingStaff(false);
+        }
+    };
+
+    const branchOptions = branches.map(b => ({
+        label: b.branchName || b.name,
+        value: (b.id || b._id).toString()
+    }));
+    console.log('computed branchOptions:', branchOptions);
 
     const priorityOptions = ['Low', 'Medium', 'High'];
 
     const handleNewTask = () => {
-        setIsNewTaskDrawerOpen(true);
-    };
-
-    const handleCreateTask = (e) => {
-        e.preventDefault();
-        // Simulation of task creation
-        console.log('Task Created:', formData);
-        setIsNewTaskDrawerOpen(false);
-        // Reset form
+        setEditingTaskId(null);
         setFormData({
             branch: '',
             title: '',
@@ -50,6 +110,70 @@ const TaskList = () => {
             dueDate: '',
             assignTo: ''
         });
+        setIsNewTaskDrawerOpen(true);
+    };
+
+    const handleEditTask = (task) => {
+        setEditingTaskId(task.id);
+        const branchString = task.tenantId ? task.tenantId.toString() : '';
+        setFormData({
+            branch: branchString,
+            title: task.title,
+            description: task.description || '',
+            priority: task.priority,
+            dueDate: task.dueDate !== 'N/A' ? task.dueDate : '',
+            assignTo: task.assignedToId ? task.assignedToId.toString() : ''
+        });
+        setIsNewTaskDrawerOpen(true);
+    };
+
+    const handleDeleteTask = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this task?")) return;
+        try {
+            await deleteTask(id);
+            toast.success("Task deleted successfully");
+            fetchData();
+        } catch (error) {
+            console.error("Error deleting task:", error);
+            toast.error(error.response?.data?.message || "Failed to delete task");
+        }
+    };
+
+    const handleCreateTask = async (e) => {
+        e.preventDefault();
+        try {
+            const taskPayload = {
+                title: formData.title,
+                description: formData.description,
+                priority: formData.priority,
+                dueDate: formData.dueDate,
+                assignedToId: formData.assignTo,
+                tenantId: formData.branch
+            };
+
+            if (editingTaskId) {
+                await updateTask(editingTaskId, taskPayload);
+                toast.success('Task updated successfully');
+            } else {
+                await createTask(taskPayload);
+                toast.success('Task created successfully');
+            }
+
+            setIsNewTaskDrawerOpen(false);
+            setEditingTaskId(null);
+            setFormData({
+                branch: '',
+                title: '',
+                description: '',
+                priority: 'Medium',
+                dueDate: '',
+                assignTo: ''
+            });
+            fetchData(); // Refresh list
+        } catch (error) {
+            console.error('Error creating task:', error);
+            toast.error(error.response?.data?.message || 'Failed to create task');
+        }
     };
 
     return (
@@ -76,11 +200,11 @@ const TaskList = () => {
             <div className="max-w-7xl mx-auto mb-10">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                     {[
-                        { label: 'Total Tasks', value: '0', color: 'indigo', icon: ListTodo },
-                        { label: 'Pending', value: '0', color: 'amber', icon: Clock },
-                        { label: 'In Progress', value: '0', color: 'blue', icon: Loader2 },
-                        { label: 'Completed', value: '0', color: 'emerald', icon: CheckCircle2 },
-                        { label: 'Overdue', value: '0', color: 'rose', icon: AlertCircle },
+                        { label: 'Total Tasks', value: stats.total.toString(), color: 'indigo', icon: ListTodo },
+                        { label: 'Pending', value: stats.pending.toString(), color: 'amber', icon: Clock },
+                        { label: 'In Progress', value: stats.inProgress.toString(), color: 'blue', icon: Loader2 },
+                        { label: 'Completed', value: stats.completed.toString(), color: 'emerald', icon: CheckCircle2 },
+                        { label: 'Overdue', value: stats.overdue.toString(), color: 'rose', icon: AlertCircle },
                     ].map((card, idx) => (
                         <div key={idx} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex items-center gap-4 hover:shadow-md transition-shadow">
                             <div className={`w-12 h-12 bg-${card.color}-50 text-${card.color}-600 rounded-xl flex items-center justify-center`}>
@@ -132,16 +256,77 @@ const TaskList = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100/50">
-                                <tr>
-                                    <td colSpan="6" className="py-24 text-center">
-                                        <div className="flex flex-col items-center justify-center">
-                                            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                <Filter size={32} />
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan="6" className="py-24 text-center">
+                                            <Loader2 className="animate-spin mx-auto text-violet-600" size={40} />
+                                        </td>
+                                    </tr>
+                                ) : tasks.length > 0 ? (
+                                    tasks.map(task => (
+                                        <tr key={task.id} className="group hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-slate-700">{task.title}</td>
+                                            <td className="px-8 py-5">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${task.priority === 'High' ? 'bg-rose-50 text-rose-600' :
+                                                    task.priority === 'Medium' ? 'bg-blue-50 text-blue-600' :
+                                                        'bg-slate-50 text-slate-600'
+                                                    }`}>
+                                                    {task.priority}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-slate-600 flex items-center gap-2">
+                                                <div className="w-8 h-8 rounded-full bg-violet-100 text-violet-600 flex items-center justify-center text-[10px] font-black uppercase">
+                                                    {task.assignedTo?.substring(0, 2)}
+                                                </div>
+                                                {task.assignedTo}
+                                            </td>
+                                            <td className="px-8 py-5 text-slate-500 font-medium">
+                                                {new Date(task.dueDate).toLocaleDateString()}
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${task.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
+                                                    'bg-amber-50 text-amber-600'
+                                                    }`}>
+                                                    {task.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-8 py-5 text-right flex items-center justify-end gap-2">
+                                                <button
+                                                    onClick={() => navigate(`/branchadmin/tasks/${task.id}`)}
+                                                    className="p-2 hover:bg-violet-50 text-slate-400 hover:text-violet-600 rounded-lg transition-colors"
+                                                    title="View Details"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleEditTask(task)}
+                                                    className="p-2 hover:bg-blue-50 text-slate-400 hover:text-blue-600 rounded-lg transition-colors"
+                                                    title="Edit Task"
+                                                >
+                                                    <FileText size={18} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteTask(task.id)}
+                                                    className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors"
+                                                    title="Delete Task"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="6" className="py-24 text-center">
+                                            <div className="flex flex-col items-center justify-center">
+                                                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                    <Filter size={32} />
+                                                </div>
+                                                <h3 className="text-xl font-black text-slate-800">No tasks found</h3>
                                             </div>
-                                            <h3 className="text-xl font-black text-slate-800">No tasks found</h3>
-                                        </div>
-                                    </td>
-                                </tr>
+                                        </td>
+                                    </tr>
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -168,7 +353,7 @@ const TaskList = () => {
                             form="create-task-form"
                             className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-violet-200 hover:shadow-violet-400/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
                         >
-                            Create Task
+                            {editingTaskId ? "Save Changes" : "Create Task"}
                         </button>
                     </div>
                 }
@@ -258,8 +443,9 @@ const TaskList = () => {
                             Assign To
                         </label>
                         <CustomDropdown
-                            options={staffOptions}
+                            options={staffList}
                             value={formData.assignTo}
+                            loading={loadingStaff}
                             onChange={(val) => setFormData({ ...formData, assignTo: val })}
                             placeholder="Select user (optional)"
                             className="w-full"

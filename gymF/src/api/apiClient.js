@@ -7,6 +7,19 @@ const apiClient = axios.create({
     withCredentials: true,
 });
 
+// Request interceptor to add tenant-id from localStorage
+apiClient.interceptors.request.use(
+    (config) => {
+        const selectedBranch = localStorage.getItem('selectedBranch');
+        // Do not overwrite if already explicitly set or if specifically cleared (null/undefined)
+        if (selectedBranch && config.headers['x-tenant-id'] === undefined) {
+            config.headers['x-tenant-id'] = selectedBranch;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
 // Response interceptor for global error handling
 apiClient.interceptors.response.use(
     (response) => response,

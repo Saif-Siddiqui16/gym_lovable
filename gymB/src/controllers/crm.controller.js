@@ -4,7 +4,13 @@ const prisma = require('../config/prisma');
 
 const createLead = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId; // SaaS Isolation
+        // Use Header for Multi-Branch selector, or User's primary tenantId as fallback
+        const headerTenantId = req.headers['x-tenant-id'];
+        const tenantId = headerTenantId ? parseInt(headerTenantId) : req.user.tenantId;
+
+        if (!tenantId) {
+            return res.status(400).json({ message: 'Tenant ID is required. Please select a branch or ensure your account is associated with a gym.' });
+        }
         const {
             name, phone, email, gender, age, interests, source,
             budgetRange, preferredContact, assignedTo, followUpDate, followUpTime, notes
@@ -22,18 +28,18 @@ const createLead = async (req, res) => {
 
         const lead = await prisma.lead.create({
             data: {
-                tenantId: tenantId ? tenantId : 1, // Default to 1 if superadmin (dev mode safety)
+                tenantId: tenantId,
                 name,
                 phone,
                 email,
                 gender,
                 age: age ? parseInt(age) : null,
-                interests: interests || [],
+                interests: Array.isArray(interests) ? JSON.stringify(interests) : (interests || null),
                 source,
-                budget: budgetRange,
-                preferredContact,
+                budget: budgetRange || null,
+                preferredContact: preferredContact || "WhatsApp",
                 assignedToId: assignedTo ? parseInt(assignedTo) : null,
-                notes,
+                notes: notes || null,
                 nextFollowUp,
                 status: 'New'
             }
@@ -60,8 +66,28 @@ const createLead = async (req, res) => {
 
 const getLeads = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
-        const where = tenantId ? { tenantId } : {}; // Superadmin sees all? Or restrict? Let's restrict if tenantId is present.
+        const headerTenantId = req.headers['x-tenant-id'];
+        const tenantId = headerTenantId ? parseInt(headerTenantId) : req.user.tenantId;
+
+        const where = {};
+
+        if (tenantId) {
+            where.tenantId = tenantId;
+        } else if (req.user.role === 'BRANCH_ADMIN') {
+            // If BRANCH_ADMIN has no specific tenant selected (All Branches),
+            // we should show all branches they have access to.
+            const branches = await prisma.tenant.findMany({
+                where: {
+                    OR: [
+                        { id: req.user.tenantId },
+                        { owner: req.user.email },
+                        { owner: req.user.name }
+                    ]
+                },
+                select: { id: true }
+            });
+            where.tenantId = { in: branches.map(b => b.id) };
+        }
 
         // Search & Filter
         const { search, status, assignedTo } = req.query;
@@ -114,7 +140,13 @@ const updateLeadStatus = async (req, res) => {
         if (status === 'Converted' && lead.status !== 'Converted') {
             const bcrypt = require('bcryptjs');
             const hashedPassword = await bcrypt.hash('123456', 10);
-            const userEmail = lead.email || `member${Date.now()}@empty.com`;
+            const userEmail = lead.email || `m${Date.now()}@branch${lead.tenantId}.com`;
+
+            // Check if user already exists
+            let existingUser = await prisma.user.findUnique({ where: { email: userEmail } });
+            if (existingUser) {
+                return res.status(400).json({ message: `A user with email ${userEmail} already exists. Cannot convert lead.` });
+            }
 
             // Create user
             const newUser = await prisma.user.create({
@@ -134,12 +166,15 @@ const updateLeadStatus = async (req, res) => {
                 data: {
                     userId: newUser.id,
                     tenantId: lead.tenantId,
-                    memberId: `MEM-${Date.now()}`,
+                    memberId: `MEM-LEAD-${Date.now()}-${lead.tenantId}`,
                     name: lead.name,
                     email: userEmail,
                     phone: lead.phone,
                     status: 'Active',
-                    joinDate: new Date()
+                    joinDate: new Date(),
+                    gender: lead.gender || 'Other',
+                    source: lead.source || 'Walk-in',
+                    benefits: '[]' // Fixed: benefits must be a string in schema
                 }
             });
         }
@@ -150,6 +185,50 @@ const updateLeadStatus = async (req, res) => {
         });
 
         res.json(updatedLead);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateLead = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { name, email, phone, source, notes, age, gender, budgetRange } = req.body;
+
+        const updatedLead = await prisma.lead.update({
+            where: { id: parseInt(id) },
+            data: {
+                name,
+                email,
+                phone,
+                source,
+                notes,
+                age: age ? parseInt(age) : undefined,
+                gender,
+                budget: budgetRange
+            }
+        });
+
+        res.json(updatedLead);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const deleteLead = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Delete dependent follow-ups first
+        await prisma.followUp.deleteMany({
+            where: { leadId: parseInt(id) }
+        });
+
+        await prisma.lead.delete({
+            where: { id: parseInt(id) }
+        });
+
+        res.json({ message: 'Lead deleted successfully' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -221,6 +300,8 @@ module.exports = {
     createLead,
     getLeads,
     updateLeadStatus,
+    updateLead,
+    deleteLead,
     getTodayFollowUps,
     addFollowUp
 };

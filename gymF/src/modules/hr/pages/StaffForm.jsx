@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Save, UserPlus, ChevronLeft, Clock, Info } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { createStaffAPI, fetchStaffByIdAPI, updateStaffAPI } from '../../../api/admin/adminApi';
+import { createStaffAPI, fetchStaffByIdAPI, updateStaffAPI, fetchAvailableUsersAPI, linkStaffAPI } from '../../../api/admin/adminApi';
+import { useBranchContext } from '../../../context/BranchContext';
 import toast from 'react-hot-toast';
 
 const StaffForm = () => {
@@ -29,14 +30,55 @@ const StaffForm = () => {
         taxId: ''
     });
 
+    const { branches, selectedBranch } = useBranchContext();
+    const [availableUsers, setAvailableUsers] = useState([]);
+    const [loadingUsers, setLoadingUsers] = useState(false);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
+
+    // Link Existing State
+    const [linkData, setLinkData] = useState({
+        userId: '',
+        branchId: selectedBranch === 'all' ? '' : selectedBranch,
+        role: 'Staff',
+        department: '',
+        position: '',
+        joiningDate: new Date().toISOString().split('T')[0],
+        salaryType: 'Monthly',
+        baseSalary: '',
+        bankName: '',
+        accountNumber: '',
+        taxId: ''
+    });
 
     useEffect(() => {
         if (isEditMode) {
             fetchStaffDetails();
+        } else if (selectedBranch !== 'all' && !formData.branch) {
+            setFormData(prev => ({ ...prev, branch: selectedBranch }));
+            setLinkData(prev => ({ ...prev, branchId: selectedBranch }));
         }
-    }, [id]);
+    }, [id, selectedBranch]);
+
+    useEffect(() => {
+        if (activeTab === 'Link Existing') {
+            loadAvailableUsers();
+        }
+    }, [activeTab, linkData.branchId]);
+
+    const loadAvailableUsers = async () => {
+        try {
+            setLoadingUsers(true);
+            const data = await fetchAvailableUsersAPI(linkData.branchId);
+            setAvailableUsers(data || []);
+        } catch (error) {
+            console.error('Failed to load available users', error);
+            // toast.error('Failed to load available users');
+        } finally {
+            setLoadingUsers(false);
+        }
+    };
 
     const fetchStaffDetails = async () => {
         try {
@@ -46,8 +88,18 @@ const StaffForm = () => {
 
             const formattedJoined = data.joinedDate ? new Date(data.joinedDate).toISOString().split('T')[0] : '';
 
+            let configData = {};
+            if (data.config) {
+                try {
+                    configData = typeof data.config === 'string' ? JSON.parse(data.config) : data.config;
+                } catch (e) {
+                    console.error('Error parsing config:', e);
+                }
+            }
+
             setFormData({
                 ...data,
+                ...configData,
                 role: displayRole || 'Staff',
                 joiningDate: formattedJoined,
                 baseSalary: data.baseSalary || '',
@@ -55,12 +107,12 @@ const StaffForm = () => {
                 phone: data.phone || '',
                 email: data.email || '',
                 name: data.name || '',
-                branch: data.branch || '',
-                position: data.position || '',
-                salaryType: data.salaryType || 'Monthly',
-                bankName: data.bankName || '',
+                branch: data.tenantId || '',
+                position: configData.position || '',
+                salaryType: configData.salaryType || 'Monthly',
+                bankName: configData.bankName || '',
                 accountNumber: data.accountNumber || '',
-                taxId: data.taxId || ''
+                taxId: configData.taxId || ''
             });
 
             if (data.avatar) {
@@ -75,6 +127,11 @@ const StaffForm = () => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
+    };
+
+    const handleLinkChange = (e) => {
+        const { name, value } = e.target;
+        setLinkData(prev => ({ ...prev, [name]: value }));
     };
 
     const validateForm = () => {
@@ -110,6 +167,7 @@ const StaffForm = () => {
         try {
             const payload = {
                 ...formData,
+                tenantId: formData.branch, // Map branch selection to tenantId for backend
                 avatar: profileImage ? profileImage.data : null
             };
 
@@ -124,6 +182,26 @@ const StaffForm = () => {
         } catch (error) {
             console.error('Failed to submit staff form', error);
             toast.error(error.response?.data?.message || 'Failed to save staff profile');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleLinkSubmit = async (e) => {
+        e.preventDefault();
+        if (!linkData.userId || !linkData.branchId || !linkData.role) {
+            toast.error('Please fill required fields');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await linkStaffAPI(linkData);
+            toast.success('Staff linked successfully!');
+            navigate('/hr/staff/management');
+        } catch (error) {
+            console.error('Failed to link staff', error);
+            toast.error(error.response?.data?.message || 'Failed to link staff');
         } finally {
             setIsSubmitting(false);
         }
@@ -256,8 +334,9 @@ const StaffForm = () => {
                                         className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${errors.branch ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     >
                                         <option value="" disabled>Select branch</option>
-                                        <option value="Main Branch">Main Branch</option>
-                                        <option value="North Branch">North Branch</option>
+                                        {branches.map(b => (
+                                            <option key={b.id} value={b.id}>{b.branchName || b.name}</option>
+                                        ))}
                                     </select>
                                     {errors.branch && <p className="text-[10px] text-rose-500 font-bold mt-1.5">{errors.branch}</p>}
                                 </div>
@@ -411,7 +490,7 @@ const StaffForm = () => {
                 )}
 
                 {activeTab === 'Link Existing' && (
-                    <form onSubmit={handleSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <form onSubmit={handleLinkSubmit} className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         <div className="bg-white/60 backdrop-blur-md rounded-xl shadow-lg border border-white/50 p-6 sm:p-8 hover:shadow-xl transition-all duration-300">
 
                             {/* Helper Text */}
@@ -425,10 +504,16 @@ const StaffForm = () => {
                                 <div className="relative group md:col-span-2">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">User <span className="text-rose-500">*</span></label>
                                     <select
+                                        name="userId"
+                                        value={linkData.userId}
+                                        onChange={handleLinkChange}
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all focus:border-violet-500 hover:border-slate-300 shadow-sm"
-                                        defaultValue=""
+                                        required
                                     >
-                                        <option value="" disabled>Select user</option>
+                                        <option value="" disabled>{loadingUsers ? 'Loading users...' : 'Select user'}</option>
+                                        {availableUsers.map(u => (
+                                            <option key={u.id} value={u.id}>{u.name} ({u.email})</option>
+                                        ))}
                                     </select>
                                 </div>
 
@@ -436,20 +521,34 @@ const StaffForm = () => {
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Branch <span className="text-rose-500">*</span></label>
                                     <select
+                                        name="branchId"
+                                        value={linkData.branchId}
+                                        onChange={handleLinkChange}
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all focus:border-violet-500 hover:border-slate-300 shadow-sm"
-                                        defaultValue=""
+                                        required
                                     >
                                         <option value="" disabled>Select branch</option>
-                                        <option value="Main Branch">Main Branch</option>
+                                        {branches.map(b => (
+                                            <option key={b.id} value={b.id}>{b.branchName || b.name}</option>
+                                        ))}
                                     </select>
                                 </div>
 
-                                {/* Role Fixed */}
+                                {/* Role Selection */}
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Role <span className="text-rose-500">*</span></label>
-                                    <div className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-500 cursor-not-allowed">
-                                        Staff
-                                    </div>
+                                    <select
+                                        name="role"
+                                        value={linkData.role}
+                                        onChange={handleLinkChange}
+                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all focus:border-violet-500 hover:border-slate-300 shadow-sm"
+                                        required
+                                    >
+                                        <option value="Admin">Admin</option>
+                                        <option value="Manager">Manager</option>
+                                        <option value="Trainer">Trainer</option>
+                                        <option value="Staff">Staff</option>
+                                    </select>
                                 </div>
 
                                 {/* Department */}
@@ -457,7 +556,10 @@ const StaffForm = () => {
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Department</label>
                                     <input
                                         type="text"
-                                        placeholder="None"
+                                        name="department"
+                                        value={linkData.department}
+                                        onChange={handleLinkChange}
+                                        placeholder="e.g., Fitness, Sales"
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                     />
                                 </div>
@@ -467,7 +569,10 @@ const StaffForm = () => {
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Position</label>
                                     <input
                                         type="text"
-                                        placeholder="None"
+                                        name="position"
+                                        value={linkData.position}
+                                        onChange={handleLinkChange}
+                                        placeholder="e.g., Senior Trainer"
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                     />
                                 </div>
@@ -476,8 +581,10 @@ const StaffForm = () => {
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Hire Date</label>
                                     <input
-                                        type="text"
-                                        defaultValue="28-02-2026"
+                                        type="date"
+                                        name="joiningDate"
+                                        value={linkData.joiningDate}
+                                        onChange={handleLinkChange}
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                     />
                                 </div>
@@ -485,19 +592,26 @@ const StaffForm = () => {
                                 {/* Salary Type */}
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Salary Type</label>
-                                    <input
-                                        type="text"
-                                        defaultValue="Monthly"
-                                        className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-500 cursor-not-allowed"
-                                        disabled
-                                    />
+                                    <select
+                                        name="salaryType"
+                                        value={linkData.salaryType}
+                                        onChange={handleLinkChange}
+                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all focus:border-violet-500 hover:border-slate-300 shadow-sm"
+                                    >
+                                        <option value="Monthly">Monthly</option>
+                                        <option value="Hourly">Hourly</option>
+                                        <option value="Weekly">Weekly</option>
+                                    </select>
                                 </div>
 
                                 {/* Salary */}
                                 <div className="relative group md:col-span-2">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Salary (₹)</label>
                                     <input
-                                        type="text"
+                                        type="number"
+                                        name="baseSalary"
+                                        value={linkData.baseSalary}
+                                        onChange={handleLinkChange}
                                         placeholder="Salary amount"
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                     />
@@ -512,6 +626,9 @@ const StaffForm = () => {
                                             <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Bank Name</label>
                                             <input
                                                 type="text"
+                                                name="bankName"
+                                                value={linkData.bankName}
+                                                onChange={handleLinkChange}
                                                 placeholder="e.g., HDFC Bank"
                                                 className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                             />
@@ -522,6 +639,9 @@ const StaffForm = () => {
                                             <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Account Number</label>
                                             <input
                                                 type="text"
+                                                name="accountNumber"
+                                                value={linkData.accountNumber}
+                                                onChange={handleLinkChange}
                                                 placeholder="Account number"
                                                 className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                             />
@@ -532,6 +652,9 @@ const StaffForm = () => {
                                             <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">PAN / Tax ID</label>
                                             <input
                                                 type="text"
+                                                name="taxId"
+                                                value={linkData.taxId}
+                                                onChange={handleLinkChange}
                                                 placeholder="PAN number"
                                                 className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                             />
@@ -552,9 +675,10 @@ const StaffForm = () => {
                             </button>
                             <button
                                 type="submit"
-                                className="px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white hover:shadow-violet-500/30"
+                                disabled={isSubmitting}
+                                className={`px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-violet-500/30'}`}
                             >
-                                Add Employee
+                                {isSubmitting ? 'Linking...' : 'Add Employee'}
                             </button>
                         </div>
                     </form>

@@ -194,8 +194,9 @@ export const renewMembership = async (data) => {
 };
 
 // --- STAFF API ---
-export const getAllStaff = async () => {
-    const response = await apiClient.get('/admin/staff');
+export const getAllStaff = async (branchId) => {
+    const params = branchId ? { branchId } : {};
+    const response = await apiClient.get('/admin/staff', { params });
     return response.data;
 };
 
