@@ -18,7 +18,7 @@ import {
     ChevronDown,
     History
 } from 'lucide-react';
-import { fetchFinanceStats, addExpense } from '../../../api/finance/financeApi';
+import { fetchFinanceStats, addExpense, fetchExpenseCategories } from '../../../api/finance/financeApi';
 import { useBranchContext } from '../../../context/BranchContext';
 import toast from 'react-hot-toast';
 import RightDrawer from '../../../components/common/RightDrawer';
@@ -29,6 +29,8 @@ const FinancialDashboard = () => {
     const [data, setData] = useState(null);
     const [activeTab, setActiveTab] = useState('income'); // income, expenses
     const [isExpenseDrawerOpen, setIsExpenseDrawerOpen] = useState(false);
+    const [categoriesList, setCategoriesList] = useState([]);
+    const [formCategoriesList, setFormCategoriesList] = useState([]);
 
     // Form data for adding expense
     const [expenseForm, setExpenseForm] = useState({
@@ -46,11 +48,29 @@ const FinancialDashboard = () => {
         setExpenseForm(prev => ({ ...prev, branchId: selectedBranch || 'all' }));
     }, [selectedBranch]);
 
+    useEffect(() => {
+        const fetchFormCats = async () => {
+            try {
+                const cats = await fetchExpenseCategories(expenseForm.branchId);
+                setFormCategoriesList(cats || []);
+            } catch (error) {
+                console.error("Failed to fetch form categories", error);
+            }
+        };
+        if (expenseForm.branchId) {
+            fetchFormCats();
+        }
+    }, [expenseForm.branchId]);
+
     const loadData = async () => {
         try {
             setLoading(true);
-            const stats = await fetchFinanceStats(selectedBranch);
+            const [stats, cats] = await Promise.all([
+                fetchFinanceStats(selectedBranch),
+                fetchExpenseCategories(selectedBranch)
+            ]);
             setData(stats);
+            setCategoriesList(cats || []);
         } catch (error) {
             console.error("Failed to load finance stats", error);
             toast.error("Failed to sync financial data");
@@ -62,6 +82,14 @@ const FinancialDashboard = () => {
     useEffect(() => {
         loadData();
     }, [selectedBranch]);
+
+    const dynamicCategories = categoriesList.length > 0
+        ? categoriesList.map(c => c.name)
+        : ['Electricity', 'Maintenance', 'Rent', 'Supplies', 'Salary', 'Internet/Network'];
+
+    const dynamicFormCategories = formCategoriesList.length > 0
+        ? formCategoriesList.map(c => c.name)
+        : ['Electricity', 'Maintenance', 'Rent', 'Supplies', 'Salary', 'Internet/Network'];
 
     const handleAddExpense = async (e) => {
         e.preventDefault();
@@ -387,12 +415,7 @@ const FinancialDashboard = () => {
                                 className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 transition-all"
                             >
                                 <option value="">Select category</option>
-                                <option value="Electricity">Electricity</option>
-                                <option value="Maintenance">Maintenance</option>
-                                <option value="Rent">Rent</option>
-                                <option value="Supplies">Supplies</option>
-                                <option value="Salary">Salary</option>
-                                <option value="Internet/Network">Internet/Network</option>
+                                {dynamicFormCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
                         </div>
                         <div className="space-y-3">

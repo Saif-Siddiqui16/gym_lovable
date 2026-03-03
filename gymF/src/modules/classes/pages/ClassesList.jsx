@@ -319,13 +319,8 @@ const ClassesList = () => {
                             <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Loading classes...</p>
                         </div>
                     ) : filteredClasses.length > 0 ? (
-<<<<<<< HEAD
                         <div className="w-full overflow-visible pb-32">
                             <table className="w-full min-w-[800px]">
-=======
-                        <div className="saas-table-wrapper border-0 rounded-none">
-                            <table className="saas-table saas-table-responsive">
->>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                 <thead>
                                     <tr className="bg-slate-50 border-b border-slate-100">
                                         <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Info</th>
@@ -385,16 +380,11 @@ const ClassesList = () => {
                                                     </span>
                                                 </div>
                                             </td>
-<<<<<<< HEAD
                                             <td className="py-4 px-2 text-right relative">
                                                 <button
                                                     onClick={(e) => { e.stopPropagation(); setActiveActionId(activeActionId === cls.id ? null : cls.id); }}
                                                     className={`p-2 rounded-lg transition-colors ${activeActionId === cls.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
                                                 >
-=======
-                                            <td className="py-4 px-6 text-right" data-label="Action">
-                                                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
->>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                                     <MoreHorizontal size={18} />
                                                 </button>
 
@@ -428,8 +418,8 @@ const ClassesList = () => {
                                         </tr>
                                     ))}
                                 </tbody>
-                            </table>
-                        </div>
+                            </table >
+                        </div >
                     ) : (
                         <div className="flex flex-col items-center justify-center py-20 text-center">
                             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
@@ -446,157 +436,159 @@ const ClassesList = () => {
                             </button>
                         </div>
                     )}
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* Side Panel Overlay */}
-            {showPanel && (
-                <div className="fixed inset-0 z-[100] overflow-hidden">
-                    <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => !submitting && setShowPanel(false)} />
-                    <div className="absolute inset-y-0 right-0 max-w-full flex">
-                        <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right flex flex-col">
-                            {/* Panel Header */}
-                            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                <div>
-                                    <h2 className="text-xl font-black text-slate-900">{editingClassId ? 'Edit Class' : 'Create New Class'}</h2>
-                                    <p className="text-xs font-medium text-slate-500 mt-1">{editingClassId ? 'Update existing class details' : 'Schedule a new group class'}</p>
-                                </div>
-                                <button
-                                    onClick={() => setShowPanel(false)}
-                                    className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
-                                    disabled={submitting}
-                                >
-                                    <X size={20} />
-                                </button>
-                            </div>
-
-                            {/* Panel Form */}
-                            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
-                                {/* Class Name */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Name *</label>
-                                    <input
-                                        type="text"
-                                        required
-                                        placeholder="Yoga, HIIT, Spin, etc."
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                    />
+            {
+                showPanel && (
+                    <div className="fixed inset-0 z-[100] overflow-hidden">
+                        <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={() => !submitting && setShowPanel(false)} />
+                        <div className="absolute inset-y-0 right-0 max-w-full flex">
+                            <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right flex flex-col">
+                                {/* Panel Header */}
+                                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <div>
+                                        <h2 className="text-xl font-black text-slate-900">{editingClassId ? 'Edit Class' : 'Create New Class'}</h2>
+                                        <p className="text-xs font-medium text-slate-500 mt-1">{editingClassId ? 'Update existing class details' : 'Schedule a new group class'}</p>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowPanel(false)}
+                                        className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                                        disabled={submitting}
+                                    >
+                                        <X size={20} />
+                                    </button>
                                 </div>
 
-                                {/* Class Type & Capacity */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Panel Form */}
+                                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+                                    {/* Class Name */}
                                     <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Type</label>
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Name *</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            placeholder="Yoga, HIIT, Spin, etc."
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                        />
+                                    </div>
+
+                                    {/* Class Type & Capacity */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Type</label>
+                                            <div className="relative">
+                                                <select
+                                                    value={formData.type}
+                                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium text-slate-700"
+                                                >
+                                                    <option value="">Select type</option>
+                                                    {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                                </select>
+                                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Capacity *</label>
+                                            <input
+                                                type="number"
+                                                required
+                                                min="1"
+                                                value={formData.capacity}
+                                                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Date & Time & Duration */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Date & Time *</label>
+                                            <input
+                                                type="date"
+                                                required
+                                                value={formData.date}
+                                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                            />
+                                            <input
+                                                type="time"
+                                                required
+                                                value={formData.time}
+                                                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                            />
+                                            <p className="text-[10px] text-slate-400 italic pl-1">dd-mm-yyyy --:--</p>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Duration (minutes)</label>
+                                            <input
+                                                type="number"
+                                                value={formData.duration}
+                                                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Trainer */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Trainer</label>
                                         <div className="relative">
                                             <select
-                                                value={formData.type}
-                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium text-slate-700"
+                                                value={formData.trainerId}
+                                                onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium"
                                             >
-                                                <option value="">Select type</option>
-                                                {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                                <option value="">No trainer</option>
+                                                {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                             </select>
                                             <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                                         </div>
                                     </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Capacity *</label>
-                                        <input
-                                            type="number"
-                                            required
-                                            min="1"
-                                            value={formData.capacity}
-                                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                        />
-                                    </div>
-                                </div>
 
-                                {/* Date & Time & Duration */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Date & Time *</label>
-                                        <input
-                                            type="date"
-                                            required
-                                            value={formData.date}
-                                            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                            className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                        />
-                                        <input
-                                            type="time"
-                                            required
-                                            value={formData.time}
-                                            onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                            className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                        />
-                                        <p className="text-[10px] text-slate-400 italic pl-1">dd-mm-yyyy --:--</p>
-                                    </div>
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Duration (minutes)</label>
-                                        <input
-                                            type="number"
-                                            value={formData.duration}
-                                            onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                    {/* Description */}
+                                    <div className="space-y-1.5 flex-1 flex flex-col">
+                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Description</label>
+                                        <textarea
+                                            placeholder="Class description..."
+                                            value={formData.description}
+                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                            className="w-full flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium resize-none"
                                         />
                                     </div>
-                                </div>
 
-                                {/* Trainer */}
-                                <div className="space-y-1.5">
-                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Trainer</label>
-                                    <div className="relative">
-                                        <select
-                                            value={formData.trainerId}
-                                            onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium"
+                                    {/* Action Buttons */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-auto border-t border-slate-50">
+                                        <button
+                                            type="button"
+                                            disabled={submitting}
+                                            onClick={() => setShowPanel(false)}
+                                            className="px-6 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all"
                                         >
-                                            <option value="">No trainer</option>
-                                            {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                        </select>
-                                        <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={submitting}
+                                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                        >
+                                            {submitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
+                                            {editingClassId ? 'Update Class' : 'Create Class'}
+                                        </button>
                                     </div>
-                                </div>
-
-                                {/* Description */}
-                                <div className="space-y-1.5 flex-1 flex flex-col">
-                                    <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Description</label>
-                                    <textarea
-                                        placeholder="Class description..."
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        className="w-full flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium resize-none"
-                                    />
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-auto border-t border-slate-50">
-                                    <button
-                                        type="button"
-                                        disabled={submitting}
-                                        onClick={() => setShowPanel(false)}
-                                        className="px-6 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={submitting}
-                                        className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                                    >
-                                        {submitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                                        {editingClassId ? 'Update Class' : 'Create Class'}
-                                    </button>
-                                </div>
-                            </form>
+                                </form>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 

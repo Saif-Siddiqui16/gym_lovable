@@ -12,7 +12,9 @@ apiClient.interceptors.request.use(
     (config) => {
         const selectedBranch = localStorage.getItem('selectedBranch');
         // Do not overwrite if already explicitly set or if specifically cleared (null/undefined)
-        if (selectedBranch && config.headers['x-tenant-id'] === undefined) {
+        if (config.headers['x-tenant-id'] === 'none') {
+            delete config.headers['x-tenant-id'];
+        } else if (selectedBranch && config.headers['x-tenant-id'] === undefined) {
             config.headers['x-tenant-id'] = selectedBranch;
         }
         return config;

@@ -284,7 +284,6 @@ const Invoices = () => {
                                             <span className="text-sm font-black text-slate-900">{inv.invoiceNumber}</span>
                                         </div>
                                     </td>
-<<<<<<< HEAD
                                     <td className="px-8 py-6">
                                         <span className="text-[10px] font-black text-[#7c3aed] bg-violet-50 px-2 py-1 rounded-lg uppercase tracking-widest whitespace-nowrap">
                                             {inv.tenant?.name || 'Main'}
@@ -292,10 +291,6 @@ const Invoices = () => {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div>
-=======
-                                    <td className="px-8 py-6" data-label="Client">
-                                        <div className="text-right sm:text-left">
->>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                             <p className="text-sm font-bold text-slate-900">{inv.member?.name || 'Walk-in Guest'}</p>
                                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{inv.member?.memberId || 'GUEST'}</p>
                                         </div>
@@ -340,7 +335,7 @@ const Invoices = () => {
                                 </tr>
                             ))}
                         </tbody>
-                    </table>
+                    </table >
 
                     {loading && (
                         <div className="p-24 flex flex-col items-center justify-center opacity-40">
@@ -349,18 +344,20 @@ const Invoices = () => {
                         </div>
                     )}
 
-                    {!loading && data.invoices.length === 0 && (
-                        <div className="p-24 flex flex-col items-center justify-center text-center opacity-30">
-                            <Receipt size={64} className="text-slate-300 mb-6" />
-                            <h3 className="text-xl font-black text-slate-900 mb-2">Invoice List</h3>
-                            <p className="max-w-xs text-slate-500 text-sm font-medium">No records found matching your current filter.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
+                    {
+                        !loading && data.invoices.length === 0 && (
+                            <div className="p-24 flex flex-col items-center justify-center text-center opacity-30">
+                                <Receipt size={64} className="text-slate-300 mb-6" />
+                                <h3 className="text-xl font-black text-slate-900 mb-2">Invoice List</h3>
+                                <p className="max-w-xs text-slate-500 text-sm font-medium">No records found matching your current filter.</p>
+                            </div>
+                        )
+                    }
+                </div >
+            </div >
 
             {/* Create Invoice Drawer */}
-            <RightDrawer
+            < RightDrawer
                 isOpen={isCreateDrawerOpen}
                 onClose={() => setIsCreateDrawerOpen(false)}
                 title="Create Invoice"
@@ -560,10 +557,10 @@ const Invoices = () => {
                         </button>
                     </div>
                 </form>
-            </RightDrawer>
+            </RightDrawer >
 
             {/* View Invoice Drawer */}
-            <RightDrawer
+            < RightDrawer
                 isOpen={isViewDrawerOpen}
                 onClose={() => {
                     setIsViewDrawerOpen(false);
@@ -572,113 +569,114 @@ const Invoices = () => {
                 title="Invoice Details"
                 subtitle={selectedInvoice?.invoiceNumber}
             >
-                {fetchingInvoice ? (
-                    <div className="p-24 flex flex-col items-center justify-center opacity-40 h-full">
-                        <div className="w-12 h-12 border-4 border-slate-200 border-t-violet-600 rounded-full animate-spin mb-4"></div>
-                        <p className="text-slate-500 font-black italic uppercase tracking-widest text-[10px]">Fetching Details...</p>
-                    </div>
-                ) : selectedInvoice && (
-                    <div className="p-8 space-y-8 animate-in fade-in slide-in-from-right-8 duration-300">
-                        {/* Header Info */}
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <span className="text-[10px] font-black text-violet-600 bg-violet-50 px-3 py-1 rounded-lg uppercase tracking-widest">
-                                    {selectedInvoice.status}
-                                </span>
-                                <h3 className="text-2xl font-black text-slate-900 mt-3">{selectedInvoice.invoiceNumber}</h3>
-                                <p className="text-sm font-bold text-slate-400 mt-1">{new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
-                                <p className="text-3xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</p>
-                            </div>
+                {
+                    fetchingInvoice ? (
+                        <div className="p-24 flex flex-col items-center justify-center opacity-40 h-full" >
+                            <div className="w-12 h-12 border-4 border-slate-200 border-t-violet-600 rounded-full animate-spin mb-4"></div>
+                            <p className="text-slate-500 font-black italic uppercase tracking-widest text-[10px]">Fetching Details...</p>
                         </div>
-
-                        <div className="grid grid-cols-2 gap-8 py-8 border-y border-slate-50">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bill To</p>
-                                <p className="text-md font-black text-slate-900">{selectedInvoice.member?.name || 'Walk-in Guest'}</p>
-                                <p className="text-xs font-bold text-slate-500">{selectedInvoice.member?.memberId || 'GUEST-SALE'}</p>
-                                {selectedInvoice.member?.phone && <p className="text-xs font-bold text-slate-500">{selectedInvoice.member.phone}</p>}
+                    ) : selectedInvoice && (
+                        <div className="p-8 space-y-8 animate-in fade-in slide-in-from-right-8 duration-300">
+                            {/* Header Info */}
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <span className="text-[10px] font-black text-violet-600 bg-violet-50 px-3 py-1 rounded-lg uppercase tracking-widest">
+                                        {selectedInvoice.status}
+                                    </span>
+                                    <h3 className="text-2xl font-black text-slate-900 mt-3">{selectedInvoice.invoiceNumber}</h3>
+                                    <p className="text-sm font-bold text-slate-400 mt-1">{new Date(selectedInvoice.dueDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Amount</p>
+                                    <p className="text-3xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</p>
+                                </div>
                             </div>
-                            <div className="space-y-1 text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Branch</p>
-                                <p className="text-md font-black text-slate-900">{selectedInvoice.tenant?.name || 'Main Branch'}</p>
-                            </div>
-                        </div>
 
-                        {/* Items Table */}
-                        <div className="space-y-4">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Invoice Items</p>
-                            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
-                                <table className="w-full text-left">
-                                    <thead>
-                                        <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/30">
-                                            <th className="px-6 py-4">Item</th>
-                                            <th className="px-6 py-4 text-center">Qty</th>
-                                            <th className="px-6 py-4 text-right">Rate</th>
-                                            <th className="px-6 py-4 text-right">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100">
-                                        {selectedInvoice.items?.map((item, idx) => (
-                                            <tr key={idx} className="text-xs font-bold text-slate-700">
-                                                <td className="px-6 py-4">{item.description}</td>
-                                                <td className="px-6 py-4 text-center">{item.quantity}</td>
-                                                <td className="px-6 py-4 text-right">₹{Number(item.rate).toLocaleString()}</td>
-                                                <td className="px-6 py-4 text-right text-slate-900 font-black">₹{Number(item.amount).toLocaleString()}</td>
+                            <div className="grid grid-cols-2 gap-8 py-8 border-y border-slate-50">
+                                <div className="space-y-1">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bill To</p>
+                                    <p className="text-md font-black text-slate-900">{selectedInvoice.member?.name || 'Walk-in Guest'}</p>
+                                    <p className="text-xs font-bold text-slate-500">{selectedInvoice.member?.memberId || 'GUEST-SALE'}</p>
+                                    {selectedInvoice.member?.phone && <p className="text-xs font-bold text-slate-500">{selectedInvoice.member.phone}</p>}
+                                </div>
+                                <div className="space-y-1 text-right">
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Branch</p>
+                                    <p className="text-md font-black text-slate-900">{selectedInvoice.tenant?.name || 'Main Branch'}</p>
+                                </div>
+                            </div>
+
+                            {/* Items Table */}
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Invoice Items</p>
+                                <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
+                                    <table className="w-full text-left">
+                                        <thead>
+                                            <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/30">
+                                                <th className="px-6 py-4">Item</th>
+                                                <th className="px-6 py-4 text-center">Qty</th>
+                                                <th className="px-6 py-4 text-right">Rate</th>
+                                                <th className="px-6 py-4 text-right">Total</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {selectedInvoice.items?.map((item, idx) => (
+                                                <tr key={idx} className="text-xs font-bold text-slate-700">
+                                                    <td className="px-6 py-4">{item.description}</td>
+                                                    <td className="px-6 py-4 text-center">{item.quantity}</td>
+                                                    <td className="px-6 py-4 text-right">₹{Number(item.rate).toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right text-slate-900 font-black">₹{Number(item.amount).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Totals Section */}
-                        <div className="space-y-3 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-                            <div className="flex justify-between text-xs font-bold text-slate-500">
-                                <span>Subtotal</span>
-                                <span>₹{Number(selectedInvoice.subtotal || 0).toLocaleString()}</span>
+                            {/* Totals Section */}
+                            <div className="space-y-3 bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
+                                <div className="flex justify-between text-xs font-bold text-slate-500">
+                                    <span>Subtotal</span>
+                                    <span>₹{Number(selectedInvoice.subtotal || 0).toLocaleString()}</span>
+                                </div>
+                                {selectedInvoice.discount > 0 && (
+                                    <div className="flex justify-between text-xs font-bold text-red-500">
+                                        <span>Discount</span>
+                                        <span>-₹{Number(selectedInvoice.discount).toLocaleString()}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between text-xs font-bold text-slate-500">
+                                    <span>GST ({selectedInvoice.taxRate}%)</span>
+                                    <span>₹{Number(selectedInvoice.taxAmount || 0).toLocaleString()}</span>
+                                </div>
+                                <div className="h-px bg-slate-200 mt-2"></div>
+                                <div className="flex justify-between items-center pt-2">
+                                    <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Total Amount</span>
+                                    <span className="text-xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</span>
+                                </div>
                             </div>
-                            {selectedInvoice.discount > 0 && (
-                                <div className="flex justify-between text-xs font-bold text-red-500">
-                                    <span>Discount</span>
-                                    <span>-₹{Number(selectedInvoice.discount).toLocaleString()}</span>
+
+                            {selectedInvoice.notes && (
+                                <div className="space-y-2 p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50">
+                                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Notes</p>
+                                    <p className="text-xs font-medium text-slate-600 leading-relaxed italic">"{selectedInvoice.notes}"</p>
                                 </div>
                             )}
-                            <div className="flex justify-between text-xs font-bold text-slate-500">
-                                <span>GST ({selectedInvoice.taxRate}%)</span>
-                                <span>₹{Number(selectedInvoice.taxAmount || 0).toLocaleString()}</span>
-                            </div>
-                            <div className="h-px bg-slate-200 mt-2"></div>
-                            <div className="flex justify-between items-center pt-2">
-                                <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Total Amount</span>
-                                <span className="text-xl font-black text-slate-900">₹{Number(selectedInvoice.amount).toLocaleString()}</span>
+
+                            <div className="pt-8">
+                                <button
+                                    onClick={() => {
+                                        window.print();
+                                    }}
+                                    className="w-full h-12 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 text-sm font-black text-slate-900 hover:border-violet-200 hover:bg-violet-50/30 transition-all active:scale-[0.98]"
+                                >
+                                    <Download size={18} className="text-violet-600" />
+                                    Download PDF Invoice
+                                </button>
                             </div>
                         </div>
-
-                        {selectedInvoice.notes && (
-                            <div className="space-y-2 p-6 bg-amber-50/30 rounded-3xl border border-amber-100/50">
-                                <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Notes</p>
-                                <p className="text-xs font-medium text-slate-600 leading-relaxed italic">"{selectedInvoice.notes}"</p>
-                            </div>
-                        )}
-
-                        <div className="pt-8">
-                            <button
-                                onClick={() => {
-                                    window.print();
-                                }}
-                                className="w-full h-12 bg-white border-2 border-slate-100 rounded-2xl flex items-center justify-center gap-3 text-sm font-black text-slate-900 hover:border-violet-200 hover:bg-violet-50/30 transition-all active:scale-[0.98]"
-                            >
-                                <Download size={18} className="text-violet-600" />
-                                Download PDF Invoice
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </RightDrawer>
-        </div>
+                    )}
+            </RightDrawer >
+        </div >
     );
 };
 

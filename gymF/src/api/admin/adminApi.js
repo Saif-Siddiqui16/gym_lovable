@@ -87,3 +87,8 @@ export const linkStaffAPI = async (linkData) => {
     const response = await apiClient.post('/admin/staff/link', linkData);
     return response.data;
 };
+
+export const fetchAuditLogsAPI = async (params = {}) => {
+    const response = await apiClient.get('/admin/audit-logs', { params });
+    return response.data;
+};

@@ -64,6 +64,8 @@ const getAllGyms = async (req, res) => {
             gymName: g.name,
             branchName: g.branchName,
             owner: g.owner,
+            managerName: g.managerName,
+            managerEmail: g.managerEmail,
             phone: g.phone,
             location: g.location,
             status: g.status,
@@ -98,7 +100,12 @@ const addGym = async (req, res) => {
         }
 
         if (!effectivePlanId) {
-            return res.status(400).json({ message: 'SaaS Plan is required. If you are a Branch Admin, ensure you have an active subscription.' });
+            const firstPlan = await prisma.saaSPlan.findFirst({ where: { status: 'Active' } });
+            if (firstPlan) {
+                effectivePlanId = firstPlan.id;
+            } else {
+                return res.status(400).json({ message: 'SaaS Plan is required. No active plans found in system.' });
+            }
         }
 
         const plan = await prisma.saaSPlan.findUnique({ where: { id: parseInt(effectivePlanId) } });
@@ -111,7 +118,10 @@ const addGym = async (req, res) => {
                 data: {
                     name: gymName,
                     branchName,
-                    owner: owner || email.split('@')[0],
+                    // Visibility logic: If a Branch Admin creates it, they are the 'owner' for filtering/limits
+                    owner: req.user.role === 'BRANCH_ADMIN' ? req.user.email : (owner || email.split('@')[0]),
+                    managerName: owner || email.split('@')[0],
+                    managerEmail: email,
                     phone,
                     location,
                     status: 'Active'
@@ -453,9 +463,152 @@ const getWebhookLogs = async (req, res) => {
 
 const getAuditLogs = async (req, res) => {
     try {
-        const logs = await prisma.auditLog.findMany({ orderBy: { createdAt: 'desc' } });
-        res.json(logs);
+        const { branchId, search, action, module: moduleName, from, to, page = 1, limit = 50 } = req.query;
+        const { role, tenantId: userTenantId } = req.user;
+
+        let userIdFilter = undefined;
+
+        // Determine which users to include based on branch
+        if (role !== 'SUPER_ADMIN' || (branchId && branchId !== 'all')) {
+            const targetTenantId = (branchId && branchId !== 'all') ? parseInt(branchId) : userTenantId;
+            if (targetTenantId) {
+                const branchUsers = await prisma.user.findMany({
+                    where: { tenantId: targetTenantId },
+                    select: { id: true }
+                });
+                userIdFilter = branchUsers.map(u => u.id);
+            }
+        }
+
+        let where = {};
+        if (userIdFilter !== undefined) {
+            where.userId = { in: userIdFilter };
+        }
+
+        // Search across action, affectedEntity, details
+        if (search && search.trim() !== '') {
+            where.OR = [
+                { action: { contains: search } },
+                { affectedEntity: { contains: search } },
+                { details: { contains: search } },
+                { module: { contains: search } },
+            ];
+        }
+
+        if (action && action !== 'All Actions') {
+            where.action = action;
+        }
+
+        if (moduleName && moduleName !== 'All Modules') {
+            where.module = moduleName;
+        }
+
+        // Date filters
+        if (from || to) {
+            where.createdAt = {};
+            if (from) where.createdAt.gte = new Date(from);
+            if (to) {
+                const toDate = new Date(to);
+                toDate.setHours(23, 59, 59, 999);
+                where.createdAt.lte = toDate;
+            }
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const [logs, total] = await Promise.all([
+            prisma.auditLog.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: parseInt(limit),
+                include: {
+                    // AuditLog doesn't have a direct user relation in schema, so we use raw user lookup
+                }
+            }),
+            prisma.auditLog.count({ where })
+        ]);
+
+        // Get today's activity count
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayCount = await prisma.auditLog.count({
+            where: { ...where, createdAt: { gte: todayStart } }
+        });
+
+        // Get most active user (by userId)
+        const activityByUser = await prisma.auditLog.groupBy({
+            by: ['userId'],
+            where,
+            _count: { userId: true },
+            orderBy: { _count: { userId: 'desc' } },
+            take: 1
+        });
+
+        let mostActiveUser = 'N/A';
+        if (activityByUser.length > 0) {
+            const topUser = await prisma.user.findUnique({
+                where: { id: activityByUser[0].userId },
+                select: { name: true, email: true }
+            });
+            mostActiveUser = topUser?.name || topUser?.email || `User #${activityByUser[0].userId}`;
+        }
+
+        // Get distinct actions and modules for filter dropdowns
+        const distinctActions = await prisma.auditLog.findMany({
+            where: userIdFilter !== undefined ? { userId: { in: userIdFilter } } : {},
+            select: { action: true },
+            distinct: ['action']
+        });
+        const distinctModules = await prisma.auditLog.findMany({
+            where: userIdFilter !== undefined ? { userId: { in: userIdFilter } } : {},
+            select: { module: true },
+            distinct: ['module']
+        });
+
+        // Enrich logs with user names
+        const userIds = [...new Set(logs.map(l => l.userId))];
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, email: true, role: true, tenantId: true }
+        });
+        const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+        // Get tenant names
+        const tenantIds = [...new Set(users.filter(u => u.tenantId).map(u => u.tenantId))];
+        const tenants = await prisma.tenant.findMany({
+            where: { id: { in: tenantIds } },
+            select: { id: true, name: true }
+        });
+        const tenantMap = Object.fromEntries(tenants.map(t => [t.id, t.name]));
+
+        const enrichedLogs = logs.map(log => ({
+            ...log,
+            user: userMap[log.userId] ? {
+                name: userMap[log.userId].name,
+                email: userMap[log.userId].email,
+                role: userMap[log.userId].role,
+                branch: tenantMap[userMap[log.userId].tenantId] || 'Main'
+            } : null
+        }));
+
+        res.json({
+            logs: enrichedLogs,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit)),
+            stats: {
+                total,
+                today: todayCount,
+                mostActive: mostActiveUser
+            },
+            filters: {
+                actions: distinctActions.map(a => a.action).filter(Boolean),
+                modules: distinctModules.map(m => m.module).filter(Boolean)
+            }
+        });
     } catch (error) {
+        console.error('Audit logs error:', error);
         res.status(500).json({ message: error.message });
     }
 };

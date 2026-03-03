@@ -527,6 +527,104 @@ const getFinanceStats = async (req, res) => {
     }
 };
 
+// Expense Categories
+const getExpenseCategories = async (req, res) => {
+    try {
+        const { branchId: qBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { role, tenantId: userTenantId, email, name: userName } = req.user;
+
+        const branchId = qBranchId || headerTenantId;
+
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = { in: [parseInt(branchId), 1] };
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = { in: [parseInt(branchId), userTenantId || 1] };
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
+        }
+
+        const categories = await prisma.expenseCategory.findMany({
+            where,
+            orderBy: { name: 'asc' }
+        });
+
+        // Remove duplicate categories by name if overlapping between global and branch
+        const uniqueCategories = Array.from(new Map(categories.map(c => [c.name.toLowerCase().trim(), c])).values());
+
+        res.status(200).json(uniqueCategories);
+    } catch (error) {
+        console.error('Error fetching expense categories:', error);
+        res.status(500).json({ message: 'Failed to fetch expense categories' });
+    }
+};
+
+const createExpenseCategory = async (req, res) => {
+    try {
+        const { name, description, branchId } = req.body;
+        const tenantId = req.user.tenantId;
+
+        let targetTenantId = tenantId;
+        if ((req.user.role === 'SUPER_ADMIN' || req.user.role === 'BRANCH_ADMIN') && branchId && branchId !== 'all') {
+            targetTenantId = parseInt(branchId);
+        }
+
+        if (!targetTenantId && req.user.role !== 'SUPER_ADMIN') {
+            return res.status(400).json({ message: 'Tenant ID is required for creating an expense category' });
+        }
+
+        const newCategory = await prisma.expenseCategory.create({
+            data: {
+                tenantId: targetTenantId || 1,
+                name,
+                description: description || null
+            }
+        });
+
+        res.status(201).json(newCategory);
+    } catch (error) {
+        console.error('Error adding expense category:', error);
+        res.status(500).json({ message: 'Failed to add expense category' });
+    }
+};
+
+const deleteExpenseCategory = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const tenantId = req.user.tenantId;
+
+        const category = await prisma.expenseCategory.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!category) {
+            return res.status(404).json({ message: 'Expense category not found' });
+        }
+
+        if (req.user.role !== 'SUPER_ADMIN' && category.tenantId !== tenantId) {
+            return res.status(403).json({ message: 'Not authorized to delete this expense category' });
+        }
+
+        await prisma.expenseCategory.delete({
+            where: { id: parseInt(id) }
+        });
+
+        res.status(200).json({ message: 'Expense category deleted successfully' });
+    } catch (error) {
+        console.error('Error deleting expense category:', error);
+        res.status(500).json({ message: 'Failed to delete expense category' });
+    }
+};
+
 module.exports = {
     getExpenses,
     createExpense,
@@ -537,5 +635,8 @@ module.exports = {
     getFinanceStats,
     createInvoice,
     getInvoiceById,
-    deleteInvoice
+    deleteInvoice,
+    getExpenseCategories,
+    createExpenseCategory,
+    deleteExpenseCategory
 };

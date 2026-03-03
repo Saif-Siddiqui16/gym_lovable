@@ -12,6 +12,10 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        console.log('[Topbar] Current state:', { role, branchesCount: branches?.length, selectedBranch });
+    }, [role, branches, selectedBranch]);
+
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {

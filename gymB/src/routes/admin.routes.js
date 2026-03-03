@@ -1,5 +1,6 @@
 // gym_backend/src/routes/admin.routes.js
 const express = require('express');
+const { getAuditLogs: getSuperAdminAuditLogs } = require('../controllers/superadmin.controller');
 const {
     getAllMembers,
     addMember,
@@ -170,5 +171,8 @@ router.patch('/payroll/:id/status', updatePayrollStatus);
 // Profile
 router.get('/profile', getProfile);
 router.patch('/profile', updateProfile);
+
+// Audit Logs
+router.get('/audit-logs', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getSuperAdminAuditLogs);
 
 module.exports = router;

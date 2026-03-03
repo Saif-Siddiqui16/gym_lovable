@@ -8,36 +8,52 @@ datasource db {
 }
 
 model Tenant {
-  id         Int              @id @default(autoincrement())
-  name       String
-  branchName String?
-  owner      String?
-  phone      String?
-  location   String?
-  status     String           @default("Active")
-  createdAt  DateTime         @default(now())
-  updatedAt  DateTime         @updatedAt
-  Attendance Attendance[]
-  classes    Class[]
-  equipment  Equipment[]
-  expenses   Expense[]
-  inventory  Inventory[]
-  invoices   Invoice[]
-  leads      Lead[]
-  lockers    Locker[]
-  members    Member[]
-  plans      MembershipPlan[]
-  payroll    Payroll[]
-  users      User[]
+  id           Int              @id @default(autoincrement())
+  name         String
+  branchName   String?
+  owner        String?
+  managerName  String?
+  managerEmail String?
+  phone        String?
+  location     String?
+  status       String           @default("Active")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  Attendance   Attendance[]
+  classes      Class[]
+  equipment    Equipment[]
+  expenses     Expense[]
+  inventory    Inventory[]
+  invoices     Invoice[]
+  leads        Lead[]
+  lockers      Locker[]
+  members      Member[]
+  plans        MembershipPlan[]
+  payroll      Payroll[]
+  users        User[]
   announcements   Announcement[]
-  coupons    Coupon[]
+  coupons      Coupon[]
   storeCategories StoreCategory[]
   storeProducts   StoreProduct[]
   storeOrders     StoreOrder[]
   amenities       Amenity[]
   tasks           Task[]
+  expenseCategories ExpenseCategory[]
 
   @@map("tenant")
+}
+
+model ExpenseCategory {
+  id          Int      @id @default(autoincrement())
+  tenantId    Int
+  name        String
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId], map: "expensecat_tenantId_fkey")
+  @@map("expense_category")
 }
 
 model User {
@@ -606,6 +622,7 @@ model TenantSettings {
   timezone        String  @default("UTC")
   currency        String  @default("USD")
   whatsappEnabled Boolean @default(false)
+  fiscalYearStart String  @default("April")
 
   @@map("tenantsettings")
 }

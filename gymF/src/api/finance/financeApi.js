@@ -86,3 +86,30 @@ export const deleteExpense = async (id) => {
         throw error;
     }
 };
+
+export const fetchExpenseCategories = async (branchId) => {
+    try {
+        const response = await apiClient.get('/finance/expense-categories', { params: { branchId } });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const addExpenseCategory = async (categoryData) => {
+    try {
+        const response = await apiClient.post('/finance/expense-categories', categoryData);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const deleteExpenseCategory = async (id) => {
+    try {
+        const response = await apiClient.delete(`/finance/expense-categories/${id}`);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};

@@ -26,23 +26,38 @@ export const BranchProvider = ({ children }) => {
     const fetchBranches = async () => {
         try {
             setLoadingBranches(true);
-            // Adjust this endpoint if your backend uses a different one
-            // We skip setting the x-tenant-id header for this specific call to get all available branches
-            const response = await apiClient.get('/branches', { headers: { 'x-tenant-id': undefined } });
-            const formattedBranches = Array.isArray(response.data?.data) ? response.data.data : (Array.isArray(response.data) ? response.data : []);
-            console.log('Fetched branches payload:', response.data);
-            console.log('Formatted branches:', formattedBranches);
+            // We set 'x-tenant-id' to null (not undefined) so the apiClient interceptor DOES NOT overwrite it
+            // This ensures we get all branches for the user, not just one.
+            const response = await apiClient.get('/branches', {
+                headers: { 'x-tenant-id': 'none' }
+            });
+
+            console.log('[BranchContext] API Status:', response.status);
+            const rawData = response.data?.data || response.data || [];
+            const formattedBranches = Array.isArray(rawData) ? rawData : [];
+
+            console.log('[BranchContext] Fetched branches count:', formattedBranches.length);
             setBranches(formattedBranches);
         } catch (error) {
-            console.error('Failed to fetch branches:', error);
+            console.error('[BranchContext] Fetch error:', error.response?.data || error.message);
             setBranches([]);
         } finally {
             setLoadingBranches(false);
         }
     };
 
+    const refreshBranches = () => fetchBranches();
+
     return (
-        <BranchContext.Provider value={{ branches, selectedBranch, setSelectedBranch, loadingBranches, showAllOption: true, showSelector: true }}>
+        <BranchContext.Provider value={{
+            branches,
+            selectedBranch,
+            setSelectedBranch,
+            loadingBranches,
+            refreshBranches,
+            showAllOption: true,
+            showSelector: true
+        }}>
             {children}
         </BranchContext.Provider>
     );

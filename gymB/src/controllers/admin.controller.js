@@ -331,17 +331,27 @@ const toggleMemberStatus = async (req, res) => {
 const getAllStaff = async (req, res) => {
     try {
         const { branchId } = req.query;
-        const { tenantId: userTenantId = 1, role, email, name: userName } = req.user;
-        let where = { role: { in: ['STAFF', 'TRAINER', 'MANAGER'] } };
+        const headerTenantId = req.headers['x-tenant-id'];
+        const { tenantId: userTenantIdRaw, role, email, name: userName } = req.user;
+
+        // Use prioritized branch/tenant identifier
+        const effectiveBranchId = branchId || headerTenantId;
+        const userTenantId = userTenantIdRaw || 1; // Default to 1 if null/undefined
+
+        console.log(`[getAllStaff] User: ${email}, Role: ${role}, EffBranchId: ${effectiveBranchId}, UserTenant: ${userTenantId}`);
+
+        let where = { role: { in: ['STAFF', 'TRAINER', 'MANAGER', 'BRANCH_ADMIN'] } };
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
-                where.tenantId = parseInt(branchId);
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
             }
         } else {
-            if (branchId && branchId !== 'all') {
-                where.tenantId = parseInt(branchId);
+            // Logic for BRANCH_ADMIN and MANAGER
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
             } else {
+                // Determine all branches this user can access
                 let orConditions = [{ id: userTenantId }];
                 if (email) orConditions.push({ owner: email });
                 if (userName) orConditions.push({ owner: userName });
@@ -350,13 +360,23 @@ const getAllStaff = async (req, res) => {
                     where: { OR: orConditions },
                     select: { id: true }
                 });
-                where.tenantId = { in: branches.map(b => b.id) };
+                const managedBranchIds = branches.map(b => b.id);
+                where.tenantId = { in: managedBranchIds };
+                console.log(`[getAllStaff] Managed branches: ${managedBranchIds}`);
             }
         }
 
-        const staff = await prisma.user.findMany({ where });
+        console.log('[getAllStaff] Final Where:', JSON.stringify(where, null, 2));
+
+        const staff = await prisma.user.findMany({
+            where,
+            orderBy: { joinedDate: 'desc' }
+        });
+
+        console.log(`[getAllStaff] Found ${staff.length} staff members`);
         res.json(staff);
     } catch (error) {
+        console.error('[getAllStaff] Controller Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -1838,13 +1858,18 @@ const getTenantSettings = async (req, res) => {
             where: { tenantId }
         });
 
+        const tenant = await prisma.tenant.findUnique({
+            where: { id: tenantId },
+            select: { name: true }
+        });
+
         if (!settings) {
             settings = await prisma.tenantSettings.create({
                 data: { tenantId }
             });
         }
 
-        res.json(settings);
+        res.json({ ...settings, name: tenant?.name || '' });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -1853,11 +1878,21 @@ const getTenantSettings = async (req, res) => {
 const updateTenantSettings = async (req, res) => {
     try {
         const { tenantId } = req.user;
+        const { name, ...settingsData } = req.body;
+
+        if (name) {
+            await prisma.tenant.update({
+                where: { id: tenantId },
+                data: { name }
+            });
+        }
+
         const updated = await prisma.tenantSettings.update({
             where: { tenantId },
-            data: req.body
+            data: settingsData
         });
-        res.json(updated);
+
+        res.json({ ...updated, name });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

@@ -1,22 +1,67 @@
-import React, { useState } from 'react';
-import { DollarSign, Plus, Tag, FileText } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { DollarSign, Plus, Tag, FileText, Trash2, Loader } from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
+import { fetchExpenseCategories, addExpenseCategory, deleteExpenseCategory } from '../../../api/finance/financeApi';
+import { useBranchContext } from '../../../context/BranchContext';
+import { toast } from 'react-hot-toast';
 
 const ExpenseSettings = () => {
+    const { selectedBranch } = useBranchContext();
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [categories, setCategories] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [submitting, setSubmitting] = useState(false);
     const [formData, setFormData] = useState({ name: '', description: '' });
 
-    const handleCreate = (e) => {
+    useEffect(() => {
+        loadCategories();
+    }, [selectedBranch]);
+
+    const loadCategories = async () => {
+        try {
+            setLoading(true);
+            const data = await fetchExpenseCategories(selectedBranch);
+            setCategories(data || []);
+        } catch (error) {
+            console.error('Failed to parse categories:', error);
+            toast.error('Failed to load expense categories');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreate = async (e) => {
         e.preventDefault();
-        // Handle creation logic here (backend skip for now)
-        setIsDrawerOpen(false);
-        setFormData({ name: '', description: '' });
+        try {
+            setSubmitting(true);
+            await addExpenseCategory({ ...formData, branchId: selectedBranch });
+            toast.success('Category created successfully');
+            setIsDrawerOpen(false);
+            setFormData({ name: '', description: '' });
+            loadCategories();
+        } catch (error) {
+            console.error('Failed to stringify error:', error);
+            toast.error(error.response?.data?.message || 'Failed to create category');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this category?')) return;
+        try {
+            await deleteExpenseCategory(id);
+            toast.success('Category deleted successfully');
+            loadCategories();
+        } catch (error) {
+            toast.error('Failed to delete category');
+        }
     };
 
     return (
         <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto font-sans animate-in fade-in duration-500">
             <div className="bg-white rounded-[24px] shadow-sm border border-slate-100 p-8 transition-all duration-300">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
                     <div className="flex items-center gap-6">
                         <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 shadow-sm border border-indigo-100">
                             <DollarSign size={28} />
@@ -39,24 +84,48 @@ const ExpenseSettings = () => {
                     </button>
                 </div>
 
-                {/* Empty State */}
-                <div className="py-24 flex flex-col items-center justify-center text-center">
-                    <div className="p-4 rounded-full bg-slate-50 mb-4">
-                        <DollarSign size={32} className="text-slate-300" />
+                {loading ? (
+                    <div className="py-24 flex justify-center">
+                        <Loader className="animate-spin text-indigo-600" size={32} />
                     </div>
-                    <p className="text-slate-400 font-medium italic">No expense categories found</p>
-                    <p className="text-slate-300 text-[10px] uppercase tracking-widest mt-2 font-bold">Start by adding your first category</p>
-                </div>
+                ) : categories.length === 0 ? (
+                    <div className="py-24 flex flex-col items-center justify-center text-center">
+                        <div className="p-4 rounded-full bg-slate-50 mb-4">
+                            <DollarSign size={32} className="text-slate-300" />
+                        </div>
+                        <p className="text-slate-400 font-medium italic">No expense categories found</p>
+                        <p className="text-slate-300 text-[10px] uppercase tracking-widest mt-2 font-bold">Start by adding your first category</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {categories.map((cat) => (
+                            <div key={cat.id} className="p-5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-all flex flex-col text-left group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <h3 className="font-bold text-slate-800 text-sm">{cat.name}</h3>
+                                    <button
+                                        onClick={() => handleDelete(cat.id)}
+                                        className="text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-all p-1.5"
+                                        title="Delete Category"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                                    {cat.description || 'No description provided.'}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
-            {/* Add Category Drawer */}
             <RightDrawer
                 isOpen={isDrawerOpen}
                 onClose={() => setIsDrawerOpen(false)}
                 title="Add Category"
                 subtitle="Create a new expense category"
             >
-                <form onSubmit={handleCreate} className="p-8 space-y-6">
+                <form onSubmit={handleCreate} className="p-8 space-y-6 text-left">
                     <div className="space-y-4">
                         <div>
                             <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-2">
@@ -96,9 +165,11 @@ const ExpenseSettings = () => {
                         </button>
                         <button
                             type="submit"
-                            className="flex-[2] py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:from-indigo-700 hover:to-violet-700 transition-all active:scale-95"
+                            disabled={submitting}
+                            className="flex-[2] flex justify-center items-center gap-2 py-4 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:from-indigo-700 hover:to-violet-700 transition-all active:scale-95 disabled:opacity-50"
                         >
-                            Create
+                            {submitting && <Loader size={14} className="animate-spin" />}
+                            {submitting ? 'Creating...' : 'Create'}
                         </button>
                     </div>
                 </form>

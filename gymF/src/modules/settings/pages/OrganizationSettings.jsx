@@ -1,18 +1,65 @@
-import React, { useState } from 'react';
-import { Building2, UploadCloud, Globe, DollarSign, Calendar, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Building2, UploadCloud, Globe, DollarSign, Calendar, Save, Loader } from 'lucide-react';
+import { getTenantSettings, updateTenantSettings } from '../../../api/admin/settingsApi';
+import { toast } from 'react-hot-toast';
 
 const OrganizationSettings = ({ role }) => {
     const isManager = role === 'MANAGER';
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
     const [formData, setFormData] = useState({
-        name: 'Your Gym Name',
+        name: '',
         timezone: 'Asia/Kolkata',
         currency: 'INR',
         fiscalYearStart: 'April'
     });
 
+    useEffect(() => {
+        loadSettings();
+    }, []);
+
+    const loadSettings = async () => {
+        try {
+            setLoading(true);
+            const data = await getTenantSettings();
+            setFormData({
+                name: data.name || '',
+                timezone: data.timezone || 'Asia/Kolkata',
+                currency: data.currency || 'INR',
+                fiscalYearStart: data.fiscalYearStart || 'April'
+            });
+        } catch (error) {
+            console.error('Failed to stringify settings:', error);
+            toast.error('Failed to load settings');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSave = async () => {
+        try {
+            setSaving(true);
+            await updateTenantSettings(formData);
+            toast.success('Organization settings updated successfully');
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+            toast.error('Failed to save settings');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <Loader className="animate-spin text-primary" size={40} />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8">
@@ -22,9 +69,13 @@ const OrganizationSettings = ({ role }) => {
                     <h1 className="text-page-title">Organization Settings</h1>
                     <p className="text-muted mt-1">Manage your brand identity and global localization</p>
                 </div>
-                <button className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20">
-                    <Save size={20} />
-                    Save Brand Identity
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20 flex items-center gap-2"
+                >
+                    {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
+                    {saving ? 'Saving...' : 'Save Brand Identity'}
                 </button>
             </div>
 

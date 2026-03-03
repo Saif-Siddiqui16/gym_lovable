@@ -1,16 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Plus, Filter, FileText, Calendar, DollarSign, Search, Receipt, TrendingDown, PieChart, Users, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
 import '../../../styles/GlobalDesign.css';
-import { fetchExpenses, addExpense } from '../../../api/finance/financeApi';
+import { fetchExpenses, addExpense, fetchExpenseCategories } from '../../../api/finance/financeApi';
 import { useBranchContext } from '../../../context/BranchContext';
 import { ChevronDown } from 'lucide-react';
-
-const CATEGORIES = ['Rent', 'Maintenance', 'Salary', 'Utilities', 'Marketing', 'Supplies', 'Others'];
 
 const Expenses = () => {
     const { selectedBranch, branches } = useBranchContext();
     const [expenses, setExpenses] = useState([]);
+    const [categoriesList, setCategoriesList] = useState([]);
+    const [formCategoriesList, setFormCategoriesList] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCategory, setFilterCategory] = useState('');
     const [showAddDrawer, setShowAddDrawer] = useState(false);
@@ -31,20 +31,48 @@ const Expenses = () => {
     }, [selectedBranch]);
 
     useEffect(() => {
-        loadExpenses();
+        const fetchFormCats = async () => {
+            try {
+                const cats = await fetchExpenseCategories(newExpense.branchId);
+                setFormCategoriesList(cats || []);
+            } catch (error) {
+                console.error('Failed to fetch form categories', error);
+            }
+        };
+        if (newExpense.branchId) {
+            fetchFormCats();
+        }
+    }, [newExpense.branchId]);
+
+    useEffect(() => {
+        loadData();
     }, [selectedBranch]);
 
-    const loadExpenses = async () => {
+    const loadData = async () => {
         try {
             setLoading(true);
-            const data = await fetchExpenses(selectedBranch);
+            const [data, cats] = await Promise.all([
+                fetchExpenses(selectedBranch),
+                fetchExpenseCategories(selectedBranch)
+            ]);
             setExpenses(data);
+            setCategoriesList(cats || []);
         } catch (error) {
-            console.error('Failed to fetch expenses', error);
+            console.error('Failed to fetch data', error);
         } finally {
             setLoading(false);
         }
     };
+
+    const dynamicCategories = useMemo(() => {
+        const list = categoriesList.map(c => c.name);
+        return list.length > 0 ? list : ['Rent', 'Maintenance', 'Salary', 'Utilities', 'Marketing', 'Supplies', 'Others'];
+    }, [categoriesList]);
+
+    const dynamicFormCategories = useMemo(() => {
+        const list = formCategoriesList.map(c => c.name);
+        return list.length > 0 ? list : ['Rent', 'Maintenance', 'Salary', 'Utilities', 'Marketing', 'Supplies', 'Others'];
+    }, [formCategoriesList]);
 
     const filteredExpenses = expenses.filter(expense => {
         const matchesSearch = expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -56,7 +84,7 @@ const Expenses = () => {
     const totalExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
     // Category-wise breakdown for the month
-    const categoryBreakdown = CATEGORIES.map(cat => {
+    const categoryBreakdown = dynamicCategories.map(cat => {
         const amount = expenses.filter(e => e.category === cat).reduce((sum, exp) => sum + Number(exp.amount), 0);
         const percentage = totalExpenses > 0 ? (amount / totalExpenses) * 100 : 0;
         return { category: cat, amount, percentage };
@@ -196,7 +224,7 @@ const Expenses = () => {
                                 className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-200 rounded-2xl text-sm font-bold focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/20 focus:bg-white transition-all appearance-none cursor-pointer"
                             >
                                 <option value="">All Categories</option>
-                                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                {dynamicCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
                         </div>
                     </div>
@@ -375,7 +403,7 @@ const Expenses = () => {
                                 className="w-full px-5 py-4 border-2 border-slate-100 rounded-[24px] focus:border-violet-500 outline-none font-bold text-gray-900 transition-all bg-slate-50/50 appearance-none cursor-pointer"
                             >
                                 <option value="">Select</option>
-                                {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                {dynamicFormCategories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                             </select>
                         </div>
                         <div className="space-y-2">

@@ -2,11 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Edit2, MapPin, Search, Building2, Phone, Mail, Eye, Trash2, Loader, Clock, User, Globe, Navigation, Hash } from 'lucide-react';
 import { fetchBranches, createBranch, updateBranch, deleteBranch } from '../../../api/superadmin/branchApi';
+import { getAllStaff } from '../../../api/manager/managerApi';
 import { toast } from 'react-hot-toast';
 import RightDrawer from '../../../components/common/RightDrawer';
+import { useBranchContext } from '../../../context/BranchContext';
 
 const BranchList = () => {
     const navigate = useNavigate();
+    const { refreshBranches } = useBranchContext();
     const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
     const [isViewDrawerOpen, setIsViewDrawerOpen] = useState(false);
     const [isEditDrawerOpen, setIsEditDrawerOpen] = useState(false);
@@ -14,9 +17,10 @@ const BranchList = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     const [branches, setBranches] = useState([]);
+    const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Updated formData structure
+    // Updated formData structure to separate Branch and Manager info
     const [formData, setFormData] = useState({
         branchName: '',
         branchCode: '',
@@ -25,17 +29,30 @@ const BranchList = () => {
         state: '',
         postalCode: '',
         country: 'India',
-        phone: '',
-        email: '',
+        branchPhone: '',
+        branchEmail: '',
         openingTime: '06:00',
         closingTime: '22:00',
-        manager: 'No manager',
+        managerId: 'No manager',
+        managerName: '',
+        managerEmail: '',
+        managerPhone: '',
         status: 'Active'
     });
 
     useEffect(() => {
         loadBranches();
+        loadStaff();
     }, []);
+
+    const loadStaff = async () => {
+        try {
+            const data = await getAllStaff();
+            setStaffList(data || []);
+        } catch (error) {
+            console.error('Failed to load staff for manager selection:', error);
+        }
+    };
 
     const loadBranches = async () => {
         try {
@@ -57,9 +74,6 @@ const BranchList = () => {
 
     const handleEditBranch = (branch) => {
         setSelectedBranch(branch);
-        // Map backend fields back to form for editing
-        // We initialize with empty values for fields that might not exist in backend
-        // to ensure we don't show "duplicate" data from a previous branch
         setFormData({
             branchName: branch.branchName || branch.gymName || '',
             branchCode: branch.branchCode || `BR-${branch.id?.toString().padStart(3, '0')}`,
@@ -68,11 +82,14 @@ const BranchList = () => {
             state: branch.state || '',
             postalCode: branch.postalCode || '',
             country: branch.country || 'India',
-            phone: branch.phone || '',
-            email: branch.email || '',
+            branchPhone: branch.phone || '',
+            branchEmail: branch.email || '',
             openingTime: branch.openingTime || '06:00',
             closingTime: branch.closingTime || '22:00',
-            manager: branch.owner || branch.manager || 'No manager',
+            managerId: branch.managerId || 'No manager',
+            managerName: branch.managerName || branch.owner || '',
+            managerEmail: branch.managerEmail || '',
+            managerPhone: branch.phone || '',
             status: branch.status || 'Active'
         });
         setIsEditDrawerOpen(true);
@@ -84,6 +101,7 @@ const BranchList = () => {
                 await deleteBranch(id);
                 toast.success('Branch deleted successfully');
                 loadBranches();
+                refreshBranches();
             } catch (error) {
                 console.error('Failed to delete branch:', error);
                 toast.error('Failed to delete branch');
@@ -101,8 +119,8 @@ const BranchList = () => {
 
     const handleSaveBranch = async () => {
         try {
-            if (!formData.branchName || !formData.email) {
-                toast.error('Branch Name and Email are required');
+            if (!formData.branchName || !formData.managerEmail) {
+                toast.error('Branch Name and Manager Email are required');
                 return;
             }
 
@@ -112,16 +130,16 @@ const BranchList = () => {
                 gymName: formData.branchName,
                 branchName: formData.branchName,
                 branchCode: formData.branchCode,
-                owner: formData.manager === 'No manager' ? '' : formData.manager,
-                manager: formData.manager,
-                phone: formData.phone,
+                owner: formData.managerName,
+                manager: formData.managerName,
+                email: formData.managerEmail,
+                phone: formData.managerPhone || formData.branchPhone,
                 location: combinedLocation,
                 address: formData.address,
                 city: formData.city,
                 state: formData.state,
                 postalCode: formData.postalCode,
                 country: formData.country,
-                email: formData.email,
                 openingTime: formData.openingTime,
                 closingTime: formData.closingTime,
                 status: formData.status
@@ -132,6 +150,7 @@ const BranchList = () => {
             setIsAddDrawerOpen(false);
             resetForm();
             loadBranches();
+            refreshBranches();
         } catch (error) {
             console.error('Failed to save branch:', error);
             const errMsg = error.response?.data?.message || error.message || 'Failed to create branch';
@@ -148,11 +167,14 @@ const BranchList = () => {
             state: '',
             postalCode: '',
             country: 'India',
-            phone: '',
-            email: '',
+            branchPhone: '',
+            branchEmail: '',
             openingTime: '06:00',
             closingTime: '22:00',
-            manager: 'No manager',
+            managerId: 'No manager',
+            managerName: '',
+            managerEmail: '',
+            managerPhone: '',
             status: 'Active'
         });
     };
@@ -166,16 +188,16 @@ const BranchList = () => {
                 gymName: formData.branchName,
                 branchName: formData.branchName,
                 branchCode: formData.branchCode,
-                owner: formData.manager === 'No manager' ? '' : formData.manager,
-                manager: formData.manager,
-                phone: formData.phone,
+                owner: formData.managerName,
+                manager: formData.managerName,
+                phone: formData.managerPhone || formData.branchPhone,
                 location: combinedLocation,
                 address: formData.address,
                 city: formData.city,
                 state: formData.state,
                 postalCode: formData.postalCode,
                 country: formData.country,
-                email: formData.email,
+                email: formData.managerEmail,
                 openingTime: formData.openingTime,
                 closingTime: formData.closingTime,
                 status: formData.status
@@ -184,6 +206,7 @@ const BranchList = () => {
             toast.success('Branch updated successfully');
             setIsEditDrawerOpen(false);
             loadBranches();
+            refreshBranches();
         } catch (error) {
             console.error('Failed to update branch:', error);
             toast.error('Failed to update branch');
@@ -302,9 +325,12 @@ const BranchList = () => {
                                     <td className="px-8 py-6 hidden lg:table-cell font-bold">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-[10px] text-slate-500 border border-white flex-shrink-0">
-                                                {branch.owner?.[0] || 'M'}
+                                                {(branch.managerName || branch.owner)?.[0] || 'M'}
                                             </div>
-                                            <span className="text-sm text-slate-700 truncate">{branch.owner || 'Not Assigned'}</span>
+                                            <div className="flex flex-col">
+                                                <span className="text-sm text-slate-700 truncate font-black">{branch.managerName || branch.owner || 'Not Assigned'}</span>
+                                                {branch.managerEmail && <span className="text-[10px] text-slate-400 font-bold tracking-tight lowercase">{branch.managerEmail}</span>}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 hidden xl:table-cell font-bold">
@@ -392,10 +418,10 @@ const BranchList = () => {
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4 pt-2">
-                                    {branch.owner && (
+                                    {(branch.managerName || branch.owner) && (
                                         <div>
                                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Manager</p>
-                                            <p className="text-[11px] font-bold text-slate-700">{branch.owner}</p>
+                                            <p className="text-[11px] font-black text-slate-700">{branch.managerName || branch.owner}</p>
                                         </div>
                                     )}
                                     {branch.phone && (
@@ -429,13 +455,13 @@ const BranchList = () => {
                         <button
                             type="button"
                             onClick={() => setIsAddDrawerOpen(false)}
-                            className="px-6 h-11 border-2 border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+                            className="px-6 h-11 border-2 border-slate-200 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all font-black uppercase tracking-widest text-[10px]"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleSaveBranch}
-                            className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all font-black uppercase tracking-widest text-xs"
+                            className="px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold hover:shadow-lg hover:shadow-violet-500/30 transition-all font-black uppercase tracking-widest text-[10px]"
                         >
                             Create Branch
                         </button>
@@ -546,31 +572,137 @@ const BranchList = () => {
                         </div>
                     </div>
 
-                    {/* Section 3: Contact & Operations */}
+                    {/* Section 3: Manager Configuration */}
                     <div>
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
                             <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">3</span>
-                            Contact & Operations
+                            Manager Configuration
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="bg-slate-50 rounded-2xl p-5 space-y-4 border border-slate-100">
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Phone</label>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Assign Manager</label>
+                                <select
+                                    name="managerId"
+                                    value={formData.managerId}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === 'No manager') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                managerId: 'No manager',
+                                                managerName: '',
+                                                managerEmail: '',
+                                                managerPhone: ''
+                                            }));
+                                        } else if (val === 'new') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                managerId: 'new',
+                                                managerName: '',
+                                                managerEmail: '',
+                                                managerPhone: ''
+                                            }));
+                                        } else {
+                                            const selectedStaff = staffList.find(s => s.id.toString() === val);
+                                            if (selectedStaff) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    managerId: val,
+                                                    managerName: selectedStaff.name,
+                                                    managerEmail: selectedStaff.email,
+                                                    managerPhone: selectedStaff.phone || ''
+                                                }));
+                                            }
+                                        }
+                                    }}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold shadow-sm"
+                                >
+                                    <option value="No manager">No manager (Draft)</option>
+                                    <optgroup label="Direct Assignment">
+                                        <option value="new">+ Register New Manager Account</option>
+                                    </optgroup>
+                                    {staffList.length > 0 && (
+                                        <optgroup label="Select Existing Staff">
+                                            {staffList.map(staff => (
+                                                <option key={staff.id} value={staff.id}>
+                                                    {staff.name} ({staff.role})
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                </select>
+                            </div>
+
+                            {(formData.managerId !== 'No manager') && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300 text-left">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Full Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Manager Name"
+                                            value={formData.managerName}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerName: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Email (Login ID)</label>
+                                        <input
+                                            type="email"
+                                            placeholder="Login Email"
+                                            value={formData.managerEmail}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerEmail: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                            disabled={formData.managerId !== 'new'}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Phone</label>
+                                        <input
+                                            type="tel"
+                                            placeholder="Contact Number"
+                                            value={formData.managerPhone}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerPhone: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-bold text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                        />
+                                    </div>
+                                    {formData.managerId === 'new' && (
+                                        <div className="sm:col-span-2 bg-violet-50 p-3 rounded-xl border border-violet-100">
+                                            <p className="text-[10px] text-violet-600 font-bold leading-relaxed tracking-tight">
+                                                Note: A new manager account will be created with default password 123456
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Section 4: Contact & Operations */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">4</span>
+                            Branch Contact & Ops
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Phone</label>
                                 <input
                                     type="tel"
-                                    name="phone"
+                                    name="branchPhone"
                                     placeholder="+91 9876543210"
-                                    value={formData.phone}
+                                    value={formData.branchPhone}
                                     onChange={handleInputChange}
                                     className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Email</label>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Email (Public)</label>
                                 <input
                                     type="email"
-                                    name="email"
-                                    placeholder="branch@gym.com"
-                                    value={formData.email}
+                                    name="branchEmail"
+                                    placeholder="contact@branch.com"
+                                    value={formData.branchEmail}
                                     onChange={handleInputChange}
                                     className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold placeholder:font-bold"
                                 />
@@ -594,19 +726,6 @@ const BranchList = () => {
                                     onChange={handleInputChange}
                                     className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
                                 />
-                            </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Assign Manager</label>
-                                <select
-                                    name="manager"
-                                    value={formData.manager}
-                                    onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
-                                >
-                                    <option value="No manager">No manager</option>
-                                    <option value="John Doe">John Doe</option>
-                                    <option value="Jane Smith">Jane Smith</option>
-                                </select>
                             </div>
                         </div>
                     </div>
@@ -655,9 +774,9 @@ const BranchList = () => {
                                 {[
                                     ['Branch Name', selectedBranch.gymName || selectedBranch.branchName || 'N/A'],
                                     ['Branch Code', selectedBranch.branchCode || `BR-${selectedBranch.id}`],
-                                    ['Primary Manager', selectedBranch.owner || selectedBranch.manager || 'Unassigned'],
-                                    ['Email', selectedBranch.email || 'N/A'],
-                                    ['Phone', selectedBranch.phone || 'N/A'],
+                                    ['Primary Manager', selectedBranch.managerName || selectedBranch.owner || 'Unassigned'],
+                                    ['Manager Email', selectedBranch.managerEmail || 'N/A'],
+                                    ['Branch Phone', selectedBranch.phone || 'N/A'],
                                     ['Operational Address', selectedBranch.address || selectedBranch.location || 'N/A'],
                                     ['City', selectedBranch.city || '—'],
                                     ['State', selectedBranch.state || '—'],
@@ -691,7 +810,7 @@ const BranchList = () => {
                     </div>
                 }
             >
-                <div className="px-6 py-6 space-y-8 font-black">
+                <div className="px-6 py-6 space-y-8 font-black leading-tight text-left">
                     {/* Section 1: Core Information */}
                     <div>
                         <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
@@ -707,7 +826,7 @@ const BranchList = () => {
                                     placeholder="Enter branch name"
                                     value={formData.branchName}
                                     onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
                                 />
                             </div>
                             <div>
@@ -718,68 +837,185 @@ const BranchList = () => {
                                     placeholder="e.g., BR01"
                                     value={formData.branchCode}
                                     onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
                                 />
                             </div>
-                            <div className="sm:col-span-2">
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Operational Address</label>
-                                <textarea
-                                    name="address"
-                                    rows={3}
-                                    placeholder="Address details"
-                                    value={formData.address}
+                        </div>
+                    </div>
+
+                    {/* Section 2: Address */}
+                    <div className="space-y-4">
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">2</span>
+                            Location Details
+                        </h3>
+                        <div>
+                            <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Operational Address</label>
+                            <textarea
+                                name="address"
+                                rows={3}
+                                placeholder="Address details"
+                                value={formData.address}
+                                onChange={handleInputChange}
+                                className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all resize-none font-black"
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">City</label>
+                                <input
+                                    type="text"
+                                    name="city"
+                                    placeholder="City"
+                                    value={formData.city}
                                     onChange={handleInputChange}
-                                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all resize-none font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
                                 />
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
-                                <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">City</label>
-                                    <input
-                                        type="text"
-                                        name="city"
-                                        placeholder="City"
-                                        value={formData.city}
-                                        onChange={handleInputChange}
-                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">State</label>
-                                    <input
-                                        type="text"
-                                        name="state"
-                                        placeholder="State"
-                                        value={formData.state}
-                                        onChange={handleInputChange}
-                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                    />
-                                </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">State</label>
+                                <input
+                                    type="text"
+                                    name="state"
+                                    placeholder="State"
+                                    value={formData.state}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
+                                />
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:col-span-2">
-                                <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Postal Code</label>
-                                    <input
-                                        type="text"
-                                        name="postalCode"
-                                        placeholder="Postal Code"
-                                        value={formData.postalCode}
-                                        onChange={handleInputChange}
-                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Country</label>
-                                    <input
-                                        type="text"
-                                        name="country"
-                                        placeholder="Country"
-                                        value={formData.country}
-                                        onChange={handleInputChange}
-                                        className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                    />
-                                </div>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Postal Code</label>
+                                <input
+                                    type="text"
+                                    name="postalCode"
+                                    placeholder="ZIP/Postal Code"
+                                    value={formData.postalCode}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
+                                />
                             </div>
+                            <div>
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Country</label>
+                                <input
+                                    type="text"
+                                    name="country"
+                                    placeholder="Country"
+                                    value={formData.country}
+                                    onChange={handleInputChange}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Section 3: Manager Configuration */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">3</span>
+                            Manager Configuration
+                        </h3>
+                        <div className="bg-slate-50 rounded-2xl p-5 space-y-4 border border-slate-100">
+                            <div>
+                                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Assign Manager</label>
+                                <select
+                                    name="managerId"
+                                    value={formData.managerId}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (val === 'No manager') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                managerId: 'No manager',
+                                                managerName: '',
+                                                managerEmail: '',
+                                                managerPhone: ''
+                                            }));
+                                        } else if (val === 'new') {
+                                            setFormData(prev => ({
+                                                ...prev,
+                                                managerId: 'new',
+                                                managerName: '',
+                                                managerEmail: '',
+                                                managerPhone: ''
+                                            }));
+                                        } else {
+                                            const selectedStaff = staffList.find(s => s.id.toString() === val);
+                                            if (selectedStaff) {
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    managerId: val,
+                                                    managerName: selectedStaff.name,
+                                                    managerEmail: selectedStaff.email,
+                                                    managerPhone: selectedStaff.phone || ''
+                                                }));
+                                            }
+                                        }
+                                    }}
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-black shadow-sm"
+                                >
+                                    <option value="No manager">No manager (Draft)</option>
+                                    <optgroup label="Direct Assignment">
+                                        <option value="new">+ Register New Manager Account</option>
+                                    </optgroup>
+                                    {staffList.length > 0 && (
+                                        <optgroup label="Select Existing Staff">
+                                            {staffList.map(staff => (
+                                                <option key={staff.id} value={staff.id}>
+                                                    {staff.name} ({staff.role})
+                                                </option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                </select>
+                            </div>
+
+                            {(formData.managerId !== 'No manager') && (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <div className="sm:col-span-2">
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Full Name</label>
+                                        <input
+                                            type="text"
+                                            placeholder="Manager Name"
+                                            value={formData.managerName}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerName: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-black text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Email</label>
+                                        <input
+                                            type="email"
+                                            placeholder="Email"
+                                            value={formData.managerEmail}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerEmail: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-black text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                            disabled={formData.managerId !== 'new'}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Manager Phone</label>
+                                        <input
+                                            type="tel"
+                                            placeholder="Phone"
+                                            value={formData.managerPhone}
+                                            onChange={(e) => setFormData(prev => ({ ...prev, managerPhone: e.target.value }))}
+                                            className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 bg-white text-sm font-black text-slate-700 outline-none focus:border-violet-400 transition-all font-black"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Section 4: Operations */}
+                    <div>
+                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2 leading-none">
+                            <span className="w-5 h-5 rounded-full bg-violet-600 text-white flex items-center justify-center text-[10px] font-black">4</span>
+                            Operations & Status
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Opening Time</label>
                                 <input
@@ -787,7 +1023,7 @@ const BranchList = () => {
                                     name="openingTime"
                                     value={formData.openingTime}
                                     onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
                                 />
                             </div>
                             <div>
@@ -797,59 +1033,24 @@ const BranchList = () => {
                                     name="closingTime"
                                     value={formData.closingTime}
                                     onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-black"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Phone</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    placeholder="Phone number"
-                                    value={formData.phone}
-                                    onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email address"
-                                    value={formData.email}
-                                    onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all font-bold"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Location Status</label>
+                            <div className="sm:col-span-2">
+                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Branch Status</label>
                                 <select
                                     name="status"
                                     value={formData.status}
                                     onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
+                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-black"
                                 >
                                     <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
                                     <option value="Suspended">Suspended</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-black text-slate-500 uppercase tracking-wider mb-1.5 ml-1">Assign Manager</label>
-                                <select
-                                    name="manager"
-                                    value={formData.manager}
-                                    onChange={handleInputChange}
-                                    className="w-full h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm text-slate-800 bg-white outline-none transition-all appearance-none cursor-pointer font-bold"
-                                >
-                                    <option value="No manager">No manager</option>
-                                    <option value="John Doe">John Doe</option>
-                                    <option value="Jane Smith">Jane Smith</option>
                                 </select>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </RightDrawer>
         </div>

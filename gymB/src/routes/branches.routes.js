@@ -1,7 +1,7 @@
 // gym_backend/src/routes/branches.routes.js
 const express = require('express');
 const router = express.Router();
-const { protect, authorize } = require('../middleware/auth.middleware');
+const { protect } = require('../middleware/auth.middleware');
 const prisma = require('../config/prisma');
 
 router.use(protect);
@@ -9,7 +9,6 @@ router.use(protect);
 router.get('/', async (req, res) => {
     try {
         const { role, tenantId, email, name } = req.user;
-        console.log(`Fetching branches for user: ${email}, role: ${role}, tenantId: ${tenantId}, name: ${name}`);
         let where = {};
 
         if (role === 'SUPER_ADMIN') {
@@ -39,7 +38,6 @@ router.get('/', async (req, res) => {
             name: b.branchName || b.name
         }));
 
-        console.log(`[BACKEND] Found ${formatted.length} branches for user`);
         res.json({ data: formatted });
     } catch (error) {
         console.error('Fetch branches error:', error);

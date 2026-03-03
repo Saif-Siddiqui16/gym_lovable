@@ -253,7 +253,6 @@ const Payroll = () => {
                                                         </span>
                                                     </div>
                                                 </td>
-<<<<<<< HEAD
                                                 <td className="px-8 py-6 text-right relative">
                                                     <button
                                                         onClick={(e) => {
@@ -262,21 +261,6 @@ const Payroll = () => {
                                                         }}
                                                         className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors"
                                                     >
-=======
-                                                <td className="px-6 py-4 text-sm font-bold text-slate-800" data-label="Salary">
-                                                    ₹{staff.baseSalary ? staff.baseSalary.toLocaleString() : '25,000'}
-                                                </td>
-                                                <td className="px-6 py-4" data-label="Status">
-                                                    <div className="flex justify-end sm:justify-start">
-                                                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full ${staff.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                                                            <div className={`w-1.5 h-1.5 rounded-full ${staff.status === 'Active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                                                            <span className="text-[10px] font-black uppercase tracking-widest">{staff.status || 'Unknown'}</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-right" data-label="Actions">
-                                                    <button className="p-2 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-indigo-50 transition-colors">
->>>>>>> 948ec5a17712b94d7fe374cc50c9fdc95095a78d
                                                         <MoreHorizontal size={18} />
                                                     </button>
 
@@ -307,164 +291,206 @@ const Payroll = () => {
                                         ))
                                     )}
                                 </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                            </table >
+                        </div >
+                    </div >
+                </div >
             )}
 
             {/* Payroll Tab UI */}
-            {activeTab === 'Payroll' && (
-                <div className="max-w-7xl mx-auto space-y-6">
-                    {/* Header: Payroll Processing */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Payroll Processing</h2>
-                            <p className="text-slate-500 text-sm font-medium mt-1">Select month to process</p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <input
-                                    type="month"
-                                    defaultValue="2026-02"
-                                    className="h-10 pl-4 pr-10 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring-4 focus:ring-slate-100 text-sm font-medium text-slate-700 bg-slate-50 outline-none transition-all cursor-pointer w-[200px]"
-                                />
+            {
+                activeTab === 'Payroll' && (
+                    <div className="max-w-7xl mx-auto space-y-6">
+                        {/* Header: Payroll Processing */}
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-black text-slate-800 tracking-tight">Payroll Processing</h2>
+                                <p className="text-slate-500 text-sm font-medium mt-1">Select month to process</p>
                             </div>
-                            <button className="flex items-center gap-2 h-10 px-6 bg-[#f97316] text-white rounded-lg font-bold text-sm tracking-wide hover:bg-[#ea580c] active:scale-95 transition-all shadow-sm">
-                                <span className="italic font-medium">₹</span> Process All
-                            </button>
+                            <div className="flex items-center gap-3">
+                                <div className="relative">
+                                    <input
+                                        type="month"
+                                        defaultValue="2026-02"
+                                        className="h-10 pl-4 pr-10 rounded-lg border border-slate-200 focus:border-slate-300 focus:ring-4 focus:ring-slate-100 text-sm font-medium text-slate-700 bg-slate-50 outline-none transition-all cursor-pointer w-[200px]"
+                                    />
+                                </div>
+                                <button className="flex items-center gap-2 h-10 px-6 bg-[#f97316] text-white rounded-lg font-bold text-sm tracking-wide hover:bg-[#ea580c] active:scale-95 transition-all shadow-sm">
+                                    <span className="italic font-medium">₹</span> Process All
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Payroll Data Table */}
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
-                        <div className="saas-table-wrapper border-0 rounded-none">
-                            <table className="saas-table saas-table-responsive">
-                                <thead>
-                                    <tr className="border-b border-slate-100 bg-slate-50">
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Days</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Pay</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PT Commission</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Gross</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PF (12%)</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Pay</th>
-                                        <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100/50">
-                                    <tr>
-                                        <td colSpan="8" className="py-20 text-center pointer-events-none" data-label="Status">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <Banknote size={48} className="text-slate-300 mb-4 stroke-1" />
-                                                <p className="text-slate-400 font-medium text-sm">No active employees for payroll</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        {/* Payroll Data Table */}
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mt-6">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 bg-slate-50">
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Days</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Pay</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PT Commission</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Gross</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">PF (12%)</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Net Pay</th>
+                                            <th className="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100/50">
+                                        <tr>
+                                            <td colSpan="8" className="py-20 text-center pointer-events-none" data-label="Status">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <Banknote size={48} className="text-slate-300 mb-4 stroke-1" />
+                                                    <p className="text-slate-400 font-medium text-sm">No active employees for payroll</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Payroll Summary Section */}
-                    <div className="bg-slate-50 rounded-xl p-6 mt-6 border border-slate-100">
-                        <h3 className="text-base font-bold text-slate-800 mb-6">Payroll Summary - February 2026</h3>
-                        <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 gap-y-8">
-                            <div>
-                                <p className="text-xs font-medium text-slate-400 mb-1">Pro-rated Base</p>
-                                <p className="text-xl font-black text-slate-800">₹0</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-slate-400 mb-1">PT Commission</p>
-                                <p className="text-xl font-black text-emerald-500">+₹0</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-slate-400 mb-1">Gross Pay</p>
-                                <p className="text-xl font-black text-slate-800">₹0</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-slate-400 mb-1">Total Deductions</p>
-                                <p className="text-xl font-black text-rose-500">-₹0</p>
-                            </div>
-                            <div>
-                                <p className="text-xs font-medium text-slate-400 mb-1">Net Payable</p>
-                                <p className="text-xl font-black text-emerald-500">₹0</p>
+                        {/* Payroll Summary Section */}
+                        <div className="bg-slate-50 rounded-xl p-6 mt-6 border border-slate-100">
+                            <h3 className="text-base font-bold text-slate-800 mb-6">Payroll Summary - February 2026</h3>
+                            <div className="grid grid-cols-2 lg:grid-cols-5 gap-6 gap-y-8">
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Pro-rated Base</p>
+                                    <p className="text-xl font-black text-slate-800">₹0</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-1">PT Commission</p>
+                                    <p className="text-xl font-black text-emerald-500">+₹0</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Gross Pay</p>
+                                    <p className="text-xl font-black text-slate-800">₹0</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Total Deductions</p>
+                                    <p className="text-xl font-black text-rose-500">-₹0</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs font-medium text-slate-400 mb-1">Net Payable</p>
+                                    <p className="text-xl font-black text-emerald-500">₹0</p>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Contracts Tab UI */}
-            {activeTab === 'Contracts' && (
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                        <h2 className="text-xl font-black text-slate-800">All Contracts</h2>
-                    </div>
+            {
+                activeTab === 'Contracts' && (
+                    <div className="max-w-7xl mx-auto">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                            <h2 className="text-xl font-black text-slate-800">All Contracts</h2>
+                        </div>
 
-                    <div className="bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
-                        <div className="saas-table-wrapper border-0 rounded-none">
-                            <table className="saas-table saas-table-responsive">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Start Date</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">End Date</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission %</th>
-                                        <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100/50">
-                                    <tr>
-                                        <td colSpan="7" className="py-24 text-center pointer-events-none" data-label="Status">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                    <FileText size={32} />
+                        <div className="bg-white/60 backdrop-blur-md rounded-2xl md:rounded-[32px] shadow-sm border border-white/50 overflow-hidden">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive">
+                                    <thead>
+                                        <tr className="bg-slate-50 border-b border-slate-100">
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Employee</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Type</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Start Date</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">End Date</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Base Salary</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Commission %</th>
+                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100/50">
+                                        <tr>
+                                            <td colSpan="7" className="py-24 text-center pointer-events-none" data-label="Status">
+                                                <div className="flex flex-col items-center justify-center">
+                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                        <FileText size={32} />
+                                                    </div>
+                                                    <h3 className="text-xl font-black text-slate-800">No contracts found</h3>
+                                                    <p className="text-slate-500 text-sm mt-2 font-medium">There are no contracts matching the criteria.</p>
                                                 </div>
-                                                <h3 className="text-xl font-black text-slate-800">No contracts found</h3>
-                                                <p className="text-slate-500 text-sm mt-2 font-medium">There are no contracts matching the criteria.</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Attendance Tab UI */}
-            {activeTab === 'Attendance' && (
-                <div className="max-w-7xl mx-auto space-y-8">
-                    {/* Section 1: Currently On Duty */}
-                    <div>
-                        <div className="flex flex-col mb-6">
-                            <h2 className="text-xl font-black text-slate-800">Currently On Duty</h2>
-                            <p className="text-slate-500 text-sm font-medium mt-1">Staff currently checked in</p>
+            {
+                activeTab === 'Attendance' && (
+                    <div className="max-w-7xl mx-auto space-y-8">
+                        {/* Section 1: Currently On Duty */}
+                        <div>
+                            <div className="flex flex-col mb-6">
+                                <h2 className="text-xl font-black text-slate-800">Currently On Duty</h2>
+                                <p className="text-slate-500 text-sm font-medium mt-1">Staff currently checked in</p>
+                            </div>
+
+                            <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
+                                <div className="overflow-x-auto custom-scrollbar">
+                                    <div className="saas-table-wrapper border-0 rounded-none">
+                                        <table className="saas-table saas-table-responsive">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-100">
+                                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
+                                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in Time</th>
+                                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
+                                                    <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100/50">
+                                                <tr>
+                                                    <td colSpan="4" className="py-24 text-center pointer-events-none" data-label="Status">
+                                                        <div className="flex flex-col items-center justify-center">
+                                                            <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                                <Clock size={32} />
+                                                            </div>
+                                                            <h3 className="text-xl font-black text-slate-800">No staff currently on duty</h3>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
-                            <div className="overflow-x-auto custom-scrollbar">
+                        {/* Section 2: Today’s Attendance Log */}
+                        <div>
+                            <div className="flex flex-col mb-6">
+                                <h2 className="text-xl font-black text-slate-800">Today’s Attendance Log</h2>
+                                <p className="text-slate-500 text-sm font-medium mt-1">All staff check-ins for today</p>
+                            </div>
+
+                            <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
                                 <div className="saas-table-wrapper border-0 rounded-none">
                                     <table className="saas-table saas-table-responsive">
                                         <thead>
                                             <tr className="bg-slate-50 border-b border-slate-100">
                                                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
-                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in Time</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in</th>
+                                                <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-out</th>
                                                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
                                                 <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100/50">
                                             <tr>
-                                                <td colSpan="4" className="py-24 text-center pointer-events-none" data-label="Status">
+                                                <td colSpan="5" className="py-24 text-center pointer-events-none" data-label="Status">
                                                     <div className="flex flex-col items-center justify-center">
                                                         <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                            <Clock size={32} />
+                                                            <Briefcase size={32} />
                                                         </div>
-                                                        <h3 className="text-xl font-black text-slate-800">No staff currently on duty</h3>
+                                                        <h3 className="text-xl font-black text-slate-800">No attendance records for today</h3>
                                                     </div>
                                                 </td>
                                             </tr>
@@ -474,45 +500,9 @@ const Payroll = () => {
                             </div>
                         </div>
                     </div>
-
-                    {/* Section 2: Today’s Attendance Log */}
-                    <div>
-                        <div className="flex flex-col mb-6">
-                            <h2 className="text-xl font-black text-slate-800">Today’s Attendance Log</h2>
-                            <p className="text-slate-500 text-sm font-medium mt-1">All staff check-ins for today</p>
-                        </div>
-
-                        <div className="bg-white/60 backdrop-blur-md rounded-2xl shadow-sm border border-white/50 overflow-hidden">
-                            <div className="saas-table-wrapper border-0 rounded-none">
-                                <table className="saas-table saas-table-responsive">
-                                    <thead>
-                                        <tr className="bg-slate-50 border-b border-slate-100">
-                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Staff</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-in</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Check-out</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Duration</th>
-                                            <th className="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100/50">
-                                        <tr>
-                                            <td colSpan="5" className="py-24 text-center pointer-events-none" data-label="Status">
-                                                <div className="flex flex-col items-center justify-center">
-                                                    <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                                                        <Briefcase size={32} />
-                                                    </div>
-                                                    <h3 className="text-xl font-black text-slate-800">No attendance records for today</h3>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 };
 
