@@ -14,6 +14,7 @@ const {
     collectPayment,
     getMembers,
     getMemberById,
+    addMember,
     getAttendanceReport,
     getBookingReport,
     getTodaysCheckIns
@@ -25,8 +26,9 @@ const router = express.Router();
 router.use(protect);
 router.use(authorize('STAFF', 'SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'));
 
-// Members read-only
+// Members
 router.get('/members', getMembers);
+router.post('/members', addMember);
 router.get('/members/search', searchMembers);
 router.get('/members/:id', getMemberById);
 

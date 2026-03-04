@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Users,
     UserCheck,
@@ -11,36 +11,130 @@ import {
     Clock,
     LayoutDashboard,
     ChevronRight,
-    Search,
-    Calendar,
-    Bell,
-    Check
+    Loader
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../../../components/ui/Card';
 import StatsCard from '../components/StatsCard';
 import DashboardGrid from '../components/DashboardGrid';
+import { useAuth } from '../../../context/AuthContext';
+import apiClient from '../../../api/apiClient';
 
 const StaffDashboard = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    const [dashData, setDashData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const today = new Date().toLocaleDateString('en-IN', {
+        weekday: 'long', day: '2-digit', month: 'short', year: 'numeric'
+    });
+
+    // Fetch all dashboard data in one go
+    useEffect(() => {
+        const fetchAll = async () => {
+            try {
+                setLoading(true);
+                const tenantId = user?.tenantId;
+
+                const [
+                    checkInsRes,
+                    invoicesRes,
+                    leadsRes,
+                    expiringRes,
+                    tasksRes,
+                    branchRes
+                ] = await Promise.allSettled([
+                    apiClient.get('/admin/check-ins', { params: { tenantId, limit: 5 } }),
+                    apiClient.get('/admin/invoices', { params: { tenantId, status: 'Pending', limit: 5 } }),
+                    apiClient.get('/admin/members', { params: { tenantId, status: 'Active', limit: 5 } }),
+                    apiClient.get('/admin/renewal-alerts', { params: { tenantId } }),
+                    apiClient.get('/staff/tasks', { params: { myTasks: true, status: 'Pending', limit: 5 } }),
+                    tenantId ? apiClient.get(`/admin/members`, { params: { tenantId, limit: 1 } }) : Promise.resolve(null),
+                ]);
+
+                // Try to get branch name from user's tenant
+                let branchName = 'Main Branch';
+                if (tenantId) {
+                    try {
+                        const branchesRes = await apiClient.get('/branches');
+                        const myBranch = branchesRes.data?.find(b => b.id === tenantId || b.id === parseInt(tenantId));
+                        if (myBranch) branchName = myBranch.name || myBranch.branchName || 'Main Branch';
+                    } catch { /* Silent */ }
+                }
+
+                const checkIns = checkInsRes.status === 'fulfilled' ? checkInsRes.value.data : [];
+                const invoices = invoicesRes.status === 'fulfilled' ? invoicesRes.value.data : [];
+                const leads = leadsRes.status === 'fulfilled' ? leadsRes.value.data : [];
+                const expiring = expiringRes.status === 'fulfilled' ? expiringRes.value.data : [];
+                const tasks = tasksRes.status === 'fulfilled' ? tasksRes.value.data : [];
+
+                setDashData({
+                    branchName,
+                    checkIns: Array.isArray(checkIns) ? checkIns : [],
+                    invoicesCount: Array.isArray(invoices) ? invoices.length : (invoices?.total || 0),
+                    leads: Array.isArray(leads) ? leads : (leads?.leads || []),
+                    expiring: Array.isArray(expiring) ? expiring : (expiring?.members || []),
+                    tasks: Array.isArray(tasks) ? tasks : (tasks?.tasks || []),
+                    todayCheckIns: Array.isArray(checkIns) ? checkIns.filter(c => {
+                        const d = new Date(c.checkIn || c.createdAt || c.date);
+                        return d.toDateString() === new Date().toDateString();
+                    }).length : 0,
+                });
+            } catch (err) {
+                console.error('StaffDashboard fetch error:', err);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchAll();
+    }, [user?.tenantId]);
 
     const quickActions = [
         { label: 'Check In Member', icon: UserCheck, path: '/staff/attendance/check-in', color: 'bg-emerald-50 text-emerald-600' },
-        { label: 'Open POS', icon: '/finance/pos', customIcon: ShoppingCart, color: 'bg-blue-50 text-blue-600' },
-        { label: 'Add Lead', icon: '/crm/inquiry', customIcon: UserPlus, color: 'bg-amber-50 text-amber-600' },
-        { label: 'View Invoices', icon: '/finance/invoices', customIcon: FileText, color: 'bg-rose-50 text-rose-600' },
+        { label: 'Open POS', customIcon: ShoppingCart, path: '/finance/pos', color: 'bg-blue-50 text-blue-600' },
+        { label: 'Add Lead', customIcon: UserPlus, path: '/crm/inquiry', color: 'bg-amber-50 text-amber-600' },
+        { label: 'View Invoices', customIcon: FileText, path: '/finance/invoices', color: 'bg-rose-50 text-rose-600' },
     ];
+
+    const getInitials = (name) => {
+        if (!name) return '??';
+        return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
+    };
+
+    const formatTime = (dt) => {
+        if (!dt) return '—';
+        return new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    };
+
+    const formatDue = (dt) => {
+        if (!dt) return '—';
+        return new Date(dt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    const daysUntilExpiry = (date) => {
+        if (!date) return null;
+        const diff = Math.ceil((new Date(date) - new Date()) / (1000 * 60 * 60 * 24));
+        return diff;
+    };
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 sm:p-8 animate-fadeIn">
-            {/* Header section */}
+            {/* Header */}
             <div className="mb-6 sm:mb-10 relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl sm:rounded-3xl blur-2xl opacity-10"></div>
                 <div className="relative bg-white/80 backdrop-blur-md rounded-2xl sm:rounded-3xl shadow-xl border border-slate-100 p-2 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="space-y-1">
-                        <h1 className="text-xl sm:text-4xl font-black text-slate-900 tracking-tight">Hello, Demo!</h1>
+                        {loading ? (
+                            <div className="h-8 w-48 bg-slate-100 rounded-xl animate-pulse" />
+                        ) : (
+                            <h1 className="text-xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                                Hello, {user?.name?.split(' ')[0] || 'Staff'}!
+                            </h1>
+                        )}
                         <p className="text-slate-500 font-black text-[9px] sm:text-[10px] uppercase tracking-[0.3em]">
-                            Main Branch • Sunday, 01 Mar 2026
+                            {loading ? '...' : dashData?.branchName || 'Main Branch'} • {today}
                         </p>
                     </div>
                     <div className="flex items-center">
@@ -51,7 +145,7 @@ const StaffDashboard = () => {
                 </div>
             </div>
 
-            {/* Quick Actions Section */}
+            {/* Quick Actions */}
             <div className="mb-10">
                 <div className="flex items-center gap-3 mb-6 px-2">
                     <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shadow-sm">
@@ -63,11 +157,11 @@ const StaffDashboard = () => {
                     {quickActions.map((action, idx) => (
                         <button
                             key={idx}
-                            onClick={() => action.path ? navigate(action.path) : action.icon && typeof action.icon === 'string' && navigate(action.icon)}
+                            onClick={() => navigate(action.path)}
                             className="bg-white p-2 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-sm border border-slate-100 hover:shadow-2xl hover:shadow-violet-500/10 hover:border-violet-200 transition-all duration-300 group flex flex-col items-center text-center gap-2 sm:gap-4"
                         >
                             <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl ${action.color} group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-sm`}>
-                                {action.customIcon ? <action.customIcon size={20} className="sm:w-6 sm:h-6" /> : action.icon && typeof action.icon !== 'string' && <action.icon size={20} className="sm:w-6 sm:h-6" />}
+                                {action.customIcon ? <action.customIcon size={20} className="sm:w-6 sm:h-6" /> : <action.icon size={20} className="sm:w-6 sm:h-6" />}
                             </div>
                             <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-600 group-hover:text-violet-600 leading-tight">{action.label}</span>
                         </button>
@@ -75,34 +169,37 @@ const StaffDashboard = () => {
                 </div>
             </div>
 
-            {/* Stats Cards Section */}
+            {/* Stats Cards */}
             <DashboardGrid>
                 <StatsCard
                     title="Today's Check-ins"
-                    value="15"
-                    trend="8 currently in"
+                    value={loading ? '—' : (dashData?.todayCheckIns ?? 0)}
+                    trend={loading ? '' : `${dashData?.checkIns?.length ?? 0} recent`}
                     icon={CheckCircle}
                     color="primary"
                     isEarningsLayout={true}
                 />
                 <StatsCard
                     title="Pending Invoices"
-                    value="5"
+                    value={loading ? '—' : (dashData?.invoicesCount ?? 0)}
                     icon={Receipt}
                     color="danger"
                     isEarningsLayout={true}
                 />
                 <StatsCard
                     title="Active Leads"
-                    value="12"
+                    value={loading ? '—' : (dashData?.leads?.length ?? 0)}
                     icon={GitBranch}
                     color="success"
                     isEarningsLayout={true}
                 />
                 <StatsCard
                     title="Expiring This Week"
-                    value="4"
-                    trend="1 today"
+                    value={loading ? '—' : (dashData?.expiring?.filter(m => {
+                        const days = daysUntilExpiry(m.expiryDate);
+                        return days !== null && days >= 0 && days <= 7;
+                    }).length ?? 0)}
+                    trend={loading ? '' : `${dashData?.expiring?.filter(m => daysUntilExpiry(m.expiryDate) === 0).length ?? 0} today`}
                     icon={Clock}
                     color="warning"
                     isEarningsLayout={true}
@@ -125,24 +222,32 @@ const StaffDashboard = () => {
                             </button>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-emerald-500/5 hover:border-emerald-200 transition-all duration-500 cursor-pointer">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm shadow-inner">
-                                        RM
+                            {loading ? (
+                                [1, 2].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[2rem] animate-pulse" />)
+                            ) : dashData?.checkIns?.length > 0 ? (
+                                dashData.checkIns.slice(0, 4).map((c, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-emerald-500/5 hover:border-emerald-200 transition-all duration-500 cursor-pointer">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600 flex items-center justify-center font-black text-sm shadow-inner">
+                                                {getInitials(c.member?.name || c.user?.name || c.name || 'Member')}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{c.member?.name || c.user?.name || c.name || 'Member'}</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{c.member?.memberId || c.memberId || '—'}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right space-y-1">
+                                            <div className="text-base font-black text-slate-900 tracking-tight">{formatTime(c.checkIn || c.createdAt)}</div>
+                                            <div className="flex items-center gap-1.5 justify-end">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">{c.status || 'Active'}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight ">Regular Member</h4>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">MEM005</p>
-                                    </div>
-                                </div>
-                                <div className="text-right space-y-1">
-                                    <div className="text-base font-black text-slate-900 tracking-tight ">11:58</div>
-                                    <div className="flex items-center gap-1.5 justify-end">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Active</span>
-                                    </div>
-                                </div>
-                            </div>
+                                ))
+                            ) : (
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No check-ins today</div>
+                            )}
                         </div>
                     </Card>
 
@@ -158,20 +263,28 @@ const StaffDashboard = () => {
                             </button>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-violet-500/5 hover:border-violet-200 transition-all duration-500 cursor-pointer">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 text-violet-600 flex items-center justify-center font-black text-sm shadow-inner">
-                                        JD
+                            {loading ? (
+                                [1, 2].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[2rem] animate-pulse" />)
+                            ) : dashData?.leads?.length > 0 ? (
+                                dashData.leads.slice(0, 4).map((lead, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-violet-500/5 hover:border-violet-200 transition-all duration-500 cursor-pointer">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 text-violet-600 flex items-center justify-center font-black text-sm shadow-inner">
+                                                {getInitials(lead.name)}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{lead.name}</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{lead.phone || 'No phone'} {lead.source ? `• ${lead.source}` : ''}</p>
+                                            </div>
+                                        </div>
+                                        <div className={`px-4 py-1.5 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg ${lead.status === 'New' || lead.status === 'new' ? 'bg-violet-600 shadow-violet-100' : 'bg-amber-500 shadow-amber-100'}`}>
+                                            {lead.status || 'New'}
+                                        </div>
                                     </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight ">James Doe</h4>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">123456789 • Instagram</p>
-                                    </div>
-                                </div>
-                                <div className="px-4 py-1.5 bg-violet-600 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-violet-100">
-                                    new
-                                </div>
-                            </div>
+                                ))
+                            ) : (
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No leads found</div>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -190,22 +303,33 @@ const StaffDashboard = () => {
                             </button>
                         </div>
                         <div className="space-y-4">
-                            <div className="flex items-center justify-between p-5 bg-rose-50/50 border border-rose-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-rose-500/5 hover:border-rose-300 transition-all duration-500 cursor-pointer">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-14 h-14 rounded-2xl bg-white text-rose-500 flex items-center justify-center shadow-lg shadow-rose-100/50 border border-rose-100 group-hover:scale-110 transition-transform duration-500">
-                                        <Clock size={28} strokeWidth={2.5} />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight ">Expiring Soon</h4>
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">No phone</p>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="px-4 py-1.5 bg-rose-600 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg shadow-rose-100">
-                                        Today
-                                    </div>
-                                </div>
-                            </div>
+                            {loading ? (
+                                [1, 2].map(i => <div key={i} className="h-20 bg-rose-50 rounded-[2rem] animate-pulse" />)
+                            ) : dashData?.expiring?.length > 0 ? (
+                                dashData.expiring.slice(0, 4).map((m, idx) => {
+                                    const days = daysUntilExpiry(m.expiryDate);
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between p-5 bg-rose-50/50 border border-rose-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-rose-500/5 hover:border-rose-300 transition-all duration-500 cursor-pointer">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 rounded-2xl bg-white text-rose-500 flex items-center justify-center shadow-lg shadow-rose-100/50 border border-rose-100 group-hover:scale-110 transition-transform duration-500">
+                                                    <Clock size={28} strokeWidth={2.5} />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{m.name}</h4>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{m.phone || 'No phone'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className={`px-4 py-1.5 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg ${days === 0 ? 'bg-rose-600 shadow-rose-100' : 'bg-amber-500 shadow-amber-100'}`}>
+                                                    {days === 0 ? 'Today' : days !== null ? `${days}d left` : 'Expired'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            ) : (
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No expiring memberships</div>
+                            )}
                         </div>
                     </Card>
 
@@ -221,27 +345,30 @@ const StaffDashboard = () => {
                             </button>
                         </div>
                         <div className="space-y-5">
-                            {[
-                                { task: "Clean equipment", due: "01 Mar 2026" },
-                                { task: "Follow up with leads", due: "01 Mar 2026" }
-                            ].map((item, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-amber-500/5 hover:border-amber-200 transition-all duration-500 cursor-pointer">
-                                    <div className="flex items-center gap-5">
-                                        <div className="w-10 h-10 rounded-xl bg-white text-slate-400 flex items-center justify-center border border-slate-200 group-hover:bg-amber-50 group-hover:text-amber-500 group-hover:border-amber-200 transition-all duration-300 shadow-sm">
-                                            <div className="w-4 h-4 border-2 border-current rounded-md" />
+                            {loading ? (
+                                [1, 2].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[2rem] animate-pulse" />)
+                            ) : dashData?.tasks?.length > 0 ? (
+                                dashData.tasks.slice(0, 5).map((task, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-amber-500/5 hover:border-amber-200 transition-all duration-500 cursor-pointer">
+                                        <div className="flex items-center gap-5">
+                                            <div className="w-10 h-10 rounded-xl bg-white text-slate-400 flex items-center justify-center border border-slate-200 group-hover:bg-amber-50 group-hover:text-amber-500 group-hover:border-amber-200 transition-all duration-300 shadow-sm">
+                                                <div className="w-4 h-4 border-2 border-current rounded-md" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-sm font-black text-slate-900 tracking-tight">{task.title || task.task}</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                                                    Due: {formatDue(task.dueDate || task.due)} – <span className="text-amber-600">{task.status || 'Pending'}</span>
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <h4 className="text-sm font-black text-slate-900  tracking-tight">{item.task}</h4>
-                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                                Due: {item.due} – <span className="text-amber-600">pending</span>
-                                            </p>
+                                        <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all duration-300">
+                                            <ChevronRight size={18} />
                                         </div>
                                     </div>
-                                    <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-all duration-300">
-                                        <ChevronRight size={18} />
-                                    </div>
-                                </div>
-                            ))}
+                                ))
+                            ) : (
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No pending tasks</div>
+                            )}
                         </div>
                     </Card>
                 </div>

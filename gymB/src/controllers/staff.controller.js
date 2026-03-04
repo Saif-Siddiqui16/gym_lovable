@@ -102,17 +102,19 @@ const getMembers = async (req, res) => {
             if (rawTargetId && rawTargetId !== 'all' && rawTargetId !== 'undefined') {
                 where.tenantId = parseInt(rawTargetId);
             }
-            // else: {} - returns everything for Super Admin
-        } else {
-            // For other roles, they can only see members of a branch they belong to or manage
-            // If they ask for a specific branch, we should really check if they own it (like admin.controller does)
-            // But for simplicity, we'll allow either the provided targetId or fallback to their userTenantId
+        } else if (role === 'BRANCH_ADMIN' || role === 'MANAGER') {
+            // Allow branch switch for these roles
             if (rawTargetId && rawTargetId !== 'all' && rawTargetId !== 'undefined') {
                 where.tenantId = parseInt(rawTargetId);
             } else {
                 where.tenantId = userTenantId || 1;
             }
+        } else {
+            // For STAFF and others, force their own tenantId
+            where.tenantId = userTenantId || 1;
         }
+
+        console.log(`[getMembers] Fetching for tenantId: ${where.tenantId}, User role: ${role}`);
 
         const members = await prisma.member.findMany({
             where,
@@ -391,6 +393,56 @@ const addLocker = async (req, res) => {
     }
 };
 
+const addMember = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        const {
+            name, email, phone, gender, dob, source, address,
+            referralCode, idType, idNumber,
+            emergencyName, emergencyPhone,
+            fitnessGoal, healthConditions
+        } = req.body;
+
+        if (!name || !email || !phone) {
+            return res.status(400).json({ message: 'Name, email and phone are required' });
+        }
+
+        const targetTenantId = tenantId || 1;
+
+        // Generate unique memberId
+        const count = await prisma.member.count({ where: { tenantId: targetTenantId } });
+        const memberId = `MEM-${String(count + 1).padStart(4, '0')}`;
+
+        const member = await prisma.member.create({
+            data: {
+                memberId,
+                name,
+                email,
+                phone,
+                gender: gender || null,
+                dob: dob || null,
+                source: source || 'Walk-in',
+                address: address || null,
+                referralCode: referralCode || null,
+                idType: idType || null,
+                idNumber: idNumber || null,
+                emergencyName: emergencyName || null,
+                emergencyPhone: emergencyPhone || null,
+                fitnessGoal: fitnessGoal || null,
+                medicalHistory: healthConditions || null,
+                tenantId: targetTenantId,
+                status: 'Active',
+                joinDate: new Date(),
+            }
+        });
+
+        res.status(201).json(member);
+    } catch (error) {
+        console.error('[addMember staff]', error);
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     searchMembers,
     checkIn,
@@ -405,6 +457,7 @@ module.exports = {
     collectPayment,
     getMembers,
     getMemberById,
+    addMember,
     getAttendanceReport,
     getBookingReport,
     getTodaysCheckIns
