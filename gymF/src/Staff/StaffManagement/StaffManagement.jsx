@@ -85,39 +85,45 @@ const StaffManagement = ({ role }) => {
     return (
         <div className="bg-gradient-to-br from-gray-50 via-white to-violet-50/30 min-h-screen p-0 md:p-8 font-sans pb-24 text-slate-800">
 
-            {/* Header */}
-            <div className="max-w-full mx-auto mb-8">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-                            Staff Attendance
-                        </h1>
-                        <p className="text-slate-500 mt-1 font-medium text-sm">
-                            Live attendance tracking for your branch
-                        </p>
-                        {lastRefreshed && (
-                            <p className="text-xs text-slate-400 mt-1">
-                                Last updated: {lastRefreshed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+            {/* Premium Header */}
+            <div className="max-w-full mx-auto mb-10 relative group">
+                <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-[2.5rem] blur-2xl opacity-10 animate-pulse pointer-events-none group-hover:opacity-15 transition-opacity"></div>
+                <div className="relative bg-white/80 backdrop-blur-md rounded-[2.5rem] shadow-xl border border-slate-100 p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 transition-transform duration-300 group-hover:scale-105">
+                            <Users size={28} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent tracking-tight">
+                                Staff Attendance
+                            </h1>
+                            <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">
+                                Live attendance tracking for your branch
                             </p>
-                        )}
+                            {lastRefreshed && (
+                                <p className="text-[10px] text-slate-400 mt-1 font-bold">
+                                    Last updated: {lastRefreshed.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                            )}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
                         {/* Search */}
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <div className="relative flex-1 md:flex-none">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
                                 placeholder="Search staff..."
                                 value={searchTerm}
                                 onChange={e => setSearchTerm(e.target.value)}
-                                className="pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-violet-400 font-medium w-48 shadow-sm"
+                                className="w-full md:w-64 h-11 pl-11 pr-4 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:border-violet-400 font-black uppercase tracking-widest shadow-sm transition-all"
                             />
                         </div>
                         {/* Refresh */}
                         <button
                             onClick={loadData}
                             disabled={loading}
-                            className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition-colors disabled:opacity-50 shadow-sm"
+                            className="h-11 px-6 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:shadow-indigo-500/30 transition-all disabled:opacity-50 shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
                         >
                             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
                             Refresh

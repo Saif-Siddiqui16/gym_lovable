@@ -139,13 +139,13 @@ const Referrals = ({ role }) => {
         return (
             <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-10 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                 {/* Header Section */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 pb-10 border-b-2 border-slate-100">
-                    <div className="flex items-center gap-6">
-                        <div className="w-20 h-20 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-100 animate-in zoom-in duration-500">
-                            <Gift size={40} strokeWidth={2.5} />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 pb-8 sm:pb-10 border-b-2 border-slate-100">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                        <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-3xl bg-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-100 animate-in zoom-in duration-500 shrink-0">
+                            <Gift size={28} className="sm:w-10 sm:h-10" strokeWidth={2.5} />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1 uppercase">
+                            <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1 uppercase">
                                 Refer & <span className="text-indigo-600">Earn</span>
                             </h1>
                             <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
@@ -284,40 +284,53 @@ const Referrals = ({ role }) => {
 
     // Existing Admin/Staff UI
     const kpiCards = [
-        { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'text-blue-500' },
-        { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'text-emerald-500' },
-        { label: 'Pending', value: referrals.filter(r => r.status === 'Pending').length, icon: Clock, color: 'text-amber-500' },
-        { label: 'Total Rewards', value: `₹${referrals.filter(r => r.status === 'Converted').length * 500}`, subtext: 'Potential', icon: Gift, color: 'text-violet-500' }
+        { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'from-blue-500 to-indigo-600', iconColor: 'text-blue-600' },
+        { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'from-emerald-500 to-teal-600', iconColor: 'text-emerald-600' },
+        { label: 'Pending', value: referrals.filter(r => r.status === 'Pending').length, icon: Clock, color: 'from-amber-500 to-orange-600', iconColor: 'text-amber-600' },
+        { label: 'Total Rewards', value: `₹${referrals.filter(r => r.status === 'Converted').length * 500}`, subtext: 'Potential', icon: Gift, color: 'from-violet-500 to-purple-600', iconColor: 'text-violet-600' }
     ];
 
     return (
-        <div className="min-h-screen bg-[#F8F9FA] p-6 lg:p-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-6 lg:p-8">
             <div className="max-w-7xl mx-auto space-y-6">
 
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                        <Shield className="text-indigo-600" /> Referrals & Rewards
-                    </h1>
-                    <button
-                        onClick={() => setIsDrawerOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold transition-all hover:shadow-lg hover:shadow-blue-500/30"
-                    >
-                        <Plus size={18} /> Create Referral
-                    </button>
+                <div className="mb-8 relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-2xl blur-2xl opacity-10 animate-pulse pointer-events-none"></div>
+                    <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-transform duration-300 shrink-0">
+                                <Shield size={24} className="sm:w-7 sm:h-7" />
+                            </div>
+                            <div>
+                                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
+                                    Referrals & Rewards
+                                </h1>
+                                <p className="text-slate-600 text-xs sm:text-sm font-medium mt-1">Manage and track your member referral program</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setIsDrawerOpen(true)}
+                            className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                            <Plus size={18} /> Create Referral
+                        </button>
+                    </div>
                 </div>
 
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {kpiCards.map((kpi, idx) => (
-                        <div key={idx} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-slate-500">{kpi.label}</p>
-                                <kpi.icon size={18} className={kpi.color} />
-                            </div>
-                            <div className="mt-4 flex items-baseline gap-2">
-                                <h3 className={`text-3xl font-bold ${kpi.color}`}>{kpi.value}</h3>
-                                {kpi.subtext && <span className="text-xs text-slate-400">{kpi.subtext}</span>}
+                        <div key={idx} className="bg-white p-6 rounded-2xl shadow-lg border border-slate-100 flex flex-col justify-between h-full group transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5">
+                            <div className="flex items-start justify-between w-full">
+                                <div>
+                                    <p className="text-xs font-semibold text-slate-500 mb-2 uppercase tracking-widest">{kpi.label}</p>
+                                    <h3 className="text-3xl font-black text-slate-900">{kpi.value}</h3>
+                                    {kpi.subtext && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{kpi.subtext}</p>}
+                                </div>
+                                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${kpi.color} flex items-center justify-center text-white shadow-md transition-transform duration-300 group-hover:scale-110`}>
+                                    <kpi.icon size={20} />
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -353,8 +366,8 @@ const Referrals = ({ role }) => {
                         </div>
                     ) : activeTab === 'Referrals' ? (
                         referrals.length > 0 ? (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-left">
+                            <div className="saas-table-wrapper border-0 rounded-none">
+                                <table className="saas-table saas-table-responsive w-full text-left">
                                     <thead className="bg-slate-50/50 text-slate-500 text-xs uppercase font-semibold">
                                         <tr>
                                             <th className="px-6 py-4">Referred Person</th>
@@ -368,20 +381,20 @@ const Referrals = ({ role }) => {
                                     <tbody className="divide-y divide-slate-100">
                                         {referrals.map((ref, idx) => (
                                             <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Referred Person">
                                                     <div className="text-sm font-bold text-slate-900">{ref.referredName}</div>
                                                     <div className="text-xs text-slate-500">{ref.phone}</div>
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Referrer">
                                                     <div className="text-sm font-medium text-slate-900">{ref.referrerName || 'N/A'}</div>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{ref.branchName || '-'}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                <td className="px-6 py-4 text-sm text-slate-500" data-label="Date">
                                                     {new Date(ref.createdAt).toLocaleDateString()}
                                                 </td>
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Status">
                                                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${ref.status === 'Converted' ? 'bg-emerald-100 text-emerald-700' :
                                                         ref.status === 'Pending' ? 'bg-amber-100 text-amber-700' :
                                                             'bg-slate-100 text-slate-700'
@@ -389,7 +402,7 @@ const Referrals = ({ role }) => {
                                                         {ref.status || 'Pending'}
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
+                                                <td className="px-6 py-4 text-sm text-slate-500" data-label="Reward">
                                                     {ref.rewardStatus || 'Pending'}
                                                 </td>
                                             </tr>

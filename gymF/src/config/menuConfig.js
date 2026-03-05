@@ -136,17 +136,6 @@ export const menuConfig = {
     [ROLES.BRANCH_ADMIN]: [
         // { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
         // {
-        //     label: 'Admin & HR',
-        //     icon: Shield,
-        //     children: [
-        //         { label: 'Branch Management', path: '/branchadmin/branch-management/branches', icon: Building },
-        //         { label: 'Staff Management', path: '/hr/staff/management', icon: Users },
-        //         { label: 'Add Staff', path: '/hr/staff/create', icon: UserPlus },
-        //         { label: 'Trainer Requests', path: '/branchadmin/trainer-requests', icon: UserCheck },
-        //         { label: 'Payroll & Salaries', path: '/hr/payroll', icon: Banknote },
-        //     ]
-        // },
-        // {
         //     label: 'Sales & CRM',
         //     icon: Search,
         //     children: [

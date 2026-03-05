@@ -64,31 +64,39 @@ const OrganizationSettings = ({ role }) => {
     return (
         <div className="space-y-8 animate-fadeIn p-0 md:p-6">
             {/* Header */}
-            <div className="relative">
+            <div className="relative mb-12">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 rounded-3xl blur-3xl opacity-10 pointer-events-none"></div>
                 <div className="relative bg-white/80 backdrop-blur-md rounded-[32px] shadow-2xl shadow-violet-500/10 border border-white/50 p-6 sm:p-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
                     <div>
                         <h1 className="text-2xl sm:text-3xl lg:text-4xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent font-black tracking-tighter">Organization Settings</h1>
                         <p className="text-slate-400 text-[10px] sm:text-xs mt-1 uppercase tracking-widest font-bold">Manage your brand identity and global localization</p>
                     </div>
-                    <button className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white rounded-2xl text-sm font-black shadow-2xl shadow-violet-500/25 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto uppercase tracking-widest">
-                        <Save size={20} strokeWidth={3} />
-                        Save Brand
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white rounded-2xl text-sm font-black shadow-2xl shadow-violet-500/25 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto uppercase tracking-widest disabled:opacity-50"
+                    >
+                        {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} strokeWidth={3} />}
+                        {saving ? 'Saving...' : 'Save Brand'}
                     </button>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20 flex items-center gap-2"
-                >
-                    {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
-                    {saving ? 'Saving...' : 'Save Brand Identity'}
-                </button>
+
+                {/* Secondary Save Button with proper spacing */}
+                <div className="mt-8 flex justify-end px-4">
+                    <button
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20 flex items-center gap-2 hover:-translate-y-0.5 transition-all"
+                    >
+                        {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
+                        {saving ? 'Saving...' : 'Save Brand Identity'}
+                    </button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-full overflow-hidden">
                 {/* Gym Logo Section */}
-                <div className="bg-white/80 backdrop-blur-md rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100 p-8 flex flex-col items-center group/card transition-all duration-300 hover:shadow-xl hover:border-violet-100">
+                <div className="bg-white/80 backdrop-blur-md rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100 p-8 flex flex-col items-center group/card transition-all duration-300 hover:shadow-xl hover:border-violet-100 w-full min-w-0">
                     <div className="w-full mb-8 text-center pt-2">
                         <h3 className="text-xl font-black text-slate-800 tracking-tight">Brand Logo</h3>
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Appears on public website and receipts</p>
@@ -98,7 +106,7 @@ const OrganizationSettings = ({ role }) => {
                         <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-violet-200 transition-all duration-300">
                             <UploadCloud className="text-slate-400 group-hover:text-violet-600 transition-colors" size={32} />
                         </div>
-                        <div className="text-center">
+                        <div className="text-center px-2">
                             <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-violet-600 transition-colors">Upload Logo</p>
                             <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">JPG, PNG up to 2MB</p>
                         </div>
@@ -106,18 +114,18 @@ const OrganizationSettings = ({ role }) => {
                 </div>
 
                 {/* Organization Details Section */}
-                <div className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100 p-6 sm:p-10 transition-all duration-300 hover:shadow-xl hover:border-violet-100">
+                <div className="lg:col-span-2 bg-white/80 backdrop-blur-md rounded-[32px] sm:rounded-[40px] shadow-sm border border-slate-100 p-6 sm:p-10 transition-all duration-300 hover:shadow-xl hover:border-violet-100 w-full min-w-0 overflow-hidden">
                     <div className="mb-10 pb-6 border-b border-slate-50 flex items-center gap-4">
                         <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 shrink-0">
                             <Building2 size={24} strokeWidth={3} />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                             <h3 className="text-xl font-black text-slate-800 tracking-tight">Organization Profile</h3>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Core business details and fiscal localization</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 truncate">Core business details and fiscal localization</p>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-8 font-black">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-8 font-black">
                         {/* Organization Name */}
                         <div>
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-wider mb-2 ml-1">Legal Organization Name</label>
