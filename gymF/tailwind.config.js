@@ -8,10 +8,21 @@ export default {
         extend: {
             colors: {
                 primary: {
-                    DEFAULT: '#8e68e5',
-                    hover: '#7b59c7',
+                    DEFAULT: '#2563EB', // blue-600
+                    hover: '#1d4ed8', // blue-700
                     light: '#f2effd',
                 },
+                card: {
+                    DEFAULT: '#ffffff',
+                    foreground: '#1f2937',
+                },
+                muted: {
+                    DEFAULT: '#f3f4f6',
+                    foreground: '#6b7280',
+                },
+                border: {
+                    DEFAULT: '#e5e7eb',
+                }
             },
             fontFamily: {
                 sans: ['Public Sans', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],

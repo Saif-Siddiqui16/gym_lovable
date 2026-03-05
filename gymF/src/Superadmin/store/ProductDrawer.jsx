@@ -132,17 +132,17 @@ const ProductDrawer = ({ isOpen, onClose, product, mode = 'add', onSubmit }) => 
                     <div className="relative w-screen sm:max-w-[480px] transform transition-transform duration-300 ease-in-out shadow-2xl translate-x-0">
                         <div className="flex h-full flex-col bg-white overflow-y-auto shadow-2xl">
                             {/* Header */}
-                            <div className="px-6 py-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative">
-                                <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all">
+                            <div className="px-6 py-8 bg-white border-b border-slate-100 relative">
+                                <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
                                     <X className="h-6 w-6" />
                                 </button>
                                 <div className="flex items-center gap-4 mb-2">
-                                    <div className="w-12 h-12 rounded-2xl bg-violet-600/20 flex items-center justify-center border border-violet-500/30 text-violet-400">
+                                    <div className="w-12 h-12 rounded-2xl bg-violet-600/10 flex items-center justify-center border border-violet-100 text-violet-600">
                                         <Box size={24} />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black tracking-tight">{mode === 'edit' ? 'Edit Product' : 'Add New Product'}</h2>
-                                        <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mt-1">
+                                        <h2 className="text-2xl font-black tracking-tight text-slate-900">{mode === 'edit' ? 'Edit Product' : 'Add New Product'}</h2>
+                                        <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-1">
                                             {mode === 'edit' ? 'Update product details in your inventory' : 'Create a new product entry'}
                                         </p>
                                     </div>

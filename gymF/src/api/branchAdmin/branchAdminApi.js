@@ -4,7 +4,8 @@ const api = apiClient;
 
 export const fetchDashboardStats = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/stats?branchId=${branchId}` : '/branch-admin/dashboard/stats';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/stats?branchId=${id}` : '/branch-admin/dashboard/stats';
         const response = await api.get(url);
         return response.data;
     } catch (error) {
@@ -14,7 +15,8 @@ export const fetchDashboardStats = async (branchId) => {
 
 export const fetchRecentActivities = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/activities?branchId=${branchId}` : '/branch-admin/dashboard/activities';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/activities?branchId=${id}` : '/branch-admin/dashboard/activities';
         const response = await api.get(url);
         return response.data;
     } catch (error) {
@@ -24,7 +26,8 @@ export const fetchRecentActivities = async (branchId) => {
 
 export const fetchTrainerAvailability = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/trainers?branchId=${branchId}` : '/branch-admin/dashboard/trainers';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/trainers?branchId=${id}` : '/branch-admin/dashboard/trainers';
         const response = await api.get(url);
         return response.data;
     } catch (error) {
@@ -34,7 +37,8 @@ export const fetchTrainerAvailability = async (branchId) => {
 
 export const fetchFinancialStats = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/financials?branchId=${branchId}` : '/branch-admin/dashboard/financials';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/financials?branchId=${id}` : '/branch-admin/dashboard/financials';
         const response = await api.get(url);
         return response.data;
     } catch (error) {
@@ -44,7 +48,8 @@ export const fetchFinancialStats = async (branchId) => {
 
 export const fetchLiveAccess = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/live-access?branchId=${branchId}` : '/branch-admin/dashboard/live-access';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/live-access?branchId=${id}` : '/branch-admin/dashboard/live-access';
         const response = await api.get(url);
         return response.data;
     } catch (error) {
@@ -54,7 +59,8 @@ export const fetchLiveAccess = async (branchId) => {
 
 export const fetchRenewalAlerts = async (branchId) => {
     try {
-        const url = branchId ? `/branch-admin/dashboard/renewal-alerts?branchId=${branchId}` : '/branch-admin/dashboard/renewal-alerts';
+        const id = branchId === 'all' ? '' : branchId;
+        const url = id ? `/branch-admin/dashboard/renewal-alerts?branchId=${id}` : '/branch-admin/dashboard/renewal-alerts';
         const response = await api.get(url);
         return response.data;
     } catch (error) {

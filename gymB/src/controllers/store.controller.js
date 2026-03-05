@@ -484,7 +484,7 @@ exports.getCoupons = async (req, res) => {
         }
 
         if (search) {
-            where.code = { contains: search, mode: 'insensitive' };
+            where.code = { contains: search };
         }
 
         const coupons = await prisma.coupon.findMany({
@@ -680,7 +680,7 @@ exports.getCategories = async (req, res) => {
         }
 
         if (search) {
-            where.name = { contains: search, mode: 'insensitive' };
+            where.name = { contains: search };
         }
 
         const categories = await prisma.storeCategory.findMany({

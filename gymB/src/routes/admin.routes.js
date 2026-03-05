@@ -66,12 +66,8 @@ const {
     updateLeaveStatus,
     getTenantSettings,
     updateTenantSettings,
-    getNotificationSettings,
-    updateNotificationSettings,
-    getSecuritySettings,
-    updateSecuritySettings,
-    runReminders,
-    getTrainerStats
+    getTrainerStats,
+    getSystemHealth
 } = require('../controllers/admin.controller');
 const { getTrainerRequests, updateTrainerRequest, updateStaffMember, deleteStaffMember } = require('../controllers/superadmin.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
@@ -188,5 +184,6 @@ router.patch('/profile', updateProfile);
 
 // Audit Logs
 router.get('/audit-logs', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getSuperAdminAuditLogs);
+router.get('/system-health', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getSystemHealth);
 
 module.exports = router;

@@ -4,16 +4,33 @@ const prisma = require('../config/prisma');
 
 const createLead = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const {
+            name, phone, email: leadEmail, gender, age, interests, source,
+            budgetRange, preferredContact, assignedTo, followUpDate, followUpTime, notes,
+            branchId: bodyBranchId
+        } = req.body;
+        const queryBranchId = req.query.branchId;
+        const headerTenantId = req.headers['x-tenant-id'];
 
-        if (!tenantId) {
-            return res.status(403).json({ message: 'Unauthorized: Your account is not associated with a specific branch.' });
+        // Prioritize branch identifier
+        const effectiveBranchId = bodyBranchId || queryBranchId || headerTenantId;
+
+        let targetTenantId = userTenantId;
+
+        if (role === 'SUPER_ADMIN') {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                targetTenantId = parseInt(effectiveBranchId);
+            } else {
+                return res.status(400).json({ message: 'Branch ID is required for Super Admin to create a lead.' });
+            }
+        } else if (effectiveBranchId && effectiveBranchId !== 'all') {
+            targetTenantId = parseInt(effectiveBranchId);
         }
 
-        const {
-            name, phone, email, gender, age, interests, source,
-            budgetRange, preferredContact, assignedTo, followUpDate, followUpTime, notes
-        } = req.body;
+        if (!targetTenantId) {
+            return res.status(403).json({ message: 'Unauthorized: No branch context found.' });
+        }
 
         // Combine date and time to nextFollowUp
         let nextFollowUp = null;
@@ -27,10 +44,10 @@ const createLead = async (req, res) => {
 
         const lead = await prisma.lead.create({
             data: {
-                tenantId: tenantId,
+                tenantId: targetTenantId,
                 name,
                 phone,
-                email,
+                email: leadEmail,
                 gender,
                 age: age ? parseInt(age) : null,
                 interests: Array.isArray(interests) ? JSON.stringify(interests) : (interests || null),
@@ -53,20 +70,42 @@ const createLead = async (req, res) => {
 
 const getLeads = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const { search, status, assignedTo, branchId: queryBranchId } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+
+        // Prioritize branch identifier
+        const effectiveBranchId = queryBranchId || headerTenantId;
+
         const where = {};
 
-        // Security: Limit by tenant unless Super Admin
-        if (role !== 'SUPER_ADMIN') {
-            if (!tenantId) {
-                return res.json([]); // No branch access, no leads
+        // Security & Filtering by branch
+        if (role === 'SUPER_ADMIN') {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
             }
-            where.tenantId = tenantId;
+        } else {
+            // Logic for BRANCH_ADMIN / MANAGER / etc.
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                where.tenantId = parseInt(effectiveBranchId);
+            } else {
+                // If 'all' or not specified, limit to branches managed by this user
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId || undefined },
+                            { owner: email || undefined },
+                            { owner: userName || undefined }
+                        ].filter(cond => Object.values(cond)[0] !== undefined)
+                    },
+                    select: { id: true }
+                });
+                const managedBranchIds = branches.map(b => b.id);
+                where.tenantId = { in: managedBranchIds };
+            }
         }
 
-        // Search & Filter
-        const { search, status, assignedTo } = req.query;
-
+        // Status Filter
         if (status && status !== 'All') where.status = status;
 
         // Strict: Trainers only see their assigned leads

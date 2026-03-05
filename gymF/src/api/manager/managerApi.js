@@ -24,35 +24,23 @@ export const getMembers = async ({ filters = {}, page = 1, limit = 5, branchId }
         params.branchId = branchId;
     }
     const response = await apiClient.get('/admin/members', { params });
-    const raw = Array.isArray(response.data) ? response.data : [];
+    const raw = Array.isArray(response.data?.data) ? response.data.data : [];
+    const total = response.data?.total || 0;
 
     // Normalize raw API/Prisma fields → flat fields the table expects
     const data = raw.map(m => {
         const expiry = m.expiryDate ? new Date(m.expiryDate) : null;
-        const daysLeft = expiry
+        const daysLeft = (expiry && !isNaN(expiry.getTime()))
             ? Math.max(0, Math.floor((expiry - new Date()) / (1000 * 60 * 60 * 24)))
             : null;
 
         return {
             ...m,
-            id: m.id,
-            name: m.name || m.fullName || '',
-            phone: m.phone || m.phoneNumber || '',
-            email: m.email || '',
-            memberId: m.memberId || m.member_id || '',
-            status: m.status || 'Active',
-            plan: (typeof m.plan === 'object' && m.plan !== null)
-                ? (m.plan.name || '—')
-                : (m.plan || m.planName || '—'),
-            planId: m.planId || m.plan_id || '',
-            branch: m.branch || m.tenant?.name || m.branchName || '—',
-            joinDate: m.joinDate ? new Date(m.joinDate).toLocaleDateString('en-IN') : '—',
-            expiryDate: m.expiryDate ? new Date(m.expiryDate).toLocaleDateString('en-IN') : '—',
             daysLeft,
         };
     });
 
-    return { data, total: data.length };
+    return { data, total };
 };
 
 export const getMemberStats = async () => {

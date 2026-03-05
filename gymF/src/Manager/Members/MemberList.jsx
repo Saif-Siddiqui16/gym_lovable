@@ -118,7 +118,8 @@ const MemberList = () => {
             emergencyName: member.emergencyName || '',
             emergencyPhone: member.emergencyPhone || '',
             fitnessGoal: member.fitnessGoal || '',
-            healthConditions: member.healthConditions || ''
+            healthConditions: member.healthConditions || '',
+            startDate: member.joinDate ? member.joinDate.split('T')[0] : ''
         });
         setIsEditDrawerOpen(true);
     };
@@ -247,15 +248,15 @@ const MemberList = () => {
                 <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-100 p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shrink-0">
                                 <User size={28} />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Members</h1>
-                                <p className="text-slate-600 text-sm mt-1">Manage your gym members and their memberships</p>
+                                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Members</h1>
+                                <p className="text-slate-600 text-xs sm:text-sm mt-1">Manage your gym members and their memberships</p>
                             </div>
                         </div>
-                        <button onClick={() => setIsAddDrawerOpen(true)} className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold transition-all hover:shadow-lg hover:shadow-violet-500/30 self-start sm:self-auto">
+                        <button onClick={() => setIsAddDrawerOpen(true)} className="flex justify-center items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold transition-all hover:shadow-lg hover:shadow-violet-500/30 w-full sm:w-auto">
                             <User size={18} /> Add Member
                         </button>
                     </div>
@@ -296,7 +297,7 @@ const MemberList = () => {
                 <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex items-center justify-between">
                     <div>
                         <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2"><User className="text-violet-600" size={18} />All Members</h3>
-                        <p className="text-xs text-slate-500 font-semibold mt-0.5">{members.length} members total</p>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">{totalItems} members total</p>
                     </div>
                     <div className="flex gap-2">
                         <button onClick={handleExportCSV} className="flex items-center gap-1.5 px-3 py-2 bg-white border-2 border-slate-200 rounded-xl text-xs font-bold text-slate-600 hover:border-violet-300 hover:text-violet-600 transition-all">
@@ -309,11 +310,21 @@ const MemberList = () => {
                 </div>
 
                 {members.length > 0 ? (
+<<<<<<< HEAD
+                    <>
+                        <div className="saas-table-wrapper border-0 rounded-none">
+                            <table className="saas-table saas-table-responsive">
+                                <thead className="bg-slate-50 border-b border-slate-200">
+                                    <tr>
+                                        {['Name', 'Member ID', 'Branch', 'Status', 'Plan', 'Days Left', 'Joined', 'Actions'].map(col => (
+                                            <th key={col} className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{col}</th>
+                                        ))}
+=======
                     <div className="saas-table-wrapper border-0 rounded-none">
-                        <table className="saas-table saas-table-responsive">
-                            <thead className="bg-slate-50 border-b border-slate-200">
+                        <table className="saas-table saas-table-responsive w-full">
+                            <thead className="bg-slate-50 border-b border-slate-200 text-left">
                                 <tr>
-                                    {['Name', 'Member ID', 'Branch', 'Status', 'Plan', 'Days Left', 'Joined', 'Actions'].map(col => (
+                                    {['Member', 'Code', 'Branch', 'Status', 'Plan', 'Days Left', 'Joined', 'Actions'].map(col => (
                                         <th key={col} className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{col}</th>
                                     ))}
                                 </tr>
@@ -321,29 +332,83 @@ const MemberList = () => {
                             <tbody className="divide-y divide-slate-100">
                                 {members.map((member) => (
                                     <tr key={member.id} className="group hover:bg-violet-50/30 transition-all duration-150 border-b border-slate-50">
-                                        <td className="px-6 py-4 whitespace-nowrap" data-label="Name">
+                                        <td className="p-4 sm:px-6 sm:py-4" data-label="Member">
                                             <div className="flex items-center gap-3 justify-end sm:justify-start">
-                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-sm border-2 border-violet-200">{(member.name || '?').charAt(0).toUpperCase()}</div>
-                                                <span className="text-sm font-bold text-slate-900 group-hover:text-violet-700 transition-colors">{member.name}</span>
+                                                <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-sm border-2 border-violet-200">{(member.name || '?').charAt(0).toUpperCase()}</div>
+                                                <span className="text-sm font-bold text-slate-900 group-hover:text-violet-700 transition-colors truncate max-w-[150px] sm:max-w-xs">{member.name}</span>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-4"><span className="text-xs font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded-md">{member.memberId}</span></td>
-                                        <td className="px-6 py-4 text-sm text-slate-600">{member.branch || 'Main Branch'}</td>
-                                        <td className="px-6 py-4"><button onClick={() => handleToggleStatus(member.id)}>{getStatusBadge(member.status)}</button></td>
-                                        <td className="px-6 py-4 text-sm font-semibold text-slate-700">{member.plan || '—'}</td>
-                                        <td className="px-6 py-4 text-sm text-slate-600">{member.daysLeft ?? '—'}</td>
-                                        <td className="px-6 py-4 text-sm text-slate-500">{member.joinDate || '—'}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
-                                                <button onClick={() => handleView(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all" title="View"><Eye size={16} /></button>
-                                                <button onClick={() => handleEdit(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all" title="Edit"><Edit size={16} /></button>
-                                                <button onClick={() => handleDelete(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all" title="Delete"><Trash2 size={16} /></button>
+                                        <td className="p-4 sm:px-6 sm:py-4" data-label="Code"><span className="text-xs font-mono text-slate-500 bg-slate-50 px-2 py-1 rounded-md">{member.memberId}</span></td>
+                                        <td className="p-4 sm:px-6 sm:py-4 text-sm text-slate-600" data-label="Branch">{member.branch || 'Main Branch'}</td>
+                                        <td className="p-4 sm:px-6 sm:py-4" data-label="Status">
+                                            <div className="flex justify-end sm:justify-start">
+                                                <button onClick={() => handleToggleStatus(member.id)}>{getStatusBadge(member.status)}</button>
                                             </div>
                                         </td>
+                                        <td className="p-4 sm:px-6 sm:py-4 text-sm font-semibold text-slate-700" data-label="Plan">{member.plan || 'No Plan'}</td>
+                                        <td className="p-4 sm:px-6 sm:py-4 text-sm text-slate-600" data-label="Days Left">{member.daysLeft ?? '—'}</td>
+                                        <td className="p-4 sm:px-6 sm:py-4 text-sm text-slate-500" data-label="Joined">
+                                            {member.joinDate ? new Date(member.joinDate).toLocaleDateString('en-IN') : '—'}
+                                        </td>
+                                        <td className="p-4 sm:px-6 sm:py-4" data-label="Actions">
+                                            <div className="flex items-center justify-end sm:justify-start gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-200">
+                                                <button onClick={() => handleView(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-all shadow-sm sm:shadow-none border border-slate-100 sm:border-transparent bg-white sm:bg-transparent" title="View"><Eye size={16} /></button>
+                                                <button onClick={() => handleEdit(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all shadow-sm sm:shadow-none border border-slate-100 sm:border-transparent bg-white sm:bg-transparent" title="Edit"><Edit size={16} /></button>
+                                                <button onClick={() => handleDelete(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm sm:shadow-none border border-slate-100 sm:border-transparent bg-white sm:bg-transparent" title="Delete"><Trash2 size={16} /></button>
+                                            </div>
+                                        </td>
+>>>>>>> 4c2f4ae2f1d9bf43a13ebf6fec9455657500c1f8
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+
+                        {/* ── Pagination ── */}
+                        <div className="bg-white border-t border-slate-100 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <p className="text-sm text-slate-500 font-medium order-2 sm:order-1">
+                                Showing <span className="text-slate-900 font-bold">{totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-900 font-bold">{Math.min(currentPage * itemsPerPage, totalItems)}</span> of <span className="text-slate-900 font-bold">{totalItems}</span> members
+                            </p>
+                            <div className="flex items-center gap-2 order-1 sm:order-2">
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                                    disabled={currentPage === 1}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600 disabled:opacity-40 disabled:hover:border-slate-100 disabled:hover:text-slate-400 transition-all"
+                                >
+                                    <ChevronLeft size={20} />
+                                </button>
+
+                                {/* Simple Page Indicator for Mobile */}
+                                <div className="flex sm:hidden items-center px-4 h-10 rounded-xl bg-slate-50 text-xs font-bold text-slate-600">
+                                    Page {currentPage} of {Math.max(1, Math.ceil(totalItems / itemsPerPage))}
+                                </div>
+
+                                {/* Page Numbers for Desktop */}
+                                <div className="hidden sm:flex items-center gap-2">
+                                    {Array.from({ length: Math.ceil(totalItems / itemsPerPage) }, (_, i) => i + 1)
+                                        .filter(page => page === 1 || page === Math.ceil(totalItems / itemsPerPage) || Math.abs(page - currentPage) <= 1)
+                                        .map((page, i, arr) => (
+                                            <React.Fragment key={page}>
+                                                {i > 0 && arr[i - 1] !== page - 1 && <span className="text-slate-300">...</span>}
+                                                <button
+                                                    onClick={() => setCurrentPage(page)}
+                                                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === page ? 'bg-violet-600 text-white shadow-lg shadow-violet-200' : 'text-slate-500 hover:bg-slate-50'}`}
+                                                >
+                                                    {page}
+                                                </button>
+                                            </React.Fragment>
+                                        ))
+                                    }
+                                </div>
+
+                                <button
+                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalItems / itemsPerPage)))}
+                                    disabled={currentPage === Math.ceil(totalItems / itemsPerPage) || totalItems === 0}
+                                    className="w-10 h-10 flex items-center justify-center rounded-xl border-2 border-slate-100 text-slate-400 hover:border-violet-200 hover:text-violet-600 disabled:opacity-40 disabled:hover:border-slate-100 disabled:hover:text-slate-400 transition-all"
+                                >
+                                    <ChevronRight size={20} />
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-b-2xl border-t border-slate-100">
@@ -351,10 +416,10 @@ const MemberList = () => {
                             <User size={40} />
                         </div>
                         <h3 className="text-lg font-black text-slate-400 italic tracking-tight">No members found</h3>
-                        <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest">Register a new member to see them here</p>
+                        <p className="text-slate-400 text-xs font-bold mt-1 uppercase tracking-widest text-center">Register a new member to see them here</p>
                     </div>
                 )}
-            </div>
+            </div >
 
             {/* ── Modals & Drawers (all logic untouched) ── */}
 
@@ -581,8 +646,8 @@ const MemberList = () => {
                                     ['Date of Birth', selectedMember.dob],
                                     ['Source', selectedMember.source],
                                     ['Plan', selectedMember.plan],
-                                    ['Join Date', selectedMember.joinDate],
-                                    ['Expiry', selectedMember.expiryDate],
+                                    ['Join Date', selectedMember.joinDate ? new Date(selectedMember.joinDate).toLocaleDateString('en-IN') : '—'],
+                                    ['Expiry', (selectedMember.expiryDate && !isNaN(new Date(selectedMember.expiryDate).getTime())) ? new Date(selectedMember.expiryDate).toLocaleDateString('en-IN') : '—'],
                                 ].map(([label, val]) => (
                                     <div key={label} className="bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-100">
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
@@ -843,7 +908,7 @@ const MemberList = () => {
                 </div>
             </RightDrawer>
 
-        </div>
+        </div >
     );
 };
 

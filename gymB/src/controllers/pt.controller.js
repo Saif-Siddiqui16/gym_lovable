@@ -56,14 +56,31 @@ const createPackage = async (req, res) => {
 
 const getPackages = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId, role, email, name: userName } = req.user;
         const { branchId } = req.query;
 
-        const where = {};
-        if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (tenantId) {
-            where.tenantId = tenantId;
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                // Fetch all branches the user has access to
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: tenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const packages = await prisma.pTPackage.findMany({
@@ -143,14 +160,30 @@ const purchasePackage = async (req, res) => {
 
 const getActiveAccounts = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId, role, email, name: userName } = req.user;
         const { branchId } = req.query;
 
-        const where = { status: 'Active' };
-        if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (tenantId) {
-            where.tenantId = tenantId;
+        let where = { status: 'Active' };
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: tenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const accounts = await prisma.pTMemberAccount.findMany({
@@ -223,14 +256,30 @@ const logSession = async (req, res) => {
 
 const getSessions = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId, role, email, name: userName } = req.user;
         const { branchId, trainerId, memberId } = req.query;
 
-        const where = {};
-        if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (tenantId) {
-            where.tenantId = tenantId;
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: tenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         if (trainerId) where.trainerId = parseInt(trainerId);
@@ -255,14 +304,30 @@ const getSessions = async (req, res) => {
 
 const getPTStats = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId, role, email, name: userName } = req.user;
         const { branchId } = req.query;
 
-        const where = {};
-        if (branchId && branchId !== 'all') {
-            where.tenantId = parseInt(branchId);
-        } else if (tenantId) {
-            where.tenantId = tenantId;
+        let where = {};
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                where.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: tenantId },
+                            { owner: email },
+                            { owner: userName }
+                        ]
+                    },
+                    select: { id: true }
+                });
+                where.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const [totalPackages, activeAccounts, sessionsToday] = await Promise.all([
@@ -279,8 +344,11 @@ const getPTStats = async (req, res) => {
             })
         ]);
 
-        // Mock completion rate for now
-        const completionRate = 0;
+        const completionSessions = await prisma.pTSession.count({
+            where: { ...where, status: 'Completed' }
+        });
+        const totalSessions = await prisma.pTSession.count({ where });
+        const completionRate = totalSessions > 0 ? Math.round((completionSessions / totalSessions) * 100) : 0;
 
         res.json({
             totalPackages,

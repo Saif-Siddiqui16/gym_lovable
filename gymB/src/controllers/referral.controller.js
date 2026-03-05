@@ -3,18 +3,37 @@ const prisma = new PrismaClient();
 
 exports.getAllReferrals = async (req, res) => {
     try {
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         const { branchId } = req.query;
         const whereClause = { source: 'Referral' };
 
-        if (branchId && branchId !== 'all') {
-            whereClause.tenantId = parseInt(branchId);
-        } else if (req.user && req.user.tenantId) {
-            whereClause.tenantId = req.user.tenantId;
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                whereClause.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                whereClause.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId || undefined },
+                            { owner: email || undefined },
+                            { owner: userName || undefined }
+                        ].filter(cond => Object.values(cond)[0] !== undefined)
+                    },
+                    select: { id: true }
+                });
+                const managedBranchIds = branches.map(b => b.id);
+                whereClause.tenantId = { in: managedBranchIds };
+            }
         }
 
         const rawLeads = await prisma.lead.findMany({
             where: whereClause,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { tenant: { select: { name: true } } }
         });
 
         const formatted = await Promise.all(rawLeads.map(async (lead) => {
@@ -44,6 +63,7 @@ exports.getAllReferrals = async (req, res) => {
                 referrerName,
                 status: lead.status === 'Converted' ? 'Converted' : (lead.status === 'New' ? 'Pending' : lead.status),
                 rewardStatus,
+                branchName: lead.tenant?.name || 'Main Branch',
                 createdAt: lead.createdAt
             };
         }));
@@ -59,14 +79,22 @@ exports.createReferral = async (req, res) => {
     try {
         const { referrerId, referredName, phone, email, branchId } = req.body;
 
-        let tenantId = req.user && req.user.tenantId;
-        if (!tenantId) {
-            if (branchId && branchId !== 'all') {
-                tenantId = parseInt(branchId);
-            } else {
-                const firstTenant = await prisma.tenant.findFirst();
-                tenantId = firstTenant ? firstTenant.id : 1;
+        let tenantId = null;
+
+        if (branchId && branchId !== 'all') {
+            tenantId = parseInt(branchId);
+        } else if (referrerId) {
+            // Find referrer to get their branch
+            const referrer = await prisma.member.findFirst({
+                where: { memberId: String(referrerId) }
+            });
+            if (referrer) {
+                tenantId = referrer.tenantId;
             }
+        }
+
+        if (!tenantId) {
+            tenantId = req.user?.tenantId || 1;
         }
 
         const newLead = await prisma.lead.create({
@@ -91,14 +119,31 @@ exports.createReferral = async (req, res) => {
 exports.verifyCode = async (req, res) => {
     try {
         const { code } = req.params;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
         const { branchId } = req.query;
 
         const whereClause = { memberId: code };
 
-        if (branchId && branchId !== 'all') {
-            whereClause.tenantId = parseInt(branchId);
-        } else if (req.user && req.user.tenantId) {
-            whereClause.tenantId = req.user.tenantId;
+        if (role === 'SUPER_ADMIN') {
+            if (branchId && branchId !== 'all') {
+                whereClause.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId && branchId !== 'all') {
+                whereClause.tenantId = parseInt(branchId);
+            } else {
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId || undefined },
+                            { owner: email || undefined },
+                            { owner: userName || undefined }
+                        ].filter(cond => Object.values(cond)[0] !== undefined)
+                    },
+                    select: { id: true }
+                });
+                whereClause.tenantId = { in: branches.map(b => b.id) };
+            }
         }
 
         const member = await prisma.member.findFirst({

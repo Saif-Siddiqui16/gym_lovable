@@ -26,13 +26,23 @@ import StatsCard from '../../dashboard/components/StatsCard';
 import DashboardGrid from '../../dashboard/components/DashboardGrid';
 import apiClient from '../../../api/apiClient';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../context/AuthContext';
+import { useBranchContext } from '../../../context/BranchContext';
+import { ROLES } from '../../../config/roles';
+import CustomDropdown from '../../../components/common/CustomDropdown';
+import RightDrawer from '../../../components/common/RightDrawer';
 
 const MemberProgress = () => {
+    const { role, user: authUser } = useAuth();
+    const { selectedBranch } = useBranchContext();
     const [activeTab, setActiveTab] = useState('Measurements');
     const [loading, setLoading] = useState(true);
+    const [membersLoading, setMembersLoading] = useState(false);
     const [progressData, setProgressData] = useState({ logs: [], targets: {} });
     const [workoutPlans, setWorkoutPlans] = useState([]);
     const [dietPlans, setDietPlans] = useState([]);
+    const [members, setMembers] = useState([]);
+    const [selectedMemberId, setSelectedMemberId] = useState('');
     const [showLogModal, setShowLogModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [logForm, setLogForm] = useState({
@@ -43,29 +53,97 @@ const MemberProgress = () => {
         measurements: { chest: '', waist: '', hips: '', arms: '', thighs: '' }
     });
 
+    const isManagement = role === ROLES.BRANCH_ADMIN || role === ROLES.MANAGER || role === ROLES.SUPER_ADMIN;
+
+    const fetchMembers = async () => {
+        if (!isManagement) return;
+        try {
+            setMembersLoading(true);
+            const res = await apiClient.get('/admin/members', {
+                params: {
+                    limit: 1000,
+                    branchId: selectedBranch === 'all' ? '' : selectedBranch
+                }
+            });
+            const data = res.data.data || [];
+            setMembers(data);
+
+            if (data.length > 0) {
+                if (!selectedMemberId || !data.find(m => m.id.toString() === selectedMemberId)) {
+                    setSelectedMemberId(data[0].id.toString());
+                } else {
+                    fetchAll();
+                }
+            } else {
+                setSelectedMemberId('');
+                setProgressData({ logs: [], targets: {} });
+                setLoading(false);
+            }
+        } catch (err) {
+            console.error('Failed to fetch members', err);
+            setLoading(false);
+        } finally {
+            setMembersLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isManagement) {
+            fetchMembers();
+        } else if (role) {
+            setLoading(false);
+        }
+    }, [selectedBranch, isManagement, role]);
+
     const fetchAll = async () => {
         setLoading(true);
         try {
+            const params = isManagement ? (selectedMemberId ? { memberId: selectedMemberId } : null) : {};
+
+            if (isManagement && !selectedMemberId && !membersLoading) {
+                setLoading(false);
+                return;
+            }
+
             const [progressRes, workoutRes, dietRes] = await Promise.allSettled([
-                apiClient.get('/member/progress'),
-                apiClient.get('/member/workout-plans'),
-                apiClient.get('/member/diet-plans')
+                apiClient.get('/member/progress', { params }),
+                apiClient.get('/member/workout-plans', { params }),
+                apiClient.get('/member/diet-plans', { params })
             ]);
 
             if (progressRes.status === 'fulfilled') setProgressData(progressRes.value.data);
+            else setProgressData({ logs: [], targets: {} });
+
             if (workoutRes.status === 'fulfilled') setWorkoutPlans(workoutRes.value.data || []);
+            else setWorkoutPlans([]);
+
             if (dietRes.status === 'fulfilled') setDietPlans(dietRes.value.data || []);
+            else setDietPlans([]);
         } catch (err) {
             console.error('Failed to load progress data', err);
+            setProgressData({ logs: [], targets: {} });
         } finally {
             setLoading(false);
         }
     };
 
-    useEffect(() => { fetchAll(); }, []);
+    useEffect(() => {
+        if (!isManagement) {
+            fetchAll();
+        } else if (selectedMemberId) {
+            fetchAll();
+        }
+    }, [selectedMemberId, isManagement]);
 
     const handleLogSubmit = async (e) => {
         e.preventDefault();
+
+        const targetMemberId = isManagement ? selectedMemberId : null;
+        if (isManagement && !targetMemberId) {
+            toast.error('Please select a member first');
+            return;
+        }
+
         setSubmitting(true);
         try {
             await apiClient.post('/member/progress', {
@@ -73,7 +151,8 @@ const MemberProgress = () => {
                 bodyFat: logForm.bodyFat || null,
                 notes: logForm.notes,
                 date: logForm.date,
-                measurements: logForm.measurements
+                measurements: logForm.measurements,
+                memberId: targetMemberId
             });
             toast.success('Progress logged successfully!');
             setShowLogModal(false);
@@ -90,7 +169,6 @@ const MemberProgress = () => {
         }
     };
 
-    // Derive stats from the latest log
     const latestLog = progressData.logs?.length > 0 ? progressData.logs[progressData.logs.length - 1] : null;
     const prevLog = progressData.logs?.length > 1 ? progressData.logs[progressData.logs.length - 2] : null;
 
@@ -140,11 +218,15 @@ const MemberProgress = () => {
                         <TrendingUp size={32} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">My Progress</h1>
-                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Track your fitness journey</p>
+                        <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-1">
+                            {isManagement ? 'Member Progress' : 'My Progress'}
+                        </h1>
+                        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">
+                            {isManagement ? 'Analyze fitness results' : 'Track your fitness journey'}
+                        </p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                     {progressData.targets?.goal && (
                         <div className="flex items-center gap-3 px-5 py-3 bg-emerald-50 rounded-2xl border-2 border-emerald-100">
                             <Target size={16} className="text-emerald-600" />
@@ -157,10 +239,18 @@ const MemberProgress = () => {
                     >
                         <Plus size={16} /> Log Progress
                     </button>
-                    <div className="flex items-center gap-3 px-5 py-3 bg-white rounded-2xl border-2 border-slate-100 shadow-sm">
-                        <Activity size={18} className="text-indigo-600" />
-                        <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Active Journey</span>
-                    </div>
+                    {isManagement && (
+                        <div className="w-full sm:w-64">
+                            <CustomDropdown
+                                options={members.map(m => ({ value: m.id.toString(), label: `${m.name} (${m.memberId})` }))}
+                                value={selectedMemberId}
+                                onChange={setSelectedMemberId}
+                                placeholder="Change Member View"
+                                searchEnabled={true}
+                                className="w-full"
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -190,7 +280,6 @@ const MemberProgress = () => {
 
                 {/* Tab Content */}
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-
                     {/* ── MEASUREMENTS TAB ── */}
                     {activeTab === 'Measurements' && (
                         <div className="space-y-6">
@@ -217,7 +306,6 @@ const MemberProgress = () => {
                                 </Card>
                             ) : (
                                 <div className="space-y-4">
-                                    {/* Latest Measurements Card */}
                                     {latestLog && (
                                         <Card className="p-8 border-2 border-slate-100 shadow-xl rounded-[2rem] bg-white">
                                             <div className="flex items-center justify-between mb-6">
@@ -246,7 +334,6 @@ const MemberProgress = () => {
                                         </Card>
                                     )}
 
-                                    {/* Targets Card */}
                                     {(progressData.targets?.weight || progressData.targets?.bodyFat) && (
                                         <Card className="p-6 border-2 border-emerald-50 rounded-2xl bg-gradient-to-br from-emerald-50/50 to-white">
                                             <div className="flex items-center gap-3 mb-4">
@@ -270,7 +357,6 @@ const MemberProgress = () => {
                                         </Card>
                                     )}
 
-                                    {/* History Table */}
                                     <Card className="border-2 border-slate-100 rounded-2xl bg-white overflow-hidden">
                                         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500"><ClipboardList size={16} /></div>
@@ -330,7 +416,6 @@ const MemberProgress = () => {
                                                 <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">{plan.status || 'Active'}</span>
                                             </div>
 
-                                            {/* Plan exercises / days */}
                                             {plan.exercises && (() => {
                                                 try {
                                                     const exercises = typeof plan.exercises === 'string' ? JSON.parse(plan.exercises) : plan.exercises;
@@ -387,7 +472,6 @@ const MemberProgress = () => {
                                                 <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-amber-100">{plan.status || 'Active'}</span>
                                             </div>
 
-                                            {/* Macros */}
                                             {(plan.calories || plan.protein || plan.carbs || plan.fat) && (
                                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                                                     {plan.calories && <MacroChip label="Calories" value={plan.calories} unit="kcal" color="amber" />}
@@ -397,7 +481,6 @@ const MemberProgress = () => {
                                                 </div>
                                             )}
 
-                                            {/* Meals */}
                                             {plan.meals && (() => {
                                                 try {
                                                     const meals = typeof plan.meals === 'string' ? JSON.parse(plan.meals) : plan.meals;
@@ -431,64 +514,71 @@ const MemberProgress = () => {
                 </div>
             </div>
 
-            {/* ── LOG PROGRESS MODAL ── */}
-            {showLogModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <Card className="w-full max-w-lg p-8 bg-white rounded-[32px] shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                    <TrendingUp size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900">Log Progress</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Record your measurements</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowLogModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
-                                <X size={20} />
-                            </button>
+            {/* ── LOG PROGRESS DRAWER ── */}
+            <RightDrawer
+                isOpen={showLogModal}
+                onClose={() => setShowLogModal(false)}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <TrendingUp size={24} />
                         </div>
+                        <span className="text-xl font-black text-slate-900">Log Progress</span>
+                    </div>
+                }
+                subtitle={isManagement ? 'Select member and record data' : 'Record your measurements'}
+            >
+                <form onSubmit={handleLogSubmit} className="space-y-6 p-1">
+                    {isManagement && (
+                        <div className="p-4 bg-indigo-50/50 rounded-2xl border-2 border-indigo-100/50">
+                            <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1 mb-2 block">Select Member</label>
+                            <CustomDropdown
+                                options={members.map(m => ({ value: m.id.toString(), label: `${m.name} (${m.memberId})` }))}
+                                value={selectedMemberId}
+                                onChange={setSelectedMemberId}
+                                placeholder="Choose a member..."
+                                searchEnabled={true}
+                                className="w-full"
+                            />
+                        </div>
+                    )}
 
-                        <form onSubmit={handleLogSubmit} className="space-y-5">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Weight (kg)" type="number" step="0.1" placeholder="e.g. 72.5"
-                                    value={logForm.weight} onChange={v => setLogForm({ ...logForm, weight: v })} />
-                                <FormField label="Body Fat (%)" type="number" step="0.1" placeholder="e.g. 16.0"
-                                    value={logForm.bodyFat} onChange={v => setLogForm({ ...logForm, bodyFat: v })} />
-                            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField label="Weight (kg)" type="number" step="0.1" placeholder="e.g. 72.5"
+                            value={logForm.weight} onChange={v => setLogForm({ ...logForm, weight: v })} />
+                        <FormField label="Body Fat (%)" type="number" step="0.1" placeholder="e.g. 16.0"
+                            value={logForm.bodyFat} onChange={v => setLogForm({ ...logForm, bodyFat: v })} />
+                    </div>
 
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Body Measurements (cm)</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['chest', 'waist', 'hips', 'arms', 'thighs'].map(key => (
-                                        <FormField key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} type="number" step="0.1" placeholder="cm"
-                                            value={logForm.measurements[key]}
-                                            onChange={v => setLogForm({ ...logForm, measurements: { ...logForm.measurements, [key]: v } })} />
-                                    ))}
-                                </div>
-                            </div>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 ml-1">Body Measurements (cm)</p>
+                        <div className="grid grid-cols-2 gap-4">
+                            {['chest', 'waist', 'hips', 'arms', 'thighs'].map(key => (
+                                <FormField key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} type="number" step="0.1" placeholder="cm"
+                                    value={logForm.measurements[key]}
+                                    onChange={v => setLogForm({ ...logForm, measurements: { ...logForm.measurements, [key]: v } })} />
+                            ))}
+                        </div>
+                    </div>
 
-                            <FormField label="Date" type="date" value={logForm.date} onChange={v => setLogForm({ ...logForm, date: v })} />
+                    <FormField label="Date" type="date" value={logForm.date} onChange={v => setLogForm({ ...logForm, date: v })} />
 
-                            <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes (optional)</label>
-                                <textarea value={logForm.notes} rows={3}
-                                    onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
-                                    placeholder="How are you feeling? Any observations..."
-                                    className="w-full mt-2 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:border-indigo-600 outline-none transition-all resize-none"
-                                />
-                            </div>
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes (optional)</label>
+                        <textarea value={logForm.notes} rows={3}
+                            onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
+                            placeholder="How are you feeling? Any observations..."
+                            className="w-full mt-2 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:border-indigo-600 outline-none transition-all resize-none"
+                        />
+                    </div>
 
-                            <button type="submit" disabled={submitting}
-                                className="w-full h-14 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                                Save Progress Entry
-                            </button>
-                        </form>
-                    </Card>
-                </div>
-            )}
+                    <button type="submit" disabled={submitting}
+                        className="w-full h-14 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                        Save Progress Entry
+                    </button>
+                </form>
+            </RightDrawer>
         </div>
     );
 };

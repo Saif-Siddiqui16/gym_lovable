@@ -40,7 +40,19 @@ const CreateMembershipPlanDrawer = ({ isOpen, onClose, onSave, initialData }) =>
             fetchAmenities();
 
             if (initialData) {
-                setFormData(initialData);
+                // Ensure benefits is an array for the frontend
+                let benefitsArray = [];
+                try {
+                    benefitsArray = initialData.benefits
+                        ? (typeof initialData.benefits === 'string' ? JSON.parse(initialData.benefits) : initialData.benefits)
+                        : [];
+                } catch (e) {
+                    benefitsArray = [];
+                }
+                setFormData({
+                    ...initialData,
+                    benefits: Array.isArray(benefitsArray) ? benefitsArray : []
+                });
             } else {
                 setFormData({
                     name: '',
