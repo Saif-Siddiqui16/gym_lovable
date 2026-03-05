@@ -80,6 +80,11 @@ const StoreDashboard = () => {
                         <div className="text-center md:text-left">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Sales</p>
                             <p className="text-2xl font-black text-slate-900">{stats.totalSales}</p>
+                            {stats.salesTrend && (
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${stats.salesTrend.direction === 'up' ? 'bg-emerald-50 text-emerald-600' : stats.salesTrend.direction === 'down' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
+                                    {stats.salesTrend.value}
+                                </span>
+                            )}
                         </div>
                         <div className="text-center md:text-left">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Products</p>
@@ -88,10 +93,20 @@ const StoreDashboard = () => {
                         <div className="text-center md:text-left">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Today's POS</p>
                             <p className="text-2xl font-black text-slate-900">₹{stats.todayPos.toLocaleString()}</p>
+                            {stats.posTrend && (
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${stats.posTrend.direction === 'up' ? 'bg-emerald-50 text-emerald-600' : stats.posTrend.direction === 'down' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
+                                    {stats.posTrend.value}
+                                </span>
+                            )}
                         </div>
                         <div className="text-center md:text-left">
                             <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">Total Revenue</p>
                             <p className="text-2xl font-black text-slate-900">₹{stats.totalRevenue.toLocaleString()}</p>
+                            {stats.revenueTrend && (
+                                <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${stats.revenueTrend.direction === 'up' ? 'bg-emerald-50 text-emerald-600' : stats.revenueTrend.direction === 'down' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
+                                    {stats.revenueTrend.value}
+                                </span>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -108,6 +123,13 @@ const StoreDashboard = () => {
                         </div>
                     </div>
                     <p className="text-3xl font-black text-slate-900">₹{stats.profit.toLocaleString()}</p>
+                    {stats.profitTrend && (
+                        <div className="mt-2">
+                             <span className={`text-[9px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${stats.profitTrend.direction === 'up' ? 'bg-emerald-50 text-emerald-600' : stats.profitTrend.direction === 'down' ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
+                                {stats.profitTrend.value}
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Stock Value */}
