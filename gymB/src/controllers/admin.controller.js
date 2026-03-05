@@ -636,24 +636,37 @@ const createStaff = async (req, res) => {
 
 const getBookings = async (req, res) => {
     try {
-        const { search, status, branchId } = req.query;
-        const { tenantId, role, email, name: userName } = req.user;
+        const { search, status, branchId: queryBranchId, startDate, endDate } = req.query;
+        const headerBranchId = req.headers['x-tenant-id'];
+        const { tenantId: userHomeTenantId, role, email, name: userName } = req.user;
+
+        // Determine effective branch ID: query param overrides header
+        // If queryBranchId is present (even if empty string), we use it.
+        // If not present, we fall back to header (and 'all' is handled in resolving logic)
+        let branchFilter = queryBranchId !== undefined ? queryBranchId : headerBranchId;
+
+        // Normalize: '' or null or 'all' should be treated as all-branch view
+        const isAll = !branchFilter || branchFilter === 'all' || branchFilter === '';
+
+        console.log(`[getBookings] User: ${email}, Role: ${role}, branchFilter: ${branchFilter}, isAll: ${isAll}`);
+
         let where = {};
 
+        // Resolve branch filtering
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
-                where.member = { tenantId: parseInt(branchId) };
+            if (!isAll) {
+                where.member = { tenantId: parseInt(branchFilter) };
             }
         } else {
-            if (branchId && branchId !== 'all') {
-                where.member = { tenantId: parseInt(branchId) };
+            if (!isAll) {
+                where.member = { tenantId: parseInt(branchFilter) };
             } else {
                 const branches = await prisma.tenant.findMany({
                     where: {
                         OR: [
-                            { id: tenantId },
-                            { owner: email },
-                            { owner: userName }
+                            { id: userHomeTenantId || -1 },
+                            { owner: email || '___NONE___' },
+                            { owner: userName || '___NONE___' }
                         ]
                     },
                     select: { id: true }
@@ -662,16 +675,36 @@ const getBookings = async (req, res) => {
             }
         }
 
-        if (status) {
+        // Status Filter
+        if (status && status !== 'All' && status !== 'All Status') {
             where.status = status;
         }
 
-        if (search) {
+        // Date Range Filter
+        if ((startDate && startDate !== '') || (endDate && endDate !== '')) {
+            where.date = {};
+            if (startDate && startDate !== '') {
+                const s = new Date(startDate);
+                if (!isNaN(s.getTime())) where.date.gte = s;
+            }
+            if (endDate && endDate !== '') {
+                const e = new Date(endDate);
+                if (!isNaN(e.getTime())) {
+                    e.setHours(23, 59, 59, 999);
+                    where.date.lte = e;
+                }
+            }
+            if (Object.keys(where.date).length === 0) delete where.date;
+        }
+
+        // Search Filter
+        if (search && search.trim() !== '') {
             where.member = {
                 ...where.member,
                 OR: [
                     { name: { contains: search } },
-                    { email: { contains: search } }
+                    { email: { contains: search } },
+                    { memberId: { contains: search } }
                 ]
             };
         }
@@ -686,32 +719,39 @@ const getBookings = async (req, res) => {
             },
             orderBy: { date: 'desc' }
         });
+
         res.json({ data: bookings, total: bookings.length });
     } catch (error) {
+        console.error('[getBookings] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
 const getBookingStats = async (req, res) => {
     try {
-        const { branchId } = req.query;
-        const { tenantId, role, email, name: userName } = req.user;
+        const { branchId: queryBranchId, startDate, endDate } = req.query;
+        const headerBranchId = req.headers['x-tenant-id'];
+        const { tenantId: userHomeTenantId, role, email, name: userName } = req.user;
+
+        let branchFilter = queryBranchId !== undefined ? queryBranchId : headerBranchId;
+        const isAll = !branchFilter || branchFilter === 'all' || branchFilter === '';
+
         let where = {};
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
-                where.member = { tenantId: parseInt(branchId) };
+            if (!isAll) {
+                where.member = { tenantId: parseInt(branchFilter) };
             }
         } else {
-            if (branchId && branchId !== 'all') {
-                where.member = { tenantId: parseInt(branchId) };
+            if (!isAll) {
+                where.member = { tenantId: parseInt(branchFilter) };
             } else {
                 const branches = await prisma.tenant.findMany({
                     where: {
                         OR: [
-                            { id: tenantId },
-                            { owner: email },
-                            { owner: userName }
+                            { id: userHomeTenantId || -1 },
+                            { owner: email || '___NONE___' },
+                            { owner: userName || '___NONE___' }
                         ]
                     },
                     select: { id: true }
@@ -720,12 +760,32 @@ const getBookingStats = async (req, res) => {
             }
         }
 
-        const total = await prisma.booking.count({ where });
-        const upcoming = await prisma.booking.count({ where: { ...where, status: 'Upcoming' } });
-        const completed = await prisma.booking.count({ where: { ...where, status: 'Completed' } });
-        const cancelled = await prisma.booking.count({ where: { ...where, status: 'Cancelled' } });
+        if ((startDate && startDate !== '') || (endDate && endDate !== '')) {
+            where.date = {};
+            if (startDate && startDate !== '') {
+                const s = new Date(startDate);
+                if (!isNaN(s.getTime())) where.date.gte = s;
+            }
+            if (endDate && endDate !== '') {
+                const e = new Date(endDate);
+                if (!isNaN(e.getTime())) {
+                    e.setHours(23, 59, 59, 999);
+                    where.date.lte = e;
+                }
+            }
+            if (Object.keys(where.date).length === 0) delete where.date;
+        }
+
+        const [total, upcoming, completed, cancelled] = await Promise.all([
+            prisma.booking.count({ where }),
+            prisma.booking.count({ where: { ...where, status: 'Upcoming' } }),
+            prisma.booking.count({ where: { ...where, status: 'Completed' } }),
+            prisma.booking.count({ where: { ...where, status: 'Cancelled' } })
+        ]);
+
         res.json({ total, upcoming, completed, cancelled });
     } catch (error) {
+        console.error('[getBookingStats] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -2352,6 +2412,110 @@ const renewMembership = async (req, res) => {
     }
 };
 
+const getSystemHealth = async (req, res) => {
+    try {
+        const { branchId, status, page = 1, limit = 50 } = req.query;
+        const { role, tenantId: userTenantId, email, name: userName } = req.user;
+
+        let userIdFilter = undefined;
+
+        // Determine which users to include based on branch
+        const effectiveBranchId = branchId || req.headers['x-tenant-id'];
+
+        if (role === 'SUPER_ADMIN') {
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                const branchUsers = await prisma.user.findMany({
+                    where: { tenantId: parseInt(effectiveBranchId) },
+                    select: { id: true }
+                });
+                userIdFilter = branchUsers.map(u => u.id);
+            }
+        } else {
+            // Logic for BRANCH_ADMIN and MANAGER
+            if (effectiveBranchId && effectiveBranchId !== 'all') {
+                const branchUsers = await prisma.user.findMany({
+                    where: { tenantId: parseInt(effectiveBranchId) },
+                    select: { id: true }
+                });
+                userIdFilter = branchUsers.map(u => u.id);
+            } else {
+                // Determine all managed branches
+                const branches = await prisma.tenant.findMany({
+                    where: {
+                        OR: [
+                            { id: userTenantId || undefined },
+                            { owner: email || undefined },
+                            { owner: userName || undefined }
+                        ].filter(cond => Object.values(cond)[0] !== undefined)
+                    },
+                    select: { id: true }
+                });
+                const managedBranchIds = branches.map(b => b.id);
+                const branchUsers = await prisma.user.findMany({
+                    where: { tenantId: { in: managedBranchIds } },
+                    select: { id: true }
+                });
+                userIdFilter = branchUsers.map(u => u.id);
+            }
+        }
+
+        let where = { module: 'Error' };
+        if (userIdFilter !== undefined) {
+            where.userId = { in: userIdFilter };
+        }
+
+        if (status && status !== 'All') {
+            where.status = status;
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+
+        const [logs, total, open, resolved] = await Promise.all([
+            prisma.auditLog.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                skip,
+                take: parseInt(limit)
+            }),
+            prisma.auditLog.count({ where: { ...where, status: undefined } }),
+            prisma.auditLog.count({ where: { ...where, status: 'Open' } }),
+            prisma.auditLog.count({ where: { ...where, status: 'Resolved' } })
+        ]);
+
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayCount = await prisma.auditLog.count({
+            where: { ...where, createdAt: { gte: todayStart } }
+        });
+
+        // Enrich logs
+        const userIds = [...new Set(logs.map(l => l.userId))];
+        const users = await prisma.user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, tenant: { select: { name: true } } }
+        });
+        const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+
+        const enrichedLogs = logs.map(log => ({
+            ...log,
+            user: userMap[log.userId]?.name || 'Unknown',
+            branch: userMap[log.userId]?.tenant?.name || 'Main'
+        }));
+
+        res.json({
+            logs: enrichedLogs,
+            stats: {
+                total: total.toString(),
+                open: open.toString(),
+                resolved: resolved.toString(),
+                today: todayCount.toString()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 const getTrainerStats = async (req, res) => {
     try {
         const { tenantId: userTenantId = 1, role, email, name: userName } = req.user;
@@ -2467,5 +2631,6 @@ module.exports = {
     updateLeaveStatus,
     getTenantSettings,
     updateTenantSettings,
-    getTrainerStats
+    getTrainerStats,
+    getSystemHealth
 };

@@ -570,12 +570,35 @@ const changePassword = async (req, res) => {
 
 const getWorkoutPlans = async (req, res) => {
     try {
-        const member = await prisma.member.findUnique({
-            where: { userId: req.user.id }
-        });
+        const { role, id: userId, email, name, tenantId: userTenantId } = req.user;
+        const { memberId: queryMemberId } = req.query;
+        let member;
+
+        if (role === 'BRANCH_ADMIN' || role === 'MANAGER' || role === 'SUPER_ADMIN' || role === 'TRAINER') {
+            const memberId = queryMemberId || (req.body && req.body.memberId);
+            if (!memberId) {
+                member = await prisma.member.findUnique({ where: { userId } });
+            } else {
+                member = await prisma.member.findUnique({ where: { id: parseInt(memberId) } });
+            }
+        } else {
+            member = await prisma.member.findUnique({ where: { userId } });
+        }
 
         if (!member) {
             return res.status(404).json({ message: 'Member not found' });
+        }
+
+        // Authorization Check for Management
+        if (role === 'BRANCH_ADMIN' || role === 'MANAGER') {
+            const branches = await prisma.tenant.findMany({
+                where: { OR: [{ id: userTenantId || -1 }, { owner: email || '___' }, { owner: name || '___' }] },
+                select: { id: true }
+            });
+            const managedIds = branches.map(b => b.id);
+            if (!managedIds.includes(member.tenantId)) {
+                return res.status(403).json({ message: 'Member does not belong to your managed branches' });
+            }
         }
 
         const plans = await prisma.workoutPlan.findMany({
@@ -591,12 +614,35 @@ const getWorkoutPlans = async (req, res) => {
 
 const getDietPlans = async (req, res) => {
     try {
-        const member = await prisma.member.findUnique({
-            where: { userId: req.user.id }
-        });
+        const { role, id: userId, email, name, tenantId: userTenantId } = req.user;
+        const { memberId: queryMemberId } = req.query;
+        let member;
+
+        if (role === 'BRANCH_ADMIN' || role === 'MANAGER' || role === 'SUPER_ADMIN' || role === 'TRAINER') {
+            const memberId = queryMemberId || (req.body && req.body.memberId);
+            if (!memberId) {
+                member = await prisma.member.findUnique({ where: { userId } });
+            } else {
+                member = await prisma.member.findUnique({ where: { id: parseInt(memberId) } });
+            }
+        } else {
+            member = await prisma.member.findUnique({ where: { userId } });
+        }
 
         if (!member) {
             return res.status(404).json({ message: 'Member not found' });
+        }
+
+        // Authorization Check for Management
+        if (role === 'BRANCH_ADMIN' || role === 'MANAGER') {
+            const branches = await prisma.tenant.findMany({
+                where: { OR: [{ id: userTenantId || -1 }, { owner: email || '___' }, { owner: name || '___' }] },
+                select: { id: true }
+            });
+            const managedIds = branches.map(b => b.id);
+            if (!managedIds.includes(member.tenantId)) {
+                return res.status(403).json({ message: 'Member does not belong to your managed branches' });
+            }
         }
 
         const plans = await prisma.dietPlan.findMany({

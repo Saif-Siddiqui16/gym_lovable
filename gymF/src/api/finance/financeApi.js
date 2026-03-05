@@ -2,7 +2,8 @@ import apiClient from '../apiClient';
 
 export const fetchFinanceStats = async (branchId) => {
     try {
-        const response = await apiClient.get('/finance/stats', { params: { branchId } });
+        const id = branchId === 'all' ? '' : branchId;
+        const response = await apiClient.get('/finance/stats', { params: { branchId: id } });
         return response.data;
     } catch (error) {
         throw error;
@@ -11,7 +12,8 @@ export const fetchFinanceStats = async (branchId) => {
 
 export const fetchExpenses = async (branchId) => {
     try {
-        const response = await apiClient.get('/finance/expenses', { params: { branchId } });
+        const id = branchId === 'all' ? '' : branchId;
+        const response = await apiClient.get('/finance/expenses', { params: { branchId: id } });
         return response.data;
     } catch (error) {
         throw error;
@@ -89,7 +91,8 @@ export const deleteExpense = async (id) => {
 
 export const fetchExpenseCategories = async (branchId) => {
     try {
-        const response = await apiClient.get('/finance/expense-categories', { params: { branchId } });
+        const id = branchId === 'all' ? '' : branchId;
+        const response = await apiClient.get('/finance/expense-categories', { params: { branchId: id } });
         return response.data;
     } catch (error) {
         throw error;

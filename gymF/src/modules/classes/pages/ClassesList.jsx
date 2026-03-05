@@ -278,6 +278,7 @@ const ClassesList = () => {
                         Create Class
                     </Button>
                 </div>
+<<<<<<< HEAD
                 <button
                     onClick={() => { resetForm(); setShowPanel(true); }}
                     className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
@@ -285,6 +286,8 @@ const ClassesList = () => {
                     <Plus size={18} />
                     Create Class
                 </button>
+=======
+>>>>>>> 4c2f4ae2f1d9bf43a13ebf6fec9455657500c1f8
             </div>
 
             {/* KPI Cards */}

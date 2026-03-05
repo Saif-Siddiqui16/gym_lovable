@@ -113,6 +113,54 @@ const FinancialDashboard = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!data || !data.transactions || data.transactions.length === 0) {
+            toast.error("No transaction data available to export");
+            return;
+        }
+
+        try {
+            // Define CSV headers
+            const headers = ["Date", "Type", "Flow", "Member/Entity", "Reference ID", "Branch", "Status", "Amount"];
+
+            // Map transaction data to CSV rows
+            const rows = data.transactions.map(txn => [
+                txn.date,
+                txn.type,
+                txn.flow === 'in' ? 'Income' : 'Expense',
+                `"${txn.member.replace(/"/g, '""')}"`, // Handle names with commas
+                txn.id,
+                `"${txn.branch.replace(/"/g, '""')}"`,
+                txn.status || 'Paid',
+                txn.amount
+            ]);
+
+            // Combine into CSV string
+            const csvContent = [
+                headers.join(","),
+                ...rows.map(row => row.join(","))
+            ].join("\n");
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const filename = `Finance_Report_${selectedBranch}_${new Date().toISOString().split('T')[0]}.csv`;
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success("Financial report exported successfully!");
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Failed to generate export file");
+        }
+    };
+
     if (loading && !data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8fafc]">
@@ -131,32 +179,25 @@ const FinancialDashboard = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-6 lg:p-10 pb-20">
             <div className="max-w-screen-2xl mx-auto space-y-10">
-                {/* Premium Header */}
-                <div className="relative group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-2xl opacity-10 animate-pulse pointer-events-none group-hover:opacity-15 transition-opacity"></div>
-                    <div className="relative bg-white/80 backdrop-blur-sm rounded-[2rem] shadow-xl border border-slate-100 p-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
-                        <div className="flex items-center gap-5">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-violet-200 transition-transform duration-300 group-hover:scale-105">
-                                <BarChart3 size={28} />
-                            </div>
-                            <div>
-                                <h1 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent tracking-tight">
-                                    Finance Dashboard
-                                </h1>
-                                <p className="text-slate-500 text-sm font-bold uppercase tracking-widest mt-1">Core Financial Intelligence</p>
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-3 w-full sm:w-auto">
-                            <button
-                                onClick={() => setIsExpenseDrawerOpen(true)}
-                                className="flex-1 sm:flex-none h-11 px-6 bg-[#7c3aed] text-white rounded-xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-violet-200 hover:bg-[#6d28d9] transition-all active:scale-95 flex items-center justify-center gap-2"
-                            >
-                                <Plus size={18} /> Add Expense
-                            </button>
-                            <button className="flex-1 sm:flex-none h-11 px-6 bg-white text-slate-700 border border-slate-200 rounded-xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">
-                                <Download size={18} /> Export
-                            </button>
-                        </div>
+                {/* Header */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-black text-slate-900 tracking-tight">Finance Dashboard</h1>
+                        <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Core Financial Intelligence</p>
+                    </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <button
+                            onClick={() => setIsExpenseDrawerOpen(true)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-[#7c3aed] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-xl shadow-violet-200 hover:bg-[#6d28d9] hover:-translate-y-0.5 transition-all"
+                        >
+                            <Plus size={18} /> Add Expense
+                        </button>
+                        <button
+                            onClick={handleExport}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                        >
+                            <Download size={18} /> Export
+                        </button>
                     </div>
                 </div>
 

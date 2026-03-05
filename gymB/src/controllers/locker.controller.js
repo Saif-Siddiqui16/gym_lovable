@@ -34,7 +34,9 @@ const getAllLockers = async (req, res) => {
                         id: true,
                         name: true,
                         memberId: true,
-                        phone: true
+                        phone: true,
+                        expiryDate: true,
+                        status: true
                     }
                 }
             },

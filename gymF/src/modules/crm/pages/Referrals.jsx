@@ -388,7 +388,11 @@ const Referrals = ({ role }) => {
                                                 <td className="px-6 py-4" data-label="Referrer">
                                                     <div className="text-sm font-medium text-slate-900">{ref.referrerName || 'N/A'}</div>
                                                 </td>
+<<<<<<< HEAD
                                                 <td className="px-6 py-4" data-label="Branch">
+=======
+                                                <td className="px-6 py-4">
+>>>>>>> 4c2f4ae2f1d9bf43a13ebf6fec9455657500c1f8
                                                     <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{ref.branchName || '-'}</div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-500" data-label="Date">

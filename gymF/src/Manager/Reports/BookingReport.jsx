@@ -76,55 +76,69 @@ const BookingReport = () => {
         try {
             setLoading(true);
             const branchId = selectedBranch === 'all' ? '' : selectedBranch;
+
+            let startDate = '', endDate = '';
+            const today = new Date();
+
+            // Helper to get local YYYY-MM-DD
+            const toLocalISO = (date) => {
+                return date.toLocaleDateString('en-CA'); // en-CA returns YYYY-MM-DD
+            };
+
+            if (dateRange === 'Today') {
+                startDate = toLocalISO(today);
+                endDate = startDate;
+            } else if (dateRange === 'This Week') {
+                const day = today.getDay();
+                const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+                const startOfWeek = new Date(new Date().setDate(diff));
+                startDate = toLocalISO(startOfWeek);
+                endDate = ''; // Include all upcoming
+            } else if (dateRange === 'This Month') {
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                startDate = toLocalISO(startOfMonth);
+                endDate = ''; // Include all upcoming
+            }
+
             const params = {
                 search: searchTerm,
                 status: statusFilter === 'All Status' || statusFilter === 'All' ? '' : statusFilter,
-                branchId
+                branchId,
+                startDate,
+                endDate
             };
+
+            console.log('[BookingReport] Fetching with params:', params);
+
             const [bookingsRes, statsRes] = await Promise.all([
                 apiClient.get('/admin/bookings', { params }),
-                apiClient.get('/admin/bookings/stats', { params: { branchId } })
-            ]);
+                apiClient.get('/admin/bookings/stats', { params })
+            ]).catch(err => {
+                console.error('[BookingReport] API Promise Error:', err);
+                throw err;
+            });
 
-            const rawData = bookingsRes.data.data || [];
+            const rawData = bookingsRes?.data?.data || [];
 
-            // Format and frontend filter by DateRange
+            // Format for table
             const formattedBookings = rawData.map(b => ({
                 id: b.id,
                 memberName: b.member?.name || 'Unknown',
-                classType: b.class?.name || 'Session',
+                classType: b.class?.name || (b.classId ? `Class #${b.classId}` : 'Session'),
                 trainerName: b.class?.trainer?.name || 'Unassigned',
-                date: new Date(b.date).toLocaleDateString(),
+                date: b.date ? new Date(b.date).toLocaleDateString() : 'N/A',
                 time: b.time || 'N/A',
                 status: b.status || 'Pending'
             }));
 
-            const filtered = formattedBookings.filter(b => {
-                if (!dateRange || dateRange === 'All Time' || dateRange === 'All') return true;
-                const d = new Date(b.date);
-                const today = new Date();
-                if (dateRange === 'Today') {
-                    return d.toDateString() === today.toDateString();
-                }
-                if (dateRange === 'This Week') {
-                    const diff = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
-                    const startOfWeek = new Date(today.setDate(diff));
-                    return d >= startOfWeek;
-                }
-                if (dateRange === 'This Month') {
-                    return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
-                }
-                return true;
-            });
-
-            setAllFilteredBookings(filtered);
-            setTotalItems(filtered.length);
+            setAllFilteredBookings(formattedBookings);
+            setTotalItems(formattedBookings.length);
             setCurrentPage(1);
 
             // Set initially shown bookings
-            setBookings(filtered.slice(0, itemsPerPage));
+            setBookings(formattedBookings.slice(0, itemsPerPage));
 
-            if (statsRes.data) {
+            if (statsRes?.data) {
                 setBookingStats({
                     total: statsRes.data.total || 0,
                     completed: statsRes.data.completed || 0,
@@ -133,6 +147,9 @@ const BookingReport = () => {
             }
         } catch (error) {
             console.error('Booking Load Error:', error);
+            setAllFilteredBookings([]);
+            setBookings([]);
+            setTotalItems(0);
         } finally {
             setLoading(false);
         }
