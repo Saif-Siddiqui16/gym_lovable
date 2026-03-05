@@ -315,7 +315,7 @@ const Payroll = () => {
                                                 </button>
                                                 {openMenuId === staff.id && (
                                                     <div className="absolute right-8 top-12 w-48 bg-white border border-slate-100 rounded-xl shadow-xl z-50 py-2 animate-in fade-in zoom-in-95 duration-200">
-                                                        <button onClick={() => navigate(`/hr/staff/edit/${staff.id}`)} className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                                        <button onClick={() => navigate(`/hr/staff/edit/${staff.id}`, { state: { readOnly: true } })} className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                                                             <Eye size={16} /> View Profile
                                                         </button>
                                                         <button onClick={() => navigate(`/hr/staff/edit/${staff.id}`)} className="w-full flex items-center gap-3 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors">

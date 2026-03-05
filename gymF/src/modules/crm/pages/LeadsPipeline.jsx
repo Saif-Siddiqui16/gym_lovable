@@ -179,9 +179,10 @@ const LeadsPipeline = () => {
                         </div>
                         <button
                             onClick={openAddDrawer}
-                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:scale-105 transition-all"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 !text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:scale-105 transition-all"
                         >
-                            <UserPlus size={18} /> Add Lead
+                            <UserPlus size={18} className="!text-white" />
+                            <span className="!text-white">Add Lead</span>
                         </button>
                     </div>
                 </div>

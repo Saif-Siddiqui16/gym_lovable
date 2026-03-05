@@ -36,6 +36,10 @@ const MemberList = () => {
     };
     const [newMemberData, setNewMemberData] = useState(initialNewMemberData);
     const [editMemberData, setEditMemberData] = useState({ ...initialNewMemberData, status: '' });
+    const [profileImage, setProfileImage] = useState(null);
+    const [editProfileImage, setEditProfileImage] = useState(null);
+    const profileImageRef = React.useRef(null);
+    const editProfileImageRef = React.useRef(null);
     const [isVerifyingReferral, setIsVerifyingReferral] = useState(false);
     const [referralVerified, setReferralVerified] = useState(false);
 
@@ -99,6 +103,22 @@ const MemberList = () => {
             } catch (error) { toast.error("Failed to delete member"); }
         }
     };
+
+    const handleImageChange = (e, mode = 'add') => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result;
+                if (mode === 'add') {
+                    setProfileImage(base64String);
+                } else {
+                    setEditProfileImage(base64String);
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
     const handleExportCSV = () => { exportCSV(members, 'MemberList'); toast.success("CSV exported successfully"); };
     const handleExportPDF = () => { exportPDF(members, 'MemberList'); toast.success("PDF exported successfully"); };
     const handleView = (member) => { setSelectedMember(member); setIsViewDrawerOpen(true); };
@@ -121,13 +141,16 @@ const MemberList = () => {
             healthConditions: member.healthConditions || '',
             startDate: member.joinDate ? member.joinDate.split('T')[0] : ''
         });
+        setEditProfileImage(member.avatar || null);
         setIsEditDrawerOpen(true);
     };
     const handleEditSubmit = async (e) => {
         e.preventDefault();
         try {
-            await updateMember(selectedMember.id, editMemberData);
+            const payload = { ...editMemberData, avatar: editProfileImage };
+            await updateMember(selectedMember.id, payload);
             setIsEditDrawerOpen(false);
+            setEditProfileImage(null);
             toast.success("Member updated successfully");
             loadMembers();
         } catch (error) { toast.error(error?.response?.data?.message || "Failed to update member"); }
@@ -139,7 +162,7 @@ const MemberList = () => {
             return;
         }
         try {
-            const memberPayload = { ...newMemberData };
+            const memberPayload = { ...newMemberData, avatar: profileImage };
 
             // Explicitly handle 'all' branches or specific branch selection
             if (selectedBranch === 'all') {
@@ -151,6 +174,7 @@ const MemberList = () => {
             await createMember(memberPayload);
             setIsAddDrawerOpen(false);
             setNewMemberData(initialNewMemberData);
+            setProfileImage(null);
             toast.success("Member created successfully");
             loadMembers();
         } catch (error) { toast.error(error?.response?.data?.message || "Failed to create member"); }
@@ -324,7 +348,11 @@ const MemberList = () => {
                                     <tr key={member.id} className="group hover:bg-violet-50/30 transition-all duration-150 border-b border-slate-50">
                                         <td className="p-4 sm:px-6 sm:py-4" data-label="Member">
                                             <div className="flex items-center gap-3 justify-end sm:justify-start">
-                                                <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-sm border-2 border-violet-200">{(member.name || '?').charAt(0).toUpperCase()}</div>
+                                                {member.avatar ? (
+                                                    <img src={member.avatar} alt={member.name} className="w-9 h-9 shrink-0 rounded-full object-cover border-2 border-violet-200" />
+                                                ) : (
+                                                    <div className="w-9 h-9 shrink-0 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-sm border-2 border-violet-200">{(member.name || '?').charAt(0).toUpperCase()}</div>
+                                                )}
                                                 <span className="text-sm font-bold text-slate-900 group-hover:text-violet-700 transition-colors truncate max-w-[150px] sm:max-w-xs">{member.name}</span>
                                             </div>
                                         </td>
@@ -441,8 +469,25 @@ const MemberList = () => {
                     {/* Profile Photo */}
                     <div className="flex flex-col items-center gap-3 pb-6 border-b border-slate-100">
                         <div className="relative">
-                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center text-4xl font-black border-4 border-white shadow-lg">N</div>
-                            <button type="button" className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all">
+                            <input
+                                type="file"
+                                ref={profileImageRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => handleImageChange(e, 'add')}
+                            />
+                            {profileImage ? (
+                                <img src={profileImage} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />
+                            ) : (
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center text-4xl font-black border-4 border-white shadow-lg">
+                                    {newMemberData.name ? newMemberData.name.charAt(0).toUpperCase() : 'N'}
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => profileImageRef.current.click()}
+                                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all"
+                            >
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
                             </button>
                         </div>
@@ -611,9 +656,13 @@ const MemberList = () => {
 
                         {/* Avatar + Name */}
                         <div className="flex items-center gap-4 pb-5 border-b border-slate-100">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center text-2xl font-black border-2 border-violet-200 flex-shrink-0">
-                                {(selectedMember.name || '?').charAt(0).toUpperCase()}
-                            </div>
+                            {selectedMember.avatar ? (
+                                <img src={selectedMember.avatar} alt={selectedMember.name} className="w-16 h-16 rounded-2xl object-cover border-2 border-violet-200" />
+                            ) : (
+                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center text-2xl font-black border-2 border-violet-200 flex-shrink-0">
+                                    {(selectedMember.name || '?').charAt(0).toUpperCase()}
+                                </div>
+                            )}
                             <div>
                                 <h3 className="text-xl font-black text-slate-900">{selectedMember.name}</h3>
                                 <p className="text-xs font-mono text-violet-500 mt-0.5">{selectedMember.memberId}</p>
@@ -742,6 +791,34 @@ const MemberList = () => {
                 }
             >
                 <form id="edit-member-form" onSubmit={handleEditSubmit} className="px-6 py-6 space-y-8">
+
+                    {/* Profile Photo */}
+                    <div className="flex flex-col items-center gap-3 pb-6 border-b border-slate-100">
+                        <div className="relative">
+                            <input
+                                type="file"
+                                ref={editProfileImageRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={(e) => handleImageChange(e, 'edit')}
+                            />
+                            {editProfileImage ? (
+                                <img src={editProfileImage} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg" />
+                            ) : (
+                                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center text-4xl font-black border-4 border-white shadow-lg">
+                                    {editMemberData.name ? editMemberData.name.charAt(0).toUpperCase() : 'N'}
+                                </div>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => editProfileImageRef.current.click()}
+                                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-lg border-2 border-white hover:scale-110 transition-all"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                            </button>
+                        </div>
+                        <p className="text-xs font-semibold text-slate-400">Click camera to change photo</p>
+                    </div>
 
                     {/* Section 1: Basic Information */}
                     <div>

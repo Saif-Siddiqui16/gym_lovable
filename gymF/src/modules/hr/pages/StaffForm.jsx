@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Save, UserPlus, ChevronLeft, Clock, Info } from 'lucide-react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { createStaffAPI, fetchStaffByIdAPI, updateStaffAPI, fetchAvailableUsersAPI, linkStaffAPI } from '../../../api/admin/adminApi';
 import { useBranchContext } from '../../../context/BranchContext';
 import toast from 'react-hot-toast';
 
 const StaffForm = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const isEditMode = !!id;
+    const isReadOnly = location.state?.readOnly || false;
     const profileImageRef = React.useRef(null);
-
     const [activeTab, setActiveTab] = useState('Create New User');
     const [profileImage, setProfileImage] = useState(null);
 
@@ -25,8 +26,10 @@ const StaffForm = () => {
         joiningDate: '',
         salaryType: 'Monthly',
         baseSalary: '',
+        commission: '',
         bankName: '',
         accountNumber: '',
+        ifsc: '',
         taxId: ''
     });
 
@@ -47,8 +50,10 @@ const StaffForm = () => {
         joiningDate: new Date().toISOString().split('T')[0],
         salaryType: 'Monthly',
         baseSalary: '',
+        commission: '',
         bankName: '',
         accountNumber: '',
+        ifsc: '',
         taxId: ''
     });
 
@@ -83,6 +88,8 @@ const StaffForm = () => {
     const fetchStaffDetails = async () => {
         try {
             const data = await fetchStaffByIdAPI(id);
+            if (!data) return;
+
             let displayRole = data.role;
             if (data.role === 'BRANCH_ADMIN') displayRole = 'Admin';
 
@@ -92,27 +99,29 @@ const StaffForm = () => {
             if (data.config) {
                 try {
                     configData = typeof data.config === 'string' ? JSON.parse(data.config) : data.config;
+                    if (!configData || typeof configData !== 'object') configData = {};
                 } catch (e) {
                     console.error('Error parsing config:', e);
                 }
             }
 
+            // Robust mapping of all 15 fields
             setFormData({
-                ...data,
-                ...configData,
-                role: displayRole || 'Staff',
-                joiningDate: formattedJoined,
-                baseSalary: data.baseSalary || '',
-                department: data.department || '',
+                name: data.name || '',
                 phone: data.phone || '',
                 email: data.email || '',
-                name: data.name || '',
                 branch: data.tenantId || '',
-                position: configData.position || '',
-                salaryType: configData.salaryType || 'Monthly',
-                bankName: configData.bankName || '',
+                role: displayRole || 'Staff',
+                department: data.department || '',
+                position: configData.position || configData.Position || '',
+                joiningDate: formattedJoined,
+                salaryType: configData.salaryType || configData.SalaryType || 'Monthly',
+                baseSalary: data.baseSalary ? data.baseSalary.toString() : '',
+                commission: (configData.commission ?? configData.commissionPercent ?? '').toString(),
+                bankName: configData.bankName || configData.BankName || '',
                 accountNumber: data.accountNumber || '',
-                taxId: configData.taxId || ''
+                ifsc: data.ifsc || '',
+                taxId: configData.taxId || configData.tax_id || configData.pan || configData.PAN || ''
             });
 
             if (data.avatar) {
@@ -216,10 +225,10 @@ const StaffForm = () => {
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent mb-2 flex items-center gap-2">
                                 <UserPlus className="text-violet-600" size={28} />
-                                Add Employee
+                                {isReadOnly ? "Staff Profile" : (isEditMode ? "Edit Employee" : "Add Employee")}
                             </h1>
                             <p className="text-slate-600 text-sm font-medium">
-                                Create a new employee or link an existing user profile
+                                {isReadOnly ? "View detailed information of the employee" : "Create a new employee or link an existing user profile"}
                             </p>
                         </div>
                         <button
@@ -271,8 +280,8 @@ const StaffForm = () => {
                                     onChange={handleImageChange}
                                 />
                                 <div
-                                    onClick={() => profileImageRef.current.click()}
-                                    className="relative w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-200 hover:border-violet-400 transition-all duration-300 group overflow-hidden shadow-sm"
+                                    onClick={() => !isReadOnly && profileImageRef.current.click()}
+                                    className={`relative w-24 h-24 rounded-full bg-slate-100 border-2 border-dashed border-slate-300 flex flex-col items-center justify-center ${isReadOnly ? 'cursor-default' : 'cursor-pointer hover:bg-slate-200 hover:border-violet-400'} transition-all duration-300 group overflow-hidden shadow-sm`}
                                 >
                                     {profileImage ? (
                                         <img src={profileImage.data} alt="Profile" className="w-full h-full object-cover" />
@@ -280,8 +289,12 @@ const StaffForm = () => {
                                         <Camera className="text-slate-400 group-hover:text-violet-500 transition-colors" size={28} />
                                     )}
                                 </div>
-                                <span className="text-xs font-bold text-slate-500 mt-3 uppercase tracking-wider">Profile Image Upload</span>
-                                <span className="text-[10px] text-slate-400 mt-1">(Click camera to upload)</span>
+                                {!isReadOnly && (
+                                    <>
+                                        <span className="text-xs font-bold text-slate-500 mt-3 uppercase tracking-wider">Profile Image Upload</span>
+                                        <span className="text-[10px] text-slate-400 mt-1">(Click camera to upload)</span>
+                                    </>
+                                )}
                             </div>
 
                             {/* Form Fields - Exact Order */}
@@ -292,9 +305,10 @@ const StaffForm = () => {
                                     <input
                                         type="text"
                                         name="name"
+                                        disabled={isReadOnly}
                                         value={formData.name || ''}
                                         onChange={handleChange}
-                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${errors.name ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : (errors.name ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm')}`}
                                     />
                                     {errors.name && <p className="text-[10px] text-rose-500 font-bold mt-1.5">{errors.name}</p>}
                                 </div>
@@ -305,9 +319,10 @@ const StaffForm = () => {
                                     <input
                                         type="tel"
                                         name="phone"
+                                        disabled={isReadOnly}
                                         value={formData.phone || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
@@ -317,9 +332,10 @@ const StaffForm = () => {
                                     <input
                                         type="email"
                                         name="email"
+                                        disabled={isReadOnly}
                                         value={formData.email || ''}
                                         onChange={handleChange}
-                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${errors.email ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : (errors.email ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm')}`}
                                     />
                                     {errors.email && <p className="text-[10px] text-rose-500 font-bold mt-1.5">{errors.email}</p>}
                                 </div>
@@ -329,9 +345,10 @@ const StaffForm = () => {
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Branch <span className="text-rose-500">*</span></label>
                                     <select
                                         name="branch"
+                                        disabled={isReadOnly}
                                         value={formData.branch || ''}
                                         onChange={handleChange}
-                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${errors.branch ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : (errors.branch ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm')}`}
                                     >
                                         <option value="" disabled>Select branch</option>
                                         {branches.map(b => (
@@ -346,9 +363,10 @@ const StaffForm = () => {
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Role <span className="text-rose-500">*</span></label>
                                     <select
                                         name="role"
+                                        disabled={isReadOnly}
                                         value={formData.role || 'Staff'}
                                         onChange={handleChange}
-                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${errors.role ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : (errors.role ? 'border-rose-500/50 focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm')}`}
                                     >
                                         <option value="Admin">Admin</option>
                                         <option value="Manager">Manager</option>
@@ -364,9 +382,10 @@ const StaffForm = () => {
                                     <input
                                         type="text"
                                         name="department"
+                                        disabled={isReadOnly}
                                         value={formData.department || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
@@ -376,9 +395,10 @@ const StaffForm = () => {
                                     <input
                                         type="text"
                                         name="position"
+                                        disabled={isReadOnly}
                                         value={formData.position || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
@@ -388,9 +408,10 @@ const StaffForm = () => {
                                     <input
                                         type="date"
                                         name="joiningDate"
+                                        disabled={isReadOnly}
                                         value={formData.joiningDate || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
@@ -399,9 +420,10 @@ const StaffForm = () => {
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Salary Type</label>
                                     <select
                                         name="salaryType"
+                                        disabled={isReadOnly}
                                         value={formData.salaryType || 'Monthly'}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all focus:border-violet-500 hover:border-slate-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none appearance-none cursor-pointer transition-all ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'focus:border-violet-500 hover:border-slate-300 shadow-sm'}`}
                                     >
                                         <option value="Monthly">Monthly</option>
                                         <option value="Hourly">Hourly</option>
@@ -416,45 +438,76 @@ const StaffForm = () => {
                                     <input
                                         type="number"
                                         name="baseSalary"
+                                        disabled={isReadOnly}
                                         value={formData.baseSalary || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
-                                {/* 11. Bank Name */}
+                                {/* 11. Commission Percent (%) */}
+                                <div className="relative group">
+                                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Commission (%)</label>
+                                    <input
+                                        type="number"
+                                        name="commission"
+                                        disabled={isReadOnly}
+                                        value={formData.commission || ''}
+                                        onChange={handleChange}
+                                        placeholder="0"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                    />
+                                </div>
+
+                                {/* 12. Bank Name */}
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Bank Name</label>
                                     <input
                                         type="text"
                                         name="bankName"
+                                        disabled={isReadOnly}
                                         value={formData.bankName || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
-                                {/* 12. Account Number */}
+                                {/* 13. Account Number */}
                                 <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Account Number</label>
                                     <input
                                         type="text"
                                         name="accountNumber"
+                                        disabled={isReadOnly}
                                         value={formData.accountNumber || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
 
-                                {/* 13. PAN / Tax ID */}
-                                <div className="relative group md:col-span-2">
+                                {/* 14. IFSC Code */}
+                                <div className="relative group">
+                                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">IFSC Code</label>
+                                    <input
+                                        type="text"
+                                        name="ifsc"
+                                        disabled={isReadOnly}
+                                        value={formData.ifsc || ''}
+                                        onChange={handleChange}
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
+                                    />
+                                </div>
+
+                                {/* 15. PAN / Tax ID */}
+                                <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">PAN / Tax ID</label>
                                     <input
                                         type="text"
                                         name="taxId"
+                                        disabled={isReadOnly}
                                         value={formData.taxId || ''}
                                         onChange={handleChange}
-                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                        className={`w-full px-4 py-3 bg-white/80 border-2 rounded-xl text-sm font-bold text-slate-800 focus:outline-none transition-all duration-300 ${isReadOnly ? 'border-slate-100 bg-slate-50/50 cursor-default' : 'border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 shadow-sm'}`}
                                     />
                                 </div>
                             </div>
@@ -467,24 +520,26 @@ const StaffForm = () => {
                                 onClick={() => navigate(-1)}
                                 className="px-8 py-3.5 rounded-xl font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-all duration-300 shadow-sm text-sm"
                             >
-                                Cancel
+                                {isReadOnly ? 'Close' : 'Cancel'}
                             </button>
-                            <button
-                                type="submit"
-                                disabled={isSubmitting}
-                                className={`px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-violet-500/30'}`}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Clock className="w-5 h-5 animate-spin" />
-                                        Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        {isEditMode ? 'Update Employee' : 'Create Employee'}
-                                    </>
-                                )}
-                            </button>
+                            {!isReadOnly && (
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className={`px-10 py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white ${isSubmitting ? 'opacity-70 cursor-not-allowed' : 'hover:shadow-violet-500/30'}`}
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <Clock className="w-5 h-5 animate-spin" />
+                                            Processing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            {isEditMode ? 'Update Employee' : 'Create Employee'}
+                                        </>
+                                    )}
+                                </button>
+                            )}
                         </div>
                     </form>
                 )}
@@ -605,7 +660,7 @@ const StaffForm = () => {
                                 </div>
 
                                 {/* Salary */}
-                                <div className="relative group md:col-span-2">
+                                <div className="relative group">
                                     <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Salary (₹)</label>
                                     <input
                                         type="number"
@@ -613,6 +668,19 @@ const StaffForm = () => {
                                         value={linkData.baseSalary}
                                         onChange={handleLinkChange}
                                         placeholder="Salary amount"
+                                        className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                    />
+                                </div>
+
+                                {/* Commission (%) */}
+                                <div className="relative group">
+                                    <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">Commission (%)</label>
+                                    <input
+                                        type="number"
+                                        name="commission"
+                                        value={linkData.commission}
+                                        onChange={handleLinkChange}
+                                        placeholder="0"
                                         className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                     />
                                 </div>
@@ -648,7 +716,7 @@ const StaffForm = () => {
                                         </div>
 
                                         {/* PAN / Tax ID */}
-                                        <div className="relative group md:col-span-2">
+                                        <div className="relative group">
                                             <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">PAN / Tax ID</label>
                                             <input
                                                 type="text"
@@ -656,6 +724,19 @@ const StaffForm = () => {
                                                 value={linkData.taxId}
                                                 onChange={handleLinkChange}
                                                 placeholder="PAN number"
+                                                className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
+                                            />
+                                        </div>
+
+                                        {/* IFSC Code */}
+                                        <div className="relative group">
+                                            <label className="block text-[11px] font-black uppercase tracking-widest text-slate-500 mb-2">IFSC Code</label>
+                                            <input
+                                                type="text"
+                                                name="ifsc"
+                                                value={linkData.ifsc}
+                                                onChange={handleLinkChange}
+                                                placeholder="IFSC code"
                                                 className="w-full px-4 py-3 bg-white/80 border-2 border-slate-200 rounded-xl text-sm font-bold text-slate-800 focus:outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 hover:border-slate-300 transition-all duration-300 shadow-sm"
                                             />
                                         </div>

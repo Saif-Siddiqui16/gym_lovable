@@ -471,7 +471,7 @@ const getAvailableUsersForStaff = async (req, res) => {
 
 const linkStaff = async (req, res) => {
     try {
-        const { userId, branchId, role, department, position, joiningDate, salaryType, baseSalary, bankName, accountNumber, taxId } = req.body;
+        const { userId, branchId, role, department, position, joiningDate, salaryType, baseSalary, bankName, accountNumber, taxId, ifsc, commission } = req.body;
 
         if (!userId || !branchId || !role) {
             return res.status(400).json({ message: 'User ID, Branch, and Role are required' });
@@ -490,11 +490,13 @@ const linkStaff = async (req, res) => {
                 joinedDate: joiningDate ? new Date(joiningDate) : new Date(),
                 baseSalary: baseSalary ? parseFloat(baseSalary) : null,
                 accountNumber,
+                ifsc,
                 config: JSON.stringify({
                     position,
                     salaryType,
                     bankName,
-                    taxId
+                    taxId,
+                    commission: commission ? parseFloat(commission) : 0
                 })
             }
         });
@@ -516,6 +518,10 @@ const createStaff = async (req, res) => {
             idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio,
             position, bankName, taxId
         } = req.body;
+
+        console.log(`[createStaff] Received payload:`, {
+            name, email, role, position, commission, bankName, taxId, ifsc
+        });
 
         // Combine role configs into one config object based on the role
         let config = null;

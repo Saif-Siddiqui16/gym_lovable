@@ -16,6 +16,7 @@ const TaskList = () => {
     const [activeTab, setActiveTab] = useState('All');
     const [isNewTaskDrawerOpen, setIsNewTaskDrawerOpen] = useState(false);
     const [editingTaskId, setEditingTaskId] = useState(null);
+    const [isReadOnly, setIsReadOnly] = useState(false);
     const [tasks, setTasks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState({
@@ -102,6 +103,7 @@ const TaskList = () => {
 
     const handleNewTask = () => {
         setEditingTaskId(null);
+        setIsReadOnly(false);
         setFormData({
             branch: '',
             title: '',
@@ -115,6 +117,22 @@ const TaskList = () => {
 
     const handleEditTask = (task) => {
         setEditingTaskId(task.id);
+        setIsReadOnly(false);
+        const branchString = task.tenantId ? task.tenantId.toString() : '';
+        setFormData({
+            branch: branchString,
+            title: task.title,
+            description: task.description || '',
+            priority: task.priority,
+            dueDate: task.dueDate !== 'N/A' ? task.dueDate : '',
+            assignTo: task.assignedToId ? task.assignedToId.toString() : ''
+        });
+        setIsNewTaskDrawerOpen(true);
+    };
+
+    const handleViewTask = (task) => {
+        setEditingTaskId(task.id);
+        setIsReadOnly(true);
         const branchString = task.tenantId ? task.tenantId.toString() : '';
         setFormData({
             branch: branchString,
@@ -292,7 +310,7 @@ const TaskList = () => {
                                             </td>
                                             <td className="px-8 py-5 text-right flex items-center justify-end gap-2">
                                                 <button
-                                                    onClick={() => handleEditTask(task)}
+                                                    onClick={() => handleViewTask(task)}
                                                     className="p-2 hover:bg-violet-50 text-slate-400 hover:text-violet-600 rounded-lg transition-colors"
                                                     title="View Details"
                                                 >
@@ -337,24 +355,26 @@ const TaskList = () => {
             <RightDrawer
                 isOpen={isNewTaskDrawerOpen}
                 onClose={() => setIsNewTaskDrawerOpen(false)}
-                title="Create New Task"
-                subtitle="Add a new task and assign it to team members"
+                title={isReadOnly ? "Task Details" : (editingTaskId ? "Edit Task" : "Create New Task")}
+                subtitle={isReadOnly ? "Detailed overview of the selected task" : "Add a new task and assign it to team members"}
                 maxWidth="max-w-md"
                 footer={
                     <div className="flex gap-4 w-full">
                         <button
                             onClick={() => setIsNewTaskDrawerOpen(false)}
-                            className="flex-1 h-12 border-2 border-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 hover:border-slate-200 transition-all duration-300"
+                            className={`flex-1 h-12 border-2 border-slate-100 text-slate-600 rounded-2xl text-sm font-bold hover:bg-slate-50 hover:border-slate-200 transition-all duration-300 ${isReadOnly ? 'w-full' : ''}`}
                         >
-                            Cancel
+                            {isReadOnly ? 'Close' : 'Cancel'}
                         </button>
-                        <button
-                            type="submit"
-                            form="create-task-form"
-                            className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-violet-200 hover:shadow-violet-400/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            {editingTaskId ? "Save Changes" : "Create Task"}
-                        </button>
+                        {!isReadOnly && (
+                            <button
+                                type="submit"
+                                form="create-task-form"
+                                className="flex-1 h-12 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-2xl text-sm font-bold shadow-lg shadow-violet-200 hover:shadow-violet-400/40 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            >
+                                {editingTaskId ? "Save Changes" : "Create Task"}
+                            </button>
+                        )}
                     </div>
                 }
             >
@@ -368,6 +388,7 @@ const TaskList = () => {
                         <CustomDropdown
                             options={branchOptions}
                             value={formData.branch}
+                            disabled={isReadOnly}
                             onChange={(val) => setFormData({ ...formData, branch: val })}
                             placeholder="Select branch"
                             className="w-full"
@@ -383,8 +404,9 @@ const TaskList = () => {
                         <input
                             required
                             type="text"
+                            disabled={isReadOnly}
                             placeholder="Task title"
-                            className="saas-input w-full h-12 px-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200"
+                            className={`saas-input w-full h-12 px-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200 ${isReadOnly ? 'cursor-default' : ''}`}
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                         />
@@ -397,9 +419,10 @@ const TaskList = () => {
                             Description
                         </label>
                         <textarea
+                            disabled={isReadOnly}
                             placeholder="Task description..."
                             rows="4"
-                            className="saas-input w-full p-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200 resize-none"
+                            className={`saas-input w-full p-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200 resize-none ${isReadOnly ? 'cursor-default' : ''}`}
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         ></textarea>
@@ -415,6 +438,7 @@ const TaskList = () => {
                             <CustomDropdown
                                 options={priorityOptions}
                                 value={formData.priority}
+                                disabled={isReadOnly}
                                 onChange={(val) => setFormData({ ...formData, priority: val })}
                                 className="w-full"
                             />
@@ -429,7 +453,8 @@ const TaskList = () => {
                             <input
                                 required
                                 type="date"
-                                className="saas-input w-full h-[52px] px-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200"
+                                disabled={isReadOnly}
+                                className={`saas-input w-full h-[52px] px-5 rounded-2xl border-2 border-slate-100 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm bg-slate-50/50 focus:bg-white transition-all duration-300 group-hover:border-slate-200 ${isReadOnly ? 'cursor-default' : ''}`}
                                 value={formData.dueDate}
                                 onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                             />
@@ -446,6 +471,7 @@ const TaskList = () => {
                             options={staffList}
                             value={formData.assignTo}
                             loading={loadingStaff}
+                            disabled={isReadOnly}
                             onChange={(val) => setFormData({ ...formData, assignTo: val })}
                             placeholder="Select user (optional)"
                             className="w-full"

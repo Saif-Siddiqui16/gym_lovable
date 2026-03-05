@@ -927,19 +927,23 @@ const deleteStaffMember = async (req, res) => {
 
 const updateStaffMember = async (req, res) => {
     try {
-        const { id } = req.params;
         const {
             name, email, phone, department, role,
             joiningDate, status, baseSalary, commission, accountNumber, ifsc,
             trainerConfig, salesConfig, managerConfig, documents,
             idType, idNumber, specialization, certifications, salaryType, hourlyRate, ptSharePercent, bio,
-            position, bankName, taxId
+            position, bankName, taxId, tenantId
         } = req.body;
+
+        console.log(`[updateStaffMember] Received update for ID ${id}:`, {
+            position, commission, bankName, taxId, ifsc, accountNumber, role
+        });
 
         const existingUser = await prisma.user.findUnique({ where: { id: parseInt(id) } });
         if (!existingUser) return res.status(404).json({ message: 'User not found' });
 
         const updateData = {};
+        if (tenantId !== undefined) updateData.tenantId = parseInt(tenantId);
         if (name !== undefined) updateData.name = name;
         if (email !== undefined) updateData.email = email;
         if (phone !== undefined) updateData.phone = phone;
