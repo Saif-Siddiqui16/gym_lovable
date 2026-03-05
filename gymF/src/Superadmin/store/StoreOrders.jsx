@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { ShoppingCart, Search, Filter, Download, ChevronRight, Eye, Calendar, Clock, CheckCircle, Plus, Users, User, SearchIcon, ReceiptText } from 'lucide-react';
 import { getStoreOrders } from '../../api/storeApi';
 import toast from 'react-hot-toast';
+import { useBranchContext } from '../../context/BranchContext';
 
 const StoreOrders = () => {
+    const { selectedBranch } = useBranchContext();
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('');
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [showModal, setShowModal] = useState(false);
 
     const fetchOrders = async () => {
         try {
             setLoading(true);
-            const data = await getStoreOrders();
-            setOrders(data);
+            const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
+            const data = await getStoreOrders({ branchId: branchParam });
+            setOrders(Array.isArray(data) ? data : []);
         } catch (error) {
             toast.error(error);
         } finally {
@@ -23,13 +28,75 @@ const StoreOrders = () => {
 
     useEffect(() => {
         fetchOrders();
-    }, []);
+    }, [selectedBranch]);
 
     const filteredOrders = orders.filter(o => {
         const matchesSearch = (o.memberName || 'Guest').toLowerCase().includes(searchTerm.toLowerCase()) || o.id.toString().includes(searchTerm);
         const matchesStatus = filterStatus === '' || o.status === filterStatus;
         return matchesSearch && matchesStatus;
     });
+
+    const handleExportCSV = () => {
+        if (filteredOrders.length === 0) return toast.error('No orders to export');
+        const headers = ['Order ID', 'Customer', 'Date', 'Items', 'Total', 'Status'];
+        const rows = filteredOrders.map(o => [
+            `#${o.id.toString().padStart(6, '0')}`,
+            o.member?.name || o.guestName || 'Guest',
+            o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A',
+            o.itemsCount || 0,
+            o.totalAmount || 0,
+            o.status
+        ]);
+        const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `store_orders_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast.success('CSV exported successfully');
+    };
+
+    const handleGenerateReport = () => {
+        if (filteredOrders.length === 0) return toast.error('No orders to generate report');
+        const totalRev = filteredOrders.reduce((a, o) => a + (o.totalAmount || 0), 0);
+        const completed = filteredOrders.filter(o => o.status === 'Completed').length;
+        const pending = filteredOrders.filter(o => o.status === 'Pending').length;
+        const processing = filteredOrders.filter(o => o.status === 'Processing').length;
+        const reportHTML = `<!DOCTYPE html><html><head><title>Store Orders Report</title>
+        <style>body{font-family:Arial,sans-serif;padding:40px;color:#1e293b}h1{font-size:24px;margin-bottom:8px}
+        .meta{color:#64748b;font-size:13px;margin-bottom:24px}.stats{display:flex;gap:20px;margin-bottom:32px}
+        .stat{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:16px 24px;text-align:center}
+        .stat h3{font-size:24px;margin:4px 0}.stat p{font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px}
+        table{width:100%;border-collapse:collapse;margin-top:16px}th{background:#f1f5f9;text-align:left;padding:12px 16px;
+        font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#64748b}td{padding:12px 16px;border-bottom:1px solid #f1f5f9;
+        font-size:13px}.completed{color:#059669;font-weight:700}.processing{color:#2563eb;font-weight:700}
+        .pending{color:#d97706;font-weight:700}@media print{body{padding:20px}}</style></head><body>
+        <h1>Store Orders Report</h1>
+        <p class="meta">Generated on ${new Date().toLocaleDateString('en-IN', { dateStyle: 'full' })}</p>
+        <div class="stats">
+          <div class="stat"><p>Total Orders</p><h3>${filteredOrders.length}</h3></div>
+          <div class="stat"><p>Revenue</p><h3>₹${totalRev.toLocaleString()}</h3></div>
+          <div class="stat"><p>Completed</p><h3>${completed}</h3></div>
+          <div class="stat"><p>Pending</p><h3>${pending}</h3></div>
+          <div class="stat"><p>Processing</p><h3>${processing}</h3></div>
+        </div>
+        <table><thead><tr><th>Order ID</th><th>Customer</th><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody>${filteredOrders.map(o => `<tr>
+          <td>#${o.id.toString().padStart(6, '0')}</td>
+          <td>${o.member?.name || o.guestName || 'Guest'}</td>
+          <td>${o.createdAt ? new Date(o.createdAt).toLocaleDateString() : 'N/A'}</td>
+          <td>${o.itemsCount || 0}</td>
+          <td>₹${(o.totalAmount || 0).toLocaleString()}</td>
+          <td class="${o.status?.toLowerCase()}">${o.status}</td>
+        </tr>`).join('')}</tbody></table></body></html>`;
+        const w = window.open('', '_blank');
+        w.document.write(reportHTML);
+        w.document.close();
+        w.print();
+        toast.success('Report generated');
+    };
 
     return (
         <div className="bg-gradient-to-br from-slate-50 via-white to-violet-50/20 p-4 sm:p-8 min-h-screen">
@@ -47,10 +114,10 @@ const StoreOrders = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all active:scale-95">
+                    <button onClick={handleExportCSV} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all active:scale-95">
                         <Download size={18} /> Export CSV
                     </button>
-                    <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-black shadow-lg shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95">
+                    <button onClick={handleGenerateReport} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-2.5 bg-violet-600 text-white rounded-xl text-sm font-black shadow-lg shadow-violet-200 hover:bg-violet-700 transition-all active:scale-95">
                         <ReceiptText size={18} /> Generate Report
                     </button>
                 </div>
@@ -182,7 +249,13 @@ const StoreOrders = () => {
                                             </span>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <button className="p-3 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-lg hover:shadow-slate-100 border border-transparent hover:border-slate-100 rounded-2xl transition-all">
+                                            <button 
+                                                onClick={() => {
+                                                    setSelectedOrder(o);
+                                                    setShowModal(true);
+                                                }}
+                                                className="p-3 text-slate-400 hover:text-slate-900 hover:bg-white hover:shadow-lg hover:shadow-slate-100 border border-transparent hover:border-slate-100 rounded-2xl transition-all"
+                                            >
                                                 <Eye size={18} />
                                             </button>
                                         </td>
@@ -201,6 +274,96 @@ const StoreOrders = () => {
                     </div>
                 )}
             </div>
+
+            {/* Order Detail Modal */}
+            {showModal && selectedOrder && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95 duration-200">
+                        {/* Modal Header */}
+                        <div className="p-8 border-b border-slate-50 bg-gradient-to-r from-slate-50 to-white flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-200">
+                                    <ReceiptText size={24} />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black text-slate-900 tracking-tight">Order Details</h2>
+                                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-0.5">#{selectedOrder.id.toString().padStart(6, '0')}</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowModal(false)}
+                                className="w-10 h-10 rounded-xl hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors"
+                            >
+                                <Plus className="rotate-45" size={24} />
+                            </button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="p-8 max-h-[70vh] overflow-y-auto">
+                            {/* Order Info Grid */}
+                            <div className="grid grid-cols-2 gap-8 mb-8">
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Customer Info</p>
+                                        <h4 className="font-black text-slate-900">{selectedOrder.memberName || selectedOrder.guestName || 'Guest Customer'}</h4>
+                                        <p className="text-sm text-slate-500 font-medium">{selectedOrder.guestPhone || 'No phone number'}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Status</p>
+                                        <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${selectedOrder.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'}`}>
+                                            {selectedOrder.status}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="text-right space-y-4">
+                                    <div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Order Date</p>
+                                        <p className="text-sm font-black text-slate-900">{new Date(selectedOrder.createdAt).toLocaleDateString()}</p>
+                                        <p className="text-xs text-slate-400 font-medium">{new Date(selectedOrder.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Items List */}
+                            <div className="space-y-4">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Items Purchased</p>
+                                <div className="space-y-3">
+                                    {selectedOrder.items?.map((item, idx) => (
+                                        <div key={idx} className="flex justify-between items-center p-4 rounded-2xl bg-slate-50 border border-slate-100 group">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-violet-600 transition-colors">
+                                                    <ShoppingCart size={18} />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-900">{item.productName}</p>
+                                                    <p className="text-xs text-slate-400 font-medium">Qty: {item.quantity} × ₹{item.price}</p>
+                                                </div>
+                                            </div>
+                                            <p className="font-black text-slate-900">₹{item.total.toLocaleString()}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Summary */}
+                            <div className="mt-8 pt-6 border-t border-dashed border-slate-200">
+                                <div className="flex justify-between items-center bg-gradient-to-r from-violet-600 to-indigo-600 p-6 rounded-2xl text-white shadow-xl shadow-violet-200">
+                                    <div className="flex gap-4 items-center">
+                                        <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/30">
+                                            <ReceiptText size={24} className="text-white" />
+                                        </div>
+                                        <div>
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-violet-100">Total Amount</p>
+                                            <p className="text-xs text-violet-200 font-medium mt-0.5">Included Taxes & Fees</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-3xl font-black tracking-tight drop-shadow-sm">₹{selectedOrder.totalAmount.toLocaleString()}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

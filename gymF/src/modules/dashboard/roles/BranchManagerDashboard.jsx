@@ -21,13 +21,14 @@ import { DASHBOARD_DATA } from '../data/mockDashboardData';
 import TodayFollowUps from '../../crm/pages/TodayFollowUps';
 import RenewalAlertsWidget from '../../membership/components/RenewalAlertsWidget';
 import { useNavigate } from 'react-router-dom';
-// import { KPIS } from '../../finance/data/mockFinance';
 import LiveAccessControl from '../components/LiveAccessControl';
 import FacilityStatusOverview from '../../operations/components/widgets/FacilityStatusOverview';
 import { EQUIPMENT_INVENTORY } from '../../operations/data/equipmentData';
 import { fetchDashboardStats, fetchRecentActivities, fetchTrainerAvailability, fetchFinancialStats } from '../../../api/branchAdmin/branchAdminApi';
+import { useBranchContext } from '../../../context/BranchContext';
 
 const BranchManagerDashboard = () => {
+    const { selectedBranch, branches } = useBranchContext();
     const [stats, setStats] = useState([]);
     const [recentActivities, setRecentActivities] = useState([]);
     const [trainers, setTrainers] = useState([]);
@@ -38,20 +39,28 @@ const BranchManagerDashboard = () => {
     const [equipment, setEquipment] = useState([]);
     const [risks, setRisks] = useState({ defaulters: 0, expiringSoon: 0, manualOverrides: 0 });
     const [loading, setLoading] = useState(true);
+    const [revenueOverview, setRevenueOverview] = useState([]);
+    const [weeklyAttendance, setWeeklyAttendance] = useState([]);
+    const [receivables, setReceivables] = useState(0);
+    const [membershipDistribution, setMembershipDistribution] = useState([]);
+    const [liveOccupancy, setLiveOccupancy] = useState({ current: 0, capacity: 50 });
+
+    const activeBranch = branches.find(b => b.id.toString() === selectedBranch.toString());
+    const welcomeTitle = activeBranch ? `Welcome back, ${activeBranch.branchName || activeBranch.name}!` : 'Welcome back, All Branches!';
 
     const navigate = useNavigate();
 
     useEffect(() => {
         const loadDashboardData = async () => {
+            setLoading(true);
             try {
                 const [statsData, activitiesData, trainersData, financialsData] = await Promise.all([
-                    fetchDashboardStats(),
-                    fetchRecentActivities(),
-                    fetchTrainerAvailability(),
-                    fetchFinancialStats()
+                    fetchDashboardStats(selectedBranch),
+                    fetchRecentActivities(selectedBranch),
+                    fetchTrainerAvailability(selectedBranch),
+                    fetchFinancialStats(selectedBranch)
                 ]);
 
-                // Map backend icon strings to actual Lucide components
                 const mappedStats = statsData.stats.map(stat => ({
                     ...stat,
                     icon: stat.icon === 'Users' ? Users :
@@ -65,16 +74,20 @@ const BranchManagerDashboard = () => {
                 setFinancials(financialsData);
                 if (statsData.equipment) setEquipment(statsData.equipment);
                 if (statsData.risks) setRisks(statsData.risks);
+                if (statsData.revenueOverview) setRevenueOverview(statsData.revenueOverview);
+                if (statsData.weeklyAttendance) setWeeklyAttendance(statsData.weeklyAttendance);
+                if (statsData.receivables !== undefined) setReceivables(statsData.receivables);
+                if (statsData.membershipDistribution) setMembershipDistribution(statsData.membershipDistribution);
+                if (statsData.liveOccupancy) setLiveOccupancy(statsData.liveOccupancy);
             } catch (error) {
                 console.error("Failed to load dashboard data:", error);
-                // Fallback to mock data on error is handled by initial state
             } finally {
                 setLoading(false);
             }
         };
 
         loadDashboardData();
-    }, []);
+    }, [selectedBranch]);
 
     if (loading) {
         return (
@@ -99,7 +112,7 @@ const BranchManagerDashboard = () => {
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">
-                                Welcome back, Demo!
+                                {welcomeTitle}
                             </h1>
                             <p className="text-slate-600 text-sm mt-1">Here's what's happening at your gym today</p>
                         </div>
@@ -115,53 +128,34 @@ const BranchManagerDashboard = () => {
 
             {/* Top Statistic Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="group relative bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5 overflow-hidden">
-                    <div className="relative flex items-start justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-600 mb-2">Total Members</p>
-                            <h3 className="text-3xl font-black text-slate-900 mb-2">0</h3>
-                            <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                                <TrendingUp size={14} className="text-emerald-500" />
-                                0% from last month
-                            </p>
-                        </div>
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white shadow-lg transition-transform duration-300">
-                            <Users size={24} />
-                        </div>
-                    </div>
-                </div>
+                {stats.slice(0, 3).map((stat, i) => {
+                    const Icon = stat.icon || Users;
+                    
+                    // Assigning different gradients and colors based on index for the 3 cards
+                    const styles = [
+                        { gradient: 'from-violet-500 to-purple-600', text: 'text-violet-600', trendColor: 'text-emerald-500' },
+                        { gradient: 'from-emerald-500 to-emerald-600', text: 'text-emerald-600', trendColor: 'text-emerald-500' },
+                        { gradient: 'from-fuchsia-500 to-fuchsia-600', text: 'text-fuchsia-600', trendColor: 'text-amber-500' }
+                    ][i] || { gradient: 'from-blue-500 to-blue-600', text: 'text-blue-600', trendColor: 'text-emerald-500' };
 
-                <div className="group relative bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5 overflow-hidden">
-                    <div className="relative flex items-start justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-600 mb-2">Revenue This Month</p>
-                            <h3 className="text-3xl font-black text-slate-900 mb-2">₹0</h3>
-                            <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                                <TrendingUp size={14} className="text-emerald-500" />
-                                0% growth
-                            </p>
+                    return (
+                        <div key={stat.id || i} className="group relative bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5 overflow-hidden">
+                            <div className="relative flex items-start justify-between">
+                                <div>
+                                    <p className="text-sm font-semibold text-slate-600 mb-2">{stat.title}</p>
+                                    <h3 className="text-3xl font-black text-slate-900 mb-2">{stat.value}</h3>
+                                    <p className={`text-xs font-semibold flex items-center gap-1 ${styles.trendColor}`}>
+                                        <TrendingUp size={14} />
+                                        {stat.trend}
+                                    </p>
+                                </div>
+                                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${styles.gradient} flex items-center justify-center text-white shadow-lg transition-transform duration-300`}>
+                                    <Icon size={24} />
+                                </div>
+                            </div>
                         </div>
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center text-white shadow-lg transition-transform duration-300">
-                            <IndianRupee size={24} />
-                        </div>
-                    </div>
-                </div>
-
-                <div className="group relative bg-white rounded-2xl shadow-lg border border-slate-100 p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5 overflow-hidden">
-                    <div className="relative flex items-start justify-between">
-                        <div>
-                            <p className="text-sm font-semibold text-slate-600 mb-2">Expiring Soon</p>
-                            <h3 className="text-3xl font-black text-slate-900 mb-2">0</h3>
-                            <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                                <Activity size={14} className="text-amber-500" />
-                                Review needed
-                            </p>
-                        </div>
-                        <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-fuchsia-500 to-fuchsia-600 flex items-center justify-center text-white shadow-lg transition-transform duration-300">
-                            <Clock size={24} />
-                        </div>
-                    </div>
-                </div>
+                    );
+                })}
             </div>
 
             {/* Secondary KPI Cards */}
@@ -173,7 +167,7 @@ const BranchManagerDashboard = () => {
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 transition-all duration-200 md:hover:shadow-md md:hover:-translate-y-0.5">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Active Trainers</p>
-                    <h4 className="text-xl font-black text-slate-800">2</h4>
+                    <h4 className="text-xl font-black text-slate-800">{trainers.length || 0}</h4>
                     <p className="text-[10px] text-slate-500 font-medium">Available today</p>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-4 transition-all duration-200 md:hover:shadow-md md:hover:-translate-y-0.5">
@@ -196,25 +190,27 @@ const BranchManagerDashboard = () => {
                         Revenue Overview
                     </h3>
                     <div className="h-48 flex items-end justify-between gap-2 px-4 pb-4 border-b border-slate-100">
-                        {['Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'].map((month, i) => {
-                            const demoValues = [2, 0, 4, 1, 3, 0];
-                            const h = demoValues[i] * 20; // 0-4 values scaled to height
+                        {revenueOverview.length > 0 ? revenueOverview.map((item, i) => {
+                            const maxValue = Math.max(...revenueOverview.map(r => r.value), 1000);
+                            const h = (item.value / maxValue) * 100;
                             return (
-                                <div key={month} className="w-full bg-violet-50 rounded-t-lg relative group/bar">
+                                <div key={i} className="w-full bg-violet-50 rounded-t-lg relative group/bar">
                                     <div
                                         className="absolute bottom-0 w-full bg-gradient-to-t from-violet-600 to-purple-500 rounded-t-lg transition-all duration-500 hover:from-violet-700 hover:to-purple-600 cursor-pointer"
-                                        style={{ height: `${h || 2}%` }}
+                                        style={{ height: `${Math.max(h, 2)}%` }}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                                            ₹{demoValues[i].toLocaleString()}
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                            ₹{item.value.toLocaleString()}
                                         </div>
                                     </div>
                                     <div className="absolute -bottom-6 w-full text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        {month}
+                                        {item.month}
                                     </div>
                                 </div>
                             );
-                        })}
+                        }) : (
+                            <div className="w-full flex items-center justify-center text-slate-300 italic text-sm">No revenue data</div>
+                        )}
                     </div>
                 </div>
 
@@ -225,25 +221,27 @@ const BranchManagerDashboard = () => {
                         Weekly Attendance
                     </h3>
                     <div className="h-48 flex items-end justify-between gap-2 px-4 pb-4 border-b border-slate-100">
-                        {['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => {
-                            const demoValues = [0, 1, 4, 2, 3, 0, 0];
-                            const h = demoValues[i] * 20;
+                        {weeklyAttendance.length > 0 ? weeklyAttendance.map((item, i) => {
+                            const maxCount = Math.max(...weeklyAttendance.map(a => a.count), 5);
+                            const h = (item.count / maxCount) * 100;
                             return (
-                                <div key={day} className="w-full bg-emerald-50 rounded-t-lg relative group/bar">
+                                <div key={i} className="w-full bg-emerald-50 rounded-t-lg relative group/bar">
                                     <div
                                         className="absolute bottom-0 w-full bg-gradient-to-t from-emerald-600 to-teal-500 rounded-t-lg transition-all duration-500 hover:from-emerald-700 hover:to-teal-600 cursor-pointer"
-                                        style={{ height: `${h || 2}%` }}
+                                        style={{ height: `${Math.max(h, 2)}%` }}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                                            {demoValues[i]} Check-ins
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                            {item.count} Check-ins
                                         </div>
                                     </div>
                                     <div className="absolute -bottom-6 w-full text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                        {day}
+                                        {item.day}
                                     </div>
                                 </div>
                             );
-                        })}
+                        }) : (
+                            <div className="w-full flex items-center justify-center text-slate-300 italic text-sm">No attendance data</div>
+                        )}
                     </div>
                 </div>
             </div>
@@ -258,12 +256,15 @@ const BranchManagerDashboard = () => {
                         <h3 className="text-lg font-bold text-slate-900">Live Occupancy</h3>
                     </div>
                     <div className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-slate-100 rounded-2xl">
-                        <h4 className="text-4xl font-black text-slate-900 mb-2">0 of 50</h4>
+                        <h4 className="text-4xl font-black text-slate-900 mb-2">{liveOccupancy.current} of {liveOccupancy.capacity}</h4>
                         <p className="text-sm font-bold text-slate-500 mb-4 uppercase tracking-widest">Capacity</p>
                         <div className="w-full bg-slate-100 h-3 rounded-full overflow-hidden mb-2">
-                            <div className="bg-violet-600 h-full w-0 transition-all duration-500"></div>
+                            <div 
+                                className="bg-violet-600 h-full transition-all duration-500"
+                                style={{ width: `${Math.min((liveOccupancy.current / liveOccupancy.capacity) * 100, 100)}%` }}
+                            ></div>
                         </div>
-                        <p className="text-lg font-black text-violet-600">0% Full</p>
+                        <p className="text-lg font-black text-violet-600">{Math.round((liveOccupancy.current / liveOccupancy.capacity) * 100)}% Full</p>
                     </div>
                 </div>
 
@@ -294,10 +295,14 @@ const BranchManagerDashboard = () => {
                     <div className="space-y-4">
                         <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-center">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Outstanding</p>
-                            <h4 className="text-2xl font-black text-slate-900">₹0</h4>
+                            <h4 className="text-2xl font-black text-slate-900">₹{receivables.toLocaleString()}</h4>
                         </div>
                         <div className="p-8 text-center border-2 border-dashed border-slate-100 rounded-xl">
-                            <p className="text-slate-400 font-bold text-sm italic">No pending dues</p>
+                            {receivables > 0 ? (
+                                <p className="text-amber-600 font-bold text-sm italic">Pending payments found</p>
+                            ) : (
+                                <p className="text-slate-400 font-bold text-sm italic">No pending dues</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -310,13 +315,22 @@ const BranchManagerDashboard = () => {
                         <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
                             <Zap size={20} />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900">Expiring in 48 Hours</h3>
+                        <h3 className="text-lg font-bold text-slate-900">Expiring in Next 7 Days</h3>
                     </div>
                     <div className="flex flex-col items-center justify-center p-12 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-                        <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-3">
-                            <ShieldAlert size={24} />
-                        </div>
-                        <p className="text-slate-500 font-black text-xs uppercase tracking-widest italic">No memberships expiring soon</p>
+                        {risks.expiringSoon > 0 ? (
+                            <>
+                                <h4 className="text-4xl font-black text-rose-600 mb-2">{risks.expiringSoon}</h4>
+                                <p className="text-slate-500 font-black text-xs uppercase tracking-widest italic text-center">Memberships expiring soon</p>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 mb-3">
+                                    <ShieldAlert size={24} />
+                                </div>
+                                <p className="text-slate-500 font-black text-xs uppercase tracking-widest italic text-center">No memberships expiring soon</p>
+                            </>
+                        )}
                     </div>
                 </div>
 
@@ -326,11 +340,19 @@ const BranchManagerDashboard = () => {
                         <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
                             <TrendingUp size={20} />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900">Membership Distribution</h3>
+                        <h3 className="text-lg font-bold text-slate-900">Membership Status</h3>
                     </div>
-                    <div className="flex flex-col items-center justify-center p-12 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-100">
-                        <p className="text-slate-500 font-black text-sm text-center tracking-tight mb-2">No active memberships</p>
-                        <p className="text-slate-400 text-xs font-semibold">Add plans to see distribution</p>
+                    <div className="flex flex-col gap-3 p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                        {membershipDistribution.length > 0 ? membershipDistribution.map((d, i) => (
+                            <div key={i} className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-600 uppercase tracking-widest">{d.status}</span>
+                                <span className="bg-white px-3 py-1 rounded-lg text-sm font-black text-slate-800 shadow-sm border border-slate-100">
+                                    {d._count.id}
+                                </span>
+                            </div>
+                        )) : (
+                            <p className="text-slate-400 text-xs font-semibold text-center py-4">No membership data</p>
+                        )}
                     </div>
                 </div>
             </div>
@@ -347,9 +369,28 @@ const BranchManagerDashboard = () => {
                             <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Real-time gym entrance logs</p>
                         </div>
                     </div>
-                    <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
-                        <p className="text-slate-500 font-black text-base mb-2 italic">No access events yet</p>
-                        <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Events will appear here in real-time</p>
+                    <div className="min-h-[200px] flex flex-col gap-3">
+                        {recentActivities.length > 0 ? recentActivities.map((act) => (
+                            <div key={act.id} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-100 shadow-sm transition-all hover:shadow-md hover:border-violet-200 group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center group-hover:bg-violet-600 group-hover:text-white transition-colors">
+                                        <User size={18} />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-900">{act.member}</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{act.action}</p>
+                                    </div>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-xs font-black text-slate-400">{act.time}</p>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
+                                <p className="text-slate-500 font-black text-base mb-2 italic">No access events yet</p>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Events will appear here in real-time</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

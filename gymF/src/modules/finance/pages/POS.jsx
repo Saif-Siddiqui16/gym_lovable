@@ -30,13 +30,19 @@ const POS = () => {
         const loadData = async () => {
             try {
                 setLoadingProducts(true);
+                // Clear cart and checkout state on branch switch
+                setCart([]);
+                setSelectedMember(null);
+                setShowGuestForm(false);
+                setGuestInfo({ name: '', phone: '', email: '' });
+
                 const [productsData, statsData, membersData] = await Promise.all([
                     getStoreProducts({ branchId: selectedBranch }),
                     getStoreStats({ branchId: selectedBranch }),
                     getMembers({ branchId: selectedBranch })
                 ]);
                 setProducts(productsData.products || productsData);
-                setTodaySalesTotal(statsData.todaySales || 0);
+                setTodaySalesTotal(statsData.stats?.todayPos || 0);
                 setMembers(membersData);
             } catch (error) {
                 console.error("Failed to load POS data", error);
@@ -112,7 +118,7 @@ const POS = () => {
                 getStoreStats({ branchId: selectedBranch })
             ]);
             setProducts(productsData.products || productsData);
-            setTodaySalesTotal(statsData.todaySales || 0);
+            setTodaySalesTotal(statsData.stats?.todayPos || 0);
         } catch (error) {
             toast.error(error);
         } finally {
