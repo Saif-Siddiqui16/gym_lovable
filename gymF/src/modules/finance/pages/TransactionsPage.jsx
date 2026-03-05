@@ -18,14 +18,18 @@ import {
     FileText,
     History
 } from 'lucide-react';
-import { fetchTransactions } from '../../../api/finance/financeApi';
+import { fetchTransactions, fetchInvoiceById } from '../../../api/finance/financeApi';
 import { useBranchContext } from '../../../context/BranchContext';
 import toast from 'react-hot-toast';
+import RightDrawer from '../../../components/common/RightDrawer';
 
 const Payments = () => {
     const { selectedBranch } = useBranchContext();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({ transactions: [], stats: { todayCollection: 0, filteredTotal: 0, completed: 0, pending: 0 } });
+    const [selectedReceipt, setSelectedReceipt] = useState(null);
+    const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+    const [fetchingReceipt, setFetchingReceipt] = useState(false);
 
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
@@ -64,6 +68,60 @@ const Payments = () => {
         }
     };
 
+    const handleExport = () => {
+        if (data.transactions.length === 0) {
+            toast.error("No transactions to export");
+            return;
+        }
+
+        try {
+            const headers = ["Member", "Branch", "Transaction Code", "Date", "Time", "Method", "Amount", "Status"];
+            const rows = data.transactions.map(txn => [
+                `"${txn.member}"`,
+                `"${txn.branch}"`,
+                txn.id,
+                new Date(txn.date).toLocaleDateString(),
+                new Date(txn.date).toLocaleTimeString(),
+                txn.method,
+                txn.amount,
+                txn.status
+            ]);
+
+            const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Payments_Report_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+            toast.success("Report exported successfully");
+        } catch (err) {
+            toast.error("Failed to export report");
+        }
+    };
+
+    const handleViewReceipt = async (id) => {
+        try {
+            setFetchingReceipt(true);
+            setIsReceiptOpen(true);
+
+            const txn = data.transactions.find(t => t.id === id || t.internalId === id);
+            if (!txn || !txn.internalId) {
+                toast.error("Internal ID missing for this transaction");
+                return;
+            }
+
+            const res = await fetchInvoiceById(txn.internalId);
+            setSelectedReceipt(res);
+        } catch (err) {
+            console.error("Receipt load failed", err);
+            toast.error("Failed to load receipt details");
+            setIsReceiptOpen(false);
+        } finally {
+            setFetchingReceipt(false);
+        }
+    };
+
     const getMethodIcon = (method) => {
         switch (method) {
             case 'Card': return CreditCard;
@@ -81,7 +139,10 @@ const Payments = () => {
                     <h1 className="text-2xl font-black text-slate-900 tracking-tight">Payments</h1>
                     <p className="text-slate-500 text-sm font-medium">Manage and monitor all payment transactions</p>
                 </div>
-                <button className="flex items-center justify-center gap-2 px-6 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all">
+                <button
+                    onClick={handleExport}
+                    className="flex items-center justify-center gap-2 px-6 py-2 bg-white text-slate-700 border border-slate-200 rounded-xl text-sm font-bold shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                >
                     <Download size={18} /> Export
                 </button>
             </div>
@@ -110,11 +171,10 @@ const Payments = () => {
                     <div className="md:col-span-3 relative">
                         <Calendar size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
-                            type="text"
-                            onFocus={(e) => (e.target.type = 'date')}
-                            onBlur={(e) => (e.target.type = 'text')}
-                            placeholder="Select dates"
-                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-violet-500 transition-all"
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[10px] font-bold focus:outline-none focus:border-violet-500 transition-all"
                         />
                     </div>
 
@@ -267,7 +327,10 @@ const Payments = () => {
                                             </span>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <button className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all shadow-sm">
+                                            <button
+                                                onClick={() => handleViewReceipt(txn.internalId || txn.id)}
+                                                className="p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 rounded-xl transition-all shadow-sm group-hover:scale-110"
+                                            >
                                                 <Receipt size={18} />
                                             </button>
                                         </td>
@@ -319,7 +382,10 @@ const Payments = () => {
                                         </div>
                                     </div>
                                     <div className="flex justify-end pt-2">
-                                        <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all">
+                                        <button
+                                            onClick={() => handleViewReceipt(txn.internalId || txn.id)}
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-slate-50 text-slate-600 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 transition-all"
+                                        >
                                             <Receipt size={14} /> Receipt
                                         </button>
                                     </div>
@@ -342,6 +408,96 @@ const Payments = () => {
                     )}
                 </div>
             </div>
+            {/* Receipt Modal */}
+            <RightDrawer
+                isOpen={isReceiptOpen}
+                onClose={() => {
+                    setIsReceiptOpen(false);
+                    setSelectedReceipt(null);
+                }}
+                title="Transaction Receipt"
+            >
+                {fetchingReceipt ? (
+                    <div className="p-24 flex flex-col items-center justify-center opacity-40 h-full">
+                        <div className="w-12 h-12 border-4 border-slate-200 border-t-violet-600 rounded-full animate-spin mb-4"></div>
+                        <p className="text-slate-500 font-black italic uppercase tracking-widest text-[10px]">Generating Receipt...</p>
+                    </div>
+                ) : selectedReceipt && (
+                    <div className="p-8 space-y-8 animate-in fade-in slide-in-from-right-8 duration-300">
+                        {/* Header Info */}
+                        <div className="flex justify-between items-start">
+                            <div className="flex flex-col gap-2">
+                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${selectedReceipt.status === 'Paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                                    {selectedReceipt.status}
+                                </span>
+                                <h3 className="text-2xl font-black text-slate-900 mt-2">{selectedReceipt.invoiceNumber}</h3>
+                                <p className="text-sm font-bold text-slate-400">Payment Date: {new Date(selectedReceipt.paidDate || selectedReceipt.dueDate).toLocaleDateString()}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Amount Paid</p>
+                                <p className="text-3xl font-black text-slate-900 font-roboto">₹{Number(selectedReceipt.amount).toLocaleString()}</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8 py-8 border-y border-slate-50">
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Payer Details</p>
+                                <p className="text-md font-black text-slate-900">{selectedReceipt.member?.name || 'Walk-in Guest'}</p>
+                                <p className="text-xs font-bold text-slate-500">{selectedReceipt.member?.memberId || 'GUEST'}</p>
+                            </div>
+                            <div className="space-y-1 text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Branch</p>
+                                <p className="text-md font-black text-slate-900">{selectedReceipt.tenant?.name || 'Main Branch'}</p>
+                                <p className="text-xs font-bold text-slate-500">Mode: {selectedReceipt.paymentMode || 'Cash'}</p>
+                            </div>
+                        </div>
+
+                        {/* Items */}
+                        <div className="space-y-4">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Breakdown</p>
+                            <div className="bg-slate-50/50 rounded-3xl border border-slate-100 overflow-hidden">
+                                <table className="w-full text-left font-sans">
+                                    <thead>
+                                        <tr className="border-b border-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest bg-slate-100/30">
+                                            <th className="px-6 py-4">Description</th>
+                                            <th className="px-6 py-4 text-center">Qty</th>
+                                            <th className="px-6 py-4 text-right">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {selectedReceipt.items?.length > 0 ? selectedReceipt.items.map((item, idx) => (
+                                            <tr key={idx} className="text-xs font-bold text-slate-700">
+                                                <td className="px-6 py-4">{item.description}</td>
+                                                <td className="px-6 py-4 text-center">{item.quantity}</td>
+                                                <td className="px-6 py-4 text-right">₹{Number(item.amount).toLocaleString()}</td>
+                                            </tr>
+                                        )) : (
+                                            <tr className="text-xs font-bold text-slate-700">
+                                                <td className="px-6 py-4">Membership/Subscription Payment</td>
+                                                <td className="px-6 py-4 text-center">1</td>
+                                                <td className="px-6 py-4 text-right">₹{Number(selectedReceipt.amount).toLocaleString()}</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="pt-8 flex flex-col items-center gap-6">
+                            <div className="w-24 h-24 bg-slate-50 rounded-2xl flex items-center justify-center">
+                                <FileText size={48} className="text-slate-200" />
+                            </div>
+                            <button
+                                onClick={() => window.print()}
+                                className="w-full h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center gap-3 text-sm font-black uppercase tracking-widest shadow-xl shadow-slate-200 hover:bg-slate-800 transition-all active:scale-[0.98]"
+                            >
+                                <Download size={20} /> Download PDF Receipt
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </RightDrawer>
         </div>
     );
 };

@@ -92,3 +92,8 @@ export const fetchAuditLogsAPI = async (params = {}) => {
     const response = await apiClient.get('/admin/audit-logs', { params });
     return response.data;
 };
+
+export const fetchSystemHealthAPI = async (params = {}) => {
+    const response = await apiClient.get('/admin/system-health', { params });
+    return response.data;
+};

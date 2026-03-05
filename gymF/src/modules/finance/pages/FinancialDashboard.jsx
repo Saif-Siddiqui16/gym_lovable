@@ -113,6 +113,54 @@ const FinancialDashboard = () => {
         }
     };
 
+    const handleExport = () => {
+        if (!data || !data.transactions || data.transactions.length === 0) {
+            toast.error("No transaction data available to export");
+            return;
+        }
+
+        try {
+            // Define CSV headers
+            const headers = ["Date", "Type", "Flow", "Member/Entity", "Reference ID", "Branch", "Status", "Amount"];
+
+            // Map transaction data to CSV rows
+            const rows = data.transactions.map(txn => [
+                txn.date,
+                txn.type,
+                txn.flow === 'in' ? 'Income' : 'Expense',
+                `"${txn.member.replace(/"/g, '""')}"`, // Handle names with commas
+                txn.id,
+                `"${txn.branch.replace(/"/g, '""')}"`,
+                txn.status || 'Paid',
+                txn.amount
+            ]);
+
+            // Combine into CSV string
+            const csvContent = [
+                headers.join(","),
+                ...rows.map(row => row.join(","))
+            ].join("\n");
+
+            // Create blob and download
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            const filename = `Finance_Report_${selectedBranch}_${new Date().toISOString().split('T')[0]}.csv`;
+
+            link.setAttribute("href", url);
+            link.setAttribute("download", filename);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            toast.success("Financial report exported successfully!");
+        } catch (error) {
+            console.error("Export failed", error);
+            toast.error("Failed to generate export file");
+        }
+    };
+
     if (loading && !data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-screen bg-[#f8fafc]">
@@ -144,7 +192,10 @@ const FinancialDashboard = () => {
                         >
                             <Plus size={18} /> Add Expense
                         </button>
-                        <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all">
+                        <button
+                            onClick={handleExport}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 bg-white text-slate-700 border border-slate-200 rounded-2xl text-[11px] font-black uppercase tracking-widest shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                        >
                             <Download size={18} /> Export
                         </button>
                     </div>

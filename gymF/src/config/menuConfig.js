@@ -307,7 +307,7 @@ export const menuConfig = {
             label: 'Admin & HR',
             icon: Shield,
             children: [
-                { label: 'Branch Management', path: '/branchadmin/branch-management/branches', icon: Building },
+                // { label: 'Branch Management', path: '/branchadmin/branch-management/branches', icon: Building },
                 { label: 'HRM', path: '/hr/payroll', icon: Users },
                 { label: 'Staff Attendance', path: '/hr/staff/management', icon: ClipboardList },
                 { label: 'Tasks', path: '/branchadmin/tasks/list', icon: ClipboardList },

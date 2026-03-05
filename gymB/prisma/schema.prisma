@@ -130,6 +130,7 @@ model AuditLog {
   details        String?  @db.Text
   module         String
   ip             String?
+  status         String   @default("Open")
   createdAt      DateTime @default(now())
 
   @@map("auditlog")

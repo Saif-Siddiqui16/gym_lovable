@@ -11,7 +11,8 @@ import {
     Settings,
     ChevronDown,
     LayoutGrid,
-    List
+    List,
+    AlertCircle
 } from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
 import AddLockerDrawer from './AddLockerDrawer';
@@ -224,24 +225,34 @@ const LockerManagement = () => {
                                     const isMaintenance = locker.status === 'Maintenance';
                                     const isReserved = locker.status === 'Reserved';
 
+                                    // Expiry Check
+                                    const isExpired = isAssigned && locker.assignedTo?.expiryDate && new Date(locker.assignedTo.expiryDate) < new Date();
+
                                     let bgClass = "bg-white border-slate-200";
                                     let dotClass = "bg-slate-300";
                                     let textClass = "text-slate-700";
 
-                                    if (isAvailable) { bgClass = "bg-green-50 border-green-200"; dotClass = "bg-green-500"; textClass = "text-green-700"; }
-                                    if (isAssigned) { bgClass = "bg-slate-100 border-slate-300"; dotClass = "bg-slate-500"; textClass = "text-slate-800"; }
-                                    if (isMaintenance) { bgClass = "bg-orange-50 border-orange-200"; dotClass = "bg-orange-400"; textClass = "text-orange-600"; }
+                                    if (isAvailable) { bgClass = "bg-emerald-50 border-emerald-100"; dotClass = "bg-emerald-500"; textClass = "text-emerald-700"; }
+                                    if (isAssigned) { bgClass = isExpired ? "bg-rose-50 border-rose-200" : "bg-violet-50 border-violet-100"; dotClass = isExpired ? "bg-rose-500" : "bg-violet-500"; textClass = isExpired ? "text-rose-700" : "text-violet-800"; }
+                                    if (isMaintenance) { bgClass = "bg-amber-50 border-amber-200"; dotClass = "bg-amber-400"; textClass = "text-orange-600"; }
                                     if (isReserved) { bgClass = "bg-blue-50 border-blue-200"; dotClass = "bg-blue-400"; textClass = "text-blue-600"; }
 
                                     return (
                                         <div
                                             key={locker.id}
                                             onClick={() => openDrawer('details', locker)}
-                                            className={`relative flex flex-col items-center justify-center p-4 rounded-xl border ${bgClass} cursor-pointer hover:shadow-md transition-shadow`}
+                                            className={`relative flex flex-col items-center justify-center p-4 rounded-3xl border-2 shadow-sm ${bgClass} cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 group`}
                                         >
-                                            <div className={`w-2 h-2 rounded-full absolute top-2 right-2 ${dotClass}`} />
-                                            <Lock size={20} className={`mb-2 ${textClass} opacity-80`} strokeWidth={1.5} />
-                                            <span className={`text-sm font-semibold ${textClass}`}>{locker.number}</span>
+                                            <div className={`w-2.5 h-2.5 rounded-full absolute top-3 right-3 ${dotClass} shadow-[0_0_10px_rgba(0,0,0,0.1)]`} />
+
+                                            {isExpired && (
+                                                <div className="absolute -top-2 -left-2 bg-rose-600 text-white p-1 rounded-full shadow-lg animate-bounce">
+                                                    <AlertCircle size={14} strokeWidth={3} />
+                                                </div>
+                                            )}
+
+                                            <Lock size={22} className={`mb-2 ${textClass} opacity-80 group-hover:rotate-12 transition-transform`} strokeWidth={2.5} />
+                                            <span className={`text-[11px] font-black uppercase tracking-tighter ${textClass}`}>{locker.number}</span>
                                         </div>
                                     );
                                 })}

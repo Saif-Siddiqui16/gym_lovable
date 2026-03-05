@@ -15,7 +15,8 @@ import {
     Info,
     Smartphone,
     MapPin,
-    Hash
+    Hash,
+    Search
 } from 'lucide-react';
 import { lockerApi } from '../../../api/lockerApi';
 import { getMembers } from '../../../api/staff/memberApi';
@@ -139,7 +140,7 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                     <div className="w-16 h-16 bg-[#0a1b2e] flex items-center justify-center rounded-[1.5rem] shadow-xl relative">
                         <Lock size={28} className="text-white" />
                         <div className={`w-4 h-4 rounded-full absolute -top-1 -right-1 border-4 border-slate-50 ${locker.status === 'Available' ? 'bg-emerald-500' :
-                                locker.status === 'Assigned' ? 'bg-blue-500' : 'bg-amber-500'
+                            locker.status === 'Assigned' ? 'bg-blue-500' : 'bg-amber-500'
                             }`} />
                     </div>
                     <div>
@@ -179,7 +180,14 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                                         {locker.assignedTo.name?.charAt(0)}
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-slate-900">{locker.assignedTo.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-sm font-black text-slate-900">{locker.assignedTo.name}</p>
+                                            {locker.assignedTo?.expiryDate && new Date(locker.assignedTo.expiryDate) < new Date() && (
+                                                <span className="bg-rose-100 text-rose-600 text-[8px] font-black px-2 py-0.5 rounded-full border border-rose-200 uppercase tracking-widest animate-pulse">
+                                                    Membership Expired
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{locker.assignedTo.memberId}</p>
                                     </div>
                                 </div>
@@ -206,13 +214,13 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                             <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Assign to Member</h4>
 
                             <div className="relative group">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-violet-500 group-focus-within:text-violet-600 transition-colors" size={18} strokeWidth={3} />
                                 <input
                                     type="text"
                                     placeholder="Search by name or ID..."
                                     value={searchMember}
                                     onChange={(e) => setSearchMember(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-xs font-bold focus:outline-none focus:border-blue-500/20 focus:bg-white transition-all"
+                                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-[11px] font-black focus:outline-none focus:border-violet-500/20 focus:bg-white transition-all placeholder:text-slate-400"
                                 />
                             </div>
 
@@ -221,21 +229,21 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                                     <button
                                         key={m.id}
                                         onClick={() => setSelectedMemberId(m.id)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${selectedMemberId === m.id
-                                                ? 'bg-blue-50 border border-blue-100 shadow-sm'
-                                                : 'hover:bg-slate-50 border border-transparent'
+                                        className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${selectedMemberId === m.id
+                                            ? 'bg-violet-50 border-2 border-violet-100 shadow-sm'
+                                            : 'hover:bg-slate-50 border-2 border-transparent'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3 text-left">
-                                            <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center text-slate-400 font-black text-[10px]">
+                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs transition-all ${selectedMemberId === m.id ? 'bg-violet-600 text-white scale-110' : 'bg-violet-100 text-violet-600'}`}>
                                                 {m.name?.charAt(0)}
                                             </div>
                                             <div>
                                                 <p className="text-xs font-black text-slate-900">{m.name}</p>
-                                                <p className="text-[8px] text-slate-400 font-bold uppercase tracking-widest">{m.memberId}</p>
+                                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">{m.memberId}</p>
                                             </div>
                                         </div>
-                                        {selectedMemberId === m.id && <CheckCircle2 size={16} className="text-blue-500" />}
+                                        {selectedMemberId === m.id && <CheckCircle2 size={18} className="text-violet-600" />}
                                     </button>
                                 )) : (
                                     <p className="text-[10px] text-slate-400 font-bold uppercase text-center py-4 italic">No members found</p>
@@ -268,7 +276,7 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                     <button
                         onClick={handleRelease}
                         disabled={loading}
-                        className="w-full py-4 bg-[#0a1b2e] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1a2b3e] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 group"
+                        className="w-full py-4 bg-rose-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-100 flex items-center justify-center gap-2 group active:scale-95"
                     >
                         {loading ? 'Processing...' : (
                             <>
@@ -280,11 +288,11 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                     <button
                         onClick={handleAssign}
                         disabled={loading || !selectedMemberId}
-                        className="w-full py-4 bg-[#0a1b2e] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#1a2b3e] transition-all shadow-xl shadow-slate-200 flex items-center justify-center gap-2 group disabled:opacity-50"
+                        className="w-full py-4 bg-[#7c3aed] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-[#6d28d9] transition-all shadow-xl shadow-violet-100 flex items-center justify-center gap-2 group disabled:opacity-40 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none active:scale-95"
                     >
                         {loading ? 'Processing...' : (
                             <>
-                                Assign to Member <CheckCircle2 size={16} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
+                                {selectedMemberId ? 'Confirm Assignment' : 'Assign to Member'} <CheckCircle2 size={16} strokeWidth={3} className="group-hover:scale-110 transition-transform" />
                             </>
                         )}
                     </button>
@@ -294,8 +302,8 @@ const LockerDetailsDrawer = ({ locker, onClose, onSuccess }) => {
                     <button
                         onClick={handleToggleMaintenance}
                         className={`py-3 border rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${locker.status === 'Maintenance'
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
-                                : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
+                            ? 'bg-emerald-50 text-emerald-600 border-emerald-100 hover:bg-emerald-100'
+                            : 'bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100'
                             }`}
                     >
                         {locker.status === 'Maintenance' ? 'Finish Service' : 'Start Service'}

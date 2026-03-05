@@ -84,29 +84,31 @@ const getInvoices = async (req, res) => {
 
         const branchId = qBranchId || headerTenantId;
 
-        let where = {};
+        let branchWhere = {};
         if (role === 'SUPER_ADMIN') {
             if (branchId && branchId !== 'all') {
-                where.tenantId = parseInt(branchId);
+                branchWhere.tenantId = parseInt(branchId);
             }
         } else {
             if (branchId && branchId !== 'all') {
-                where.tenantId = parseInt(branchId);
+                branchWhere.tenantId = parseInt(branchId);
             } else {
                 const branches = await prisma.tenant.findMany({
                     where: { OR: [{ id: userTenantId }, { owner: email }, { owner: userName }] },
                     select: { id: true }
                 });
-                where.tenantId = { in: branches.map(b => b.id) };
+                branchWhere.tenantId = { in: branches.map(b => b.id) };
             }
         }
 
+        let listWhere = { ...branchWhere };
+
         if (statusFilter && statusFilter !== 'All Status') {
-            where.status = statusFilter;
+            listWhere.status = statusFilter;
         }
 
         if (search) {
-            where.OR = [
+            listWhere.OR = [
                 { invoiceNumber: { contains: search } },
                 { member: { name: { contains: search } } }
             ];
@@ -114,12 +116,12 @@ const getInvoices = async (req, res) => {
 
         const [invoices, allInvoices] = await Promise.all([
             prisma.invoice.findMany({
-                where,
+                where: listWhere,
                 include: { member: true, items: true, tenant: { select: { name: true } } },
                 orderBy: { dueDate: 'desc' }
             }),
             prisma.invoice.findMany({
-                where: role !== 'SUPER_ADMIN' ? { tenantId: userTenantId || 1 } : (branchId && branchId !== 'all' ? { tenantId: parseInt(branchId) } : {}),
+                where: branchWhere,
                 select: { id: true, amount: true, status: true, memberId: true }
             })
         ]);
@@ -286,6 +288,7 @@ const getTransactions = async (req, res) => {
 
         const formatted = invoices.map(inv => ({
             id: inv.invoiceNumber,
+            internalId: inv.id,
             member: inv.member ? inv.member.name : 'Unknown',
             type: 'Membership',
             method: inv.paymentMode || 'Cash',
