@@ -4,16 +4,19 @@ const cloudinary = require('../utils/cloudinary');
 
 exports.getProducts = async (req, res) => {
     try {
-        const { category, search, allStatus, branchId } = req.query;
+        const { category, search, allStatus } = req.query;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        // Read branchId from query OR the x-tenant-id header (set by apiClient interceptor)
+        const rawBranchId = req.query.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
         let where = {};
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             }
         } else {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             } else {
                 let orConditions = [{ id: userTenantId }];
@@ -37,8 +40,10 @@ exports.getProducts = async (req, res) => {
         }
 
         if (search) {
-            where.name = { contains: search, mode: 'insensitive' };
+            where.name = { contains: search };
         }
+
+        console.log(`[getProducts] role=${role}, branchId=${branchId}, where=`, JSON.stringify(where));
 
         const products = await prisma.storeProduct.findMany({
             where,
@@ -46,6 +51,7 @@ exports.getProducts = async (req, res) => {
             orderBy: { createdAt: 'desc' },
         });
 
+        console.log(`[getProducts] Found ${products.length} products`);
         res.json(products);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -54,20 +60,22 @@ exports.getProducts = async (req, res) => {
 
 exports.getStoreStats = async (req, res) => {
     try {
-        const { branchId } = req.query;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        // Read branchId from query OR the x-tenant-id header
+        const rawBranchId = req.query.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
 
         let targetTenantIds = [];
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 targetTenantIds = [parseInt(branchId)];
             } else {
                 const branches = await prisma.tenant.findMany({ select: { id: true } });
                 targetTenantIds = branches.map(b => b.id);
             }
         } else {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 targetTenantIds = [parseInt(branchId)];
             } else {
                 let orConditions = [{ id: userTenantId }];
@@ -149,6 +157,8 @@ exports.addProduct = async (req, res) => {
     try {
         const { name, sku, category, price, stock, description, image, originalPrice, branchId, costPrice, taxRate } = req.body;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+
+        console.log(`[addProduct] branchId from body: ${branchId}, userTenantId: ${userTenantId}, role: ${role}`);
 
         let targetTenantIds = [];
 
@@ -291,12 +301,17 @@ exports.deleteProduct = async (req, res) => {
 
 exports.checkout = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const { memberId, cartItems, totalAmount, guestInfo } = req.body;
+        const { tenantId: reqTenantId, role } = req.user;
+        const { memberId, items, total, guestInfo, tenantId: bodyTenantId } = req.body;
 
         const order = await prisma.$transaction(async (tx) => {
             let actualMemberId = null;
-            let actualTenantId = tenantId || 1;
+            let actualTenantId = reqTenantId || 1;
+            
+            // Allow Super Admin or Branch Admin/Manager to checkout on behalf of a specific branch
+            if (['SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'].includes(role) && bodyTenantId) {
+                actualTenantId = parseInt(bodyTenantId);
+            }
 
             if (role === 'MEMBER') {
                 const memberRaw = await tx.$queryRaw`SELECT * FROM member WHERE userId = ${req.user.id}`;
@@ -312,9 +327,9 @@ exports.checkout = async (req, res) => {
             let itemsCount = 0;
             const orderItemsInput = [];
 
-            for (const item of cartItems) {
-                const product = await tx.storeProduct.findUnique({ where: { id: item.id } });
-                if (!product) throw new Error(`Product ${item.id} not found`);
+            for (const item of items) {
+                const product = await tx.storeProduct.findUnique({ where: { id: parseInt(item.productId) } });
+                if (!product) throw new Error(`Product ${item.productId} not found`);
                 if (product.stock < item.quantity) throw new Error(`Insufficient stock for ${product.name}`);
 
                 await tx.storeProduct.update({
@@ -362,23 +377,33 @@ exports.checkout = async (req, res) => {
 
 exports.getOrders = async (req, res) => {
     try {
-        const { role } = req.user;
+        const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const rawBranchId = req.query.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
 
         let where = {};
+
         if (role === 'MEMBER') {
             const memberRaw = await prisma.$queryRaw`SELECT * FROM member WHERE userId = ${req.user.id}`;
             const member = memberRaw[0];
             if (!member) return res.status(404).json({ message: 'Member profile not found' });
-
             where.memberId = member.id;
-        } else if (role !== 'SUPER_ADMIN') {
-            where.tenantId = req.user.tenantId;
+        } else if (role === 'SUPER_ADMIN') {
+            if (branchId) {
+                where.tenantId = parseInt(branchId);
+            }
+        } else {
+            if (branchId) {
+                where.tenantId = parseInt(branchId);
+            } else {
+                where.tenantId = userTenantId;
+            }
         }
 
         const orders = await prisma.storeOrder.findMany({
             where,
             include: {
-                member: true,
+                member: { select: { name: true } },
                 items: {
                     include: {
                         product: true
@@ -390,11 +415,25 @@ exports.getOrders = async (req, res) => {
 
         const formatted = orders.map(o => ({
             id: o.id,
-            total: o.total,
-            items: o.itemsCount,
+            totalAmount: parseFloat(o.total || 0),
+            total: parseFloat(o.total || 0),
+            itemsCount: o.items ? o.items.length : (o.itemsCount || 0),
             status: o.status,
-            date: new Date(o.date).toISOString().split('T')[0],
-            member: o.member?.name || 'Unknown'
+            createdAt: o.date || o.createdAt,
+            date: o.date || o.createdAt,
+            member: o.member,
+            memberName: o.member?.name || null,
+            guestName: o.guestName || null,
+            guestPhone: o.guestPhone || null,
+            guestEmail: o.guestEmail || null,
+            tenantId: o.tenantId,
+            items: (o.items || []).map(item => ({
+                id: item.id,
+                productName: item.product?.name || 'Unknown Product',
+                quantity: item.quantity,
+                price: parseFloat(item.priceAtBuy || item.product?.price || 0),
+                total: parseFloat(item.priceAtBuy || item.product?.price || 0) * item.quantity
+            }))
         }));
 
         res.json(formatted);
@@ -443,7 +482,7 @@ exports.getCoupons = async (req, res) => {
         }
 
         if (search) {
-            where.code = { contains: search, mode: 'insensitive' };
+            where.code = { contains: search };
         }
 
         const coupons = await prisma.coupon.findMany({
@@ -634,7 +673,7 @@ exports.getCategories = async (req, res) => {
         }
 
         if (search) {
-            where.name = { contains: search, mode: 'insensitive' };
+            where.name = { contains: search };
         }
 
         const categories = await prisma.storeCategory.findMany({

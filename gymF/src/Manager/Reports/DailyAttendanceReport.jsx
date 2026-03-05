@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import apiClient from '../../api/apiClient';
 import { exportCSV } from '../../api/manager/managerExport';
 import RightDrawer from '../../components/common/RightDrawer';
+import { useBranchContext } from '../../context/BranchContext';
 import '../../styles/GlobalDesign.css';
 
 // Reusable Custom Dropdown Component
@@ -69,33 +70,71 @@ const DailyAttendanceReport = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [showFilters, setShowFilters] = useState(true); // Default open for better visibility
+    const [showFilters, setShowFilters] = useState(true);
     const [selectedEntry, setSelectedEntry] = useState(null);
+    const [directoryResults, setDirectoryResults] = useState([]);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const { selectedBranch } = useBranchContext();
     const itemsPerPage = 5;
 
     useEffect(() => {
         loadData();
-    }, [selectedDate, typeFilter, searchTerm, currentPage]);
+    }, [selectedDate, typeFilter, searchTerm, currentPage, selectedBranch]);
+
+    const [isSearching, setIsSearching] = useState(false);
+
+    // Debounce search for directory results
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTerm.trim().length >= 2) {
+                fetchDirectoryResults();
+            } else {
+                setDirectoryResults([]);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchTerm, selectedBranch]);
+
+    const fetchDirectoryResults = async () => {
+        try {
+            setIsSearching(true);
+            const res = await apiClient.get('/admin/members', {
+                params: {
+                    search: searchTerm.trim(),
+                    limit: 8,
+                    branchId: selectedBranch
+                }
+            });
+            const members = res.data.data || [];
+            // Filter out already checked-in members to avoid duplication
+            const checkedInIds = new Set(attendance.map(a => a.memberId));
+            setDirectoryResults(members.filter(m => !checkedInIds.has(m.memberId)));
+        } catch (err) {
+            console.error("Search error:", err);
+            setDirectoryResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     const loadData = async () => {
         try {
             setLoading(true);
             const params = {
-                search: searchTerm,
+                search: searchTerm.trim(),
                 type: typeFilter === 'All' ? undefined : typeFilter,
                 date: selectedDate,
                 page: currentPage,
-                limit: itemsPerPage
+                limit: itemsPerPage,
+                branchId: selectedBranch
             };
 
             const [attendanceRes, statsRes] = await Promise.all([
                 apiClient.get('/admin/attendance', { params }),
-                apiClient.get('/admin/attendance/stats')
+                apiClient.get('/admin/attendance/stats', { params: { branchId: selectedBranch } })
             ]);
 
             const rawData = attendanceRes.data.data || [];
-
             const formatted = rawData.map(a => ({
                 id: a.id,
                 memberId: a.membershipId,
@@ -118,6 +157,7 @@ const DailyAttendanceReport = () => {
             }
         } catch (error) {
             console.error('Attendance Load Error:', error);
+            toast.error("Failed to load attendance data");
         } finally {
             setLoading(false);
         }
@@ -161,9 +201,20 @@ const DailyAttendanceReport = () => {
         }
     };
 
+    const handleCheckIn = async (memberId) => {
+        try {
+            await apiClient.post('/staff/attendance/check-in', { memberId });
+            toast.success('Member checked in successfully');
+            loadData();
+            setSearchTerm('');
+        } catch (error) {
+            console.error('Check-in Error:', error);
+            toast.error(error.response?.data?.message || 'Check-in failed');
+        }
+    };
+
     const handleCheckOut = async (id, memberId) => {
         try {
-            // Using the endpoint from memberCheckInApi if available, or direct apiClient call
             await apiClient.post('/staff/attendance/check-out', { memberId: memberId || id });
             toast.success('Successfully checked out');
             loadData();
@@ -213,41 +264,107 @@ const DailyAttendanceReport = () => {
             </div>
 
             {/* Search Section */}
-            <div className="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 mb-8 flex flex-col md:flex-row gap-3 items-center">
-                <div className="relative flex-1 w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <form
+                onSubmit={(e) => { e.preventDefault(); loadData(); }}
+                className="bg-white p-4 rounded-2xl shadow-lg border border-slate-100 mb-8 flex flex-col md:flex-row gap-3 items-center"
+            >
+                <div className="relative flex-1 w-full group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-violet-500 transition-colors" size={18} />
                     <input
                         type="text"
-                        placeholder="Scan barcode or type member code / name / phone..."
-                        className="pl-10 h-11 w-full rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm transition-all bg-white outline-none text-slate-800"
+                        placeholder="Search by name, member code or phone..."
+                        className="pl-10 pr-10 h-11 w-full rounded-xl border-2 border-slate-200 focus:border-violet-500 focus:ring-4 focus:ring-violet-500/10 text-sm transition-all bg-white outline-none text-slate-800 font-medium"
                         value={searchTerm}
                         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        autoComplete="off"
                     />
+                    {searchTerm && (
+                        <button
+                            type="button"
+                            onClick={() => { setSearchTerm(''); setDirectoryResults([]); }}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500 p-1"
+                        >
+                            <X size={14} />
+                        </button>
+                    )}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
                     <button
-                        onClick={() => loadData()}
-                        className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-sm font-bold shadow-md hover:shadow-violet-500/30 transition-all active:scale-95"
+                        type="submit"
+                        disabled={loading}
+                        className="w-full sm:w-auto px-6 h-11 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:shadow-violet-300/50 hover:-translate-y-0.5 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
+                        {loading ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />}
                         Search
                     </button>
                     <div className="relative w-full sm:w-auto">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                         <input
                             type="date"
-                            className="w-full pl-9 h-11 px-4 rounded-xl border-2 border-slate-200 focus:border-violet-500 text-sm font-medium transition-all bg-white outline-none min-w-[150px]"
+                            className="w-full pl-9 h-11 px-6 rounded-xl border-2 border-slate-200 focus:border-violet-500 text-xs font-black uppercase transition-all bg-white outline-none min-w-[160px]"
                             value={selectedDate}
                             onChange={(e) => { setSelectedDate(e.target.value); setCurrentPage(1); }}
                         />
                     </div>
                 </div>
-            </div>
+            </form>
+
+            {/* Search Results / Directory Search Section */}
+            {searchTerm && searchTerm.length >= 2 && (
+                <div className="mb-10 animate-in slide-in-from-top-2 duration-300">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                        <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                            <Search size={14} className="text-violet-500" />
+                            Member Search Results ({directoryResults.length})
+                            {isSearching && <Loader2 size={14} className="animate-spin text-violet-500 ml-2" />}
+                        </h2>
+                    </div>
+
+                    {directoryResults.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {directoryResults.map((member) => (
+                                <div key={member.id} className="bg-white p-5 rounded-2xl shadow-sm border-2 border-slate-100 hover:border-violet-200 transition-all group relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-violet-500/5 to-transparent rounded-bl-full"></div>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="w-12 h-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center font-black text-lg group-hover:bg-violet-600 group-hover:text-white transition-all shadow-sm">
+                                            {member.name.charAt(0)}
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="font-bold text-slate-900 leading-none mb-1 truncate text-sm">{member.name}</p>
+                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{member.memberId || 'MEM-001'}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-50">
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Status</span>
+                                            <span className={`text-[10px] font-bold ${member.status === 'Active' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                                {member.status}
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => handleCheckIn(member.id)}
+                                            className="px-4 py-2 bg-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-violet-100 hover:bg-violet-700 hover:scale-105 active:scale-95 transition-all"
+                                        >
+                                            Check In
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : !loading && (
+                        <div className="bg-white/40 backdrop-blur-sm border-2 border-dashed border-slate-200 rounded-2xl py-8 flex flex-col items-center justify-center opacity-60">
+                            <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">No matching members found in directory</p>
+                            <p className="text-slate-300 text-[9px] font-bold mt-1 uppercase">Try searching by phone or member ID</p>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Currently In Section */}
             <div className="mb-10">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-lg font-bold text-gray-800 uppercase tracking-tight flex items-center gap-2">
-                        Currently In ({attendance.filter(a => a.status === 'checked-in').length})
+                <div className="flex items-center justify-between mb-4 px-2">
+                    <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                        <UserCheck size={14} className="text-emerald-500" /> Currently In ({attendance.filter(a => a.status === 'checked-in').length})
                     </h2>
                 </div>
 

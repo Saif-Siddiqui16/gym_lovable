@@ -124,22 +124,54 @@ const ClassesList = () => {
     };
 
     const handleEditClick = (cls) => {
-        // Use raw fields from backend if available, otherwise fallback to parsing schedule string
+        // Use raw fields from backend if available
         let parsedDate = cls.rawDate || '';
         let parsedTime = cls.rawTime || '';
 
-        if (!parsedDate && cls.schedule && typeof cls.schedule === 'string') {
-            if (cls.schedule.includes(' at ')) {
-                const parts = cls.schedule.split(' at ');
-                parsedDate = parts[0];
-                parsedTime = parts[1];
-            } else {
-                parsedDate = cls.schedule;
+        // Function to ensure time is in HH:mm 24h format
+        const formatTime = (timeStr) => {
+            if (!timeStr) return '';
+            // If already HH:mm, just return
+            if (/^\d{2}:\d{2}$/.test(timeStr)) return timeStr;
+
+            // Try to extract time and am/pm
+            const match = timeStr.match(/(\d{1,2}):(\d{2})(?:\s*(AM|PM))?/i);
+            if (match) {
+                let [_, hours, mins, ampm] = match;
+                hours = parseInt(hours);
+                if (ampm) {
+                    if (ampm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+                    if (ampm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+                }
+                return `${String(hours).padStart(2, '0')}:${mins}`;
             }
+            return timeStr;
+        };
+
+        // If raw fields are missing, try to parse from schedule string
+        if (!parsedDate && cls.schedule && typeof cls.schedule === 'string') {
+            // Regex for YYYY-MM-DD or DD-MM-YYYY
+            const dateMatch = cls.schedule.match(/(\d{4}-\d{2}-\d{2})|(\d{2}-\d{2}-\d{4})/);
+            if (dateMatch) {
+                if (dateMatch[1]) parsedDate = dateMatch[1]; // YYYY-MM-DD
+                else {
+                    // Convert DD-MM-YYYY to YYYY-MM-DD
+                    const [d, m, y] = dateMatch[2].split('-');
+                    parsedDate = `${y}-${m}-${d}`;
+                }
+            }
+
+            const timeMatch = cls.schedule.match(/(\d{1,2}:\d{2}(?:\s*[AP]M)?)/i);
+            if (timeMatch) {
+                parsedTime = formatTime(timeMatch[1]);
+            }
+        } else if (parsedTime) {
+            parsedTime = formatTime(parsedTime);
         }
 
-        // Handle case where time might have AM/PM but input[type="time"] needs 24h
-        // If the backend sends rawTime as "10:00", it's perfect.
+        // Normalize Type (case-insensitive match)
+        let typeValue = cls.rawType || cls.requiredBenefit || '';
+        const normalizedType = classTypes.find(t => t.toLowerCase() === typeValue.toLowerCase()) || typeValue;
 
         let dur = 60;
         if (cls.duration) {
@@ -148,7 +180,7 @@ const ClassesList = () => {
 
         setFormData({
             name: cls.name || '',
-            type: cls.rawType || cls.requiredBenefit || '',
+            type: normalizedType,
             capacity: cls.capacity || 20,
             date: parsedDate,
             time: parsedTime,
@@ -246,6 +278,16 @@ const ClassesList = () => {
                         Create Class
                     </Button>
                 </div>
+<<<<<<< HEAD
+=======
+                <button
+                    onClick={() => { resetForm(); setShowPanel(true); }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                >
+                    <Plus size={18} />
+                    Create Class
+                </button>
+>>>>>>> 7398ac64fa134565a6f55bbb5d66df4c2e15255a
             </div>
 
             {/* KPI Cards */}

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Tag, ClipboardList, Download, Filter, Search, Clock, ChevronLeft, ChevronRight, Eye, Trash2, User, MapPin, Activity, ChevronDown, Check, FileText } from 'lucide-react';
 import apiClient from '../../api/apiClient';
 import RightDrawer from '../../components/common/RightDrawer';
+import { useBranchContext } from '../../context/BranchContext';
 import '../../styles/GlobalDesign.css';
+import { useEffect, useRef, useState } from 'react';
 
 // Reusable Custom Dropdown Component
 const CustomDropdown = ({ options, value, onChange, icon: Icon, placeholder }) => {
@@ -51,6 +52,7 @@ const CustomDropdown = ({ options, value, onChange, icon: Icon, placeholder }) =
 };
 
 const BookingReport = () => {
+    const { selectedBranch } = useBranchContext();
     const [dateRange, setDateRange] = useState('All');
     const [statusFilter, setStatusFilter] = useState('All');
     const [searchTerm, setSearchTerm] = useState('');
@@ -62,24 +64,26 @@ const BookingReport = () => {
     const [showFilters, setShowFilters] = useState(true);
     const [selectedBooking, setSelectedBooking] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const itemsPerPage = 5;
+    const itemsPerPage = 10;
 
     const [allFilteredBookings, setAllFilteredBookings] = useState([]);
 
     useEffect(() => {
         loadData();
-    }, [dateRange, statusFilter, searchTerm]);
+    }, [dateRange, statusFilter, searchTerm, selectedBranch]);
 
     const loadData = async () => {
         try {
             setLoading(true);
+            const branchId = selectedBranch === 'all' ? '' : selectedBranch;
             const params = {
                 search: searchTerm,
-                status: statusFilter === 'All Status' || statusFilter === 'All' ? '' : statusFilter
+                status: statusFilter === 'All Status' || statusFilter === 'All' ? '' : statusFilter,
+                branchId
             };
             const [bookingsRes, statsRes] = await Promise.all([
                 apiClient.get('/admin/bookings', { params }),
-                apiClient.get('/admin/bookings/stats')
+                apiClient.get('/admin/bookings/stats', { params: { branchId } })
             ]);
 
             const rawData = bookingsRes.data.data || [];
@@ -117,6 +121,9 @@ const BookingReport = () => {
             setTotalItems(filtered.length);
             setCurrentPage(1);
 
+            // Set initially shown bookings
+            setBookings(filtered.slice(0, itemsPerPage));
+
             if (statsRes.data) {
                 setBookingStats({
                     total: statsRes.data.total || 0,
@@ -131,9 +138,15 @@ const BookingReport = () => {
         }
     };
 
+    // Update 'bookings' whenever page changes
+    useEffect(() => {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        setBookings(allFilteredBookings.slice(startIndex, startIndex + itemsPerPage));
+    }, [currentPage, allFilteredBookings]);
+
     // Calculate current page bookings
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const currentBookings = allFilteredBookings.slice(startIndex, startIndex + itemsPerPage);
+    // (Removed) const startIndex = (currentPage - 1) * itemsPerPage;
+    // (Removed) const currentBookings = allFilteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
     const handleExportCSV = () => {
         const exportData = allFilteredBookings;
@@ -166,13 +179,78 @@ const BookingReport = () => {
         const exportData = allFilteredBookings;
         if (exportData.length === 0) { alert("No data to export"); return; }
         const rows = exportData.map(b =>
-            `<tr><td>${b.id}</td><td>${b.memberName}</td><td>${b.classType}</td><td>${b.trainerName}</td><td>${b.date} ${b.time}</td><td>${b.status}</td></tr>`
+            `<tr>
+                <td style="font-family: monospace; color: #4f46e5; font-weight: bold;">#${b.id}</td>
+                <td style="font-weight: 500;">${b.memberName}</td>
+                <td>${b.classType}</td>
+                <td>${b.trainerName}</td>
+                <td>
+                    <div style="font-weight: 600;">${b.date}</div>
+                    <div style="font-size: 11px; color: #94a3b8;">${b.time}</div>
+                </td>
+                <td>
+                   <span style="padding: 4px 8px; border-radius: 9999px; font-size: 10px; font-weight: bold; background: ${b.status === 'Completed' ? '#f0fdf4' : b.status === 'Cancelled' ? '#fef2f2' : '#fffbeb'}; color: ${b.status === 'Completed' ? '#15803d' : b.status === 'Cancelled' ? '#b91c1c' : '#a16207'}; border: 1px solid currentColor;">
+                    ${b.status}
+                   </span>
+                </td>
+            </tr>`
         ).join('');
-        const html = `<html><head><title>Booking Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#8b5cf6;color:white}tr:nth-child(even){background:#f9fafb}</style></head><body><h2>Booking Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>ID</th><th>Member</th><th>Class</th><th>Trainer</th><th>Date/Time</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+
+        const html = `
+            <html>
+                <head>
+                    <title>Booking Report_${new Date().toISOString().split('T')[0]}</title>
+                    <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+                        body { font-family: 'Inter', sans-serif; padding: 40px; color: #1e293b; background: white; }
+                        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
+                        .title-section h1 { margin: 0; font-size: 28px; background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+                        .title-section p { margin: 5px 0 0; color: #64748b; font-size: 14px; }
+                        .meta-info { text-align: right; color: #64748b; font-size: 12px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                        th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; text-align: left; padding: 12px 15px; border-bottom: 2px solid #e2e8f0; }
+                        td { padding: 15px; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+                        tr:nth-child(even) { background: #fcfdfe; }
+                        @media print {
+                            body { padding: 0; }
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <div class="title-section">
+                            <h1>Booking Report</h1>
+                            <p>Gym Management System - Performance Analysis</p>
+                        </div>
+                        <div class="meta-info">
+                            <div>Generated: ${new Date().toLocaleString()}</div>
+                            <div>Total Bookings: ${exportData.length}</div>
+                        </div>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Member</th>
+                                <th>Booking Type</th>
+                                <th>Trainer</th>
+                                <th>Date / Time</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </body>
+            </html>
+        `;
         const w = window.open('', '_blank');
         w.document.write(html);
         w.document.close();
-        w.print();
+        // Wait for fonts to load before printing
+        setTimeout(() => {
+            w.print();
+        }, 500);
     };
 
     const handleDelete = async (id) => {

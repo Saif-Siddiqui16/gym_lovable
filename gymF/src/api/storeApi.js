@@ -45,9 +45,9 @@ export const deleteStoreProduct = async (id) => {
     }
 };
 
-export const getStoreOrders = async () => {
+export const getStoreOrders = async (params = {}) => {
     try {
-        const response = await apiClient.get('/store/orders');
+        const response = await apiClient.get('/store/orders', { params });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || 'Failed to load orders';
