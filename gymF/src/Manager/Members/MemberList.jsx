@@ -310,16 +310,6 @@ const MemberList = () => {
                 </div>
 
                 {members.length > 0 ? (
-<<<<<<< HEAD
-                    <>
-                        <div className="saas-table-wrapper border-0 rounded-none">
-                            <table className="saas-table saas-table-responsive">
-                                <thead className="bg-slate-50 border-b border-slate-200">
-                                    <tr>
-                                        {['Name', 'Member ID', 'Branch', 'Status', 'Plan', 'Days Left', 'Joined', 'Actions'].map(col => (
-                                            <th key={col} className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">{col}</th>
-                                        ))}
-=======
                     <div className="saas-table-wrapper border-0 rounded-none">
                         <table className="saas-table saas-table-responsive w-full">
                             <thead className="bg-slate-50 border-b border-slate-200 text-left">
@@ -357,7 +347,6 @@ const MemberList = () => {
                                                 <button onClick={() => handleDelete(member)} className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all shadow-sm sm:shadow-none border border-slate-100 sm:border-transparent bg-white sm:bg-transparent" title="Delete"><Trash2 size={16} /></button>
                                             </div>
                                         </td>
->>>>>>> 4c2f4ae2f1d9bf43a13ebf6fec9455657500c1f8
                                     </tr>
                                 ))}
                             </tbody>

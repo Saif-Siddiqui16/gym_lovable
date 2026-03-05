@@ -86,13 +86,6 @@ router.use(authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER', 'STAFF', 'TRAINER
 router.get('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getTenantSettings);
 router.patch('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), upload.single('logo'), updateTenantSettings);
 
-router.get('/settings/notifications', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getNotificationSettings);
-router.patch('/settings/notifications', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateNotificationSettings);
-router.post('/settings/reminders/run', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), runReminders);
-
-router.get('/settings/security', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getSecuritySettings);
-router.patch('/settings/security', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateSecuritySettings);
-
 // Members — STAFF can view only, cannot create/edit/delete
 router.get('/members', getAllMembers);
 router.get('/members/renewal-alerts', getRenewalAlerts);
