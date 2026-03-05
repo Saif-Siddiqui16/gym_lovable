@@ -34,7 +34,9 @@ const LeadsPipeline = () => {
     const fetchLeads = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/crm/leads');
+            const response = await apiClient.get('/crm/leads', {
+                params: { branchId: selectedBranch }
+            });
             setLeads(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Fetch leads error:', error);
@@ -47,10 +49,26 @@ const LeadsPipeline = () => {
         e.preventDefault();
         try {
             setSubmitting(true);
+
+            // Check if branch is selected ONLY for New Leads
+            if (!isEdit && selectedBranch === 'all') {
+                alert('Please select a specific branch before adding a lead.');
+                return;
+            }
+
+            const payload = {
+                ...formData
+            };
+
+            // Only add branchId to payload if we are creating a new lead or have a specific branch selected
+            if (!isEdit || (selectedBranch !== 'all')) {
+                payload.branchId = selectedBranch;
+            }
+
             if (isEdit && selectedLeadId) {
-                await apiClient.patch(`/crm/leads/${selectedLeadId}`, formData);
+                await apiClient.patch(`/crm/leads/${selectedLeadId}`, payload);
             } else {
-                await apiClient.post('/crm/leads', formData);
+                await apiClient.post('/crm/leads', payload);
             }
             setShowAddDrawer(false);
             setFormData({ name: '', phone: '', email: '', source: 'Walk-in', notes: '', status: 'New' });

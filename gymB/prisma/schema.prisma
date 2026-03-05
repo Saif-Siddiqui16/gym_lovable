@@ -847,6 +847,7 @@ model PTPackage {
   gstInclusive  Boolean           @default(false)
   validityDays  Int               @default(90)
   description   String?           @db.Text
+  status        String            @default("Active")
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   tenant        Tenant            @relation(fields: [tenantId], references: [id])

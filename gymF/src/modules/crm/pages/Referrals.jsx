@@ -51,7 +51,12 @@ const Referrals = ({ role }) => {
 
     const loadMembersList = async () => {
         try {
-            const result = await getMembers({ branchId: selectedBranch, limit: 1000 });
+            // Fetch more members when 'all' is selected to ensure we can find referrers across branches
+            const result = await getMembers({
+                branchId: selectedBranch,
+                limit: 2000,
+                filters: { status: 'Active' }
+            });
             setMembers(result?.data || []);
         } catch (error) {
             console.error("Failed to load members for dropdown:", error);
@@ -246,8 +251,8 @@ const Referrals = ({ role }) => {
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${ref.status === 'Converted' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
-                                                        ref.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
-                                                            'bg-slate-100 text-slate-600 border-slate-200'
+                                                    ref.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                                        'bg-slate-100 text-slate-600 border-slate-200'
                                                     }`}>
                                                     {ref.status}
                                                 </span>
@@ -282,7 +287,7 @@ const Referrals = ({ role }) => {
         { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'text-blue-500' },
         { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'text-emerald-500' },
         { label: 'Pending', value: referrals.filter(r => r.status === 'Pending').length, icon: Clock, color: 'text-amber-500' },
-        { label: 'Total Rewards', value: '₹0', subtext: '₹0 claimed', icon: Gift, color: 'text-violet-500' }
+        { label: 'Total Rewards', value: `₹${referrals.filter(r => r.status === 'Converted').length * 500}`, subtext: 'Potential', icon: Gift, color: 'text-violet-500' }
     ];
 
     return (
@@ -354,6 +359,7 @@ const Referrals = ({ role }) => {
                                         <tr>
                                             <th className="px-6 py-4">Referred Person</th>
                                             <th className="px-6 py-4">Referrer</th>
+                                            <th className="px-6 py-4">Branch</th>
                                             <th className="px-6 py-4">Date</th>
                                             <th className="px-6 py-4">Status</th>
                                             <th className="px-6 py-4">Reward Status</th>
@@ -368,6 +374,9 @@ const Referrals = ({ role }) => {
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="text-sm font-medium text-slate-900">{ref.referrerName || 'N/A'}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{ref.branchName || '-'}</div>
                                                 </td>
                                                 <td className="px-6 py-4 text-sm text-slate-500">
                                                     {new Date(ref.createdAt).toLocaleDateString()}
@@ -395,9 +404,49 @@ const Referrals = ({ role }) => {
                             </div>
                         )
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-64 text-slate-500">
-                            <Gift size={40} className="text-slate-300 mb-4" />
-                            <p className="text-sm">No reward history found.</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50/50 text-slate-500 text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th className="px-6 py-4">Earner</th>
+                                        <th className="px-6 py-4">Source Referral</th>
+                                        <th className="px-6 py-4">Benefit</th>
+                                        <th className="px-6 py-4">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {referrals.filter(r => r.status === 'Converted').length > 0 ? (
+                                        referrals.filter(r => r.status === 'Converted').map((ref, idx) => (
+                                            <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-bold text-slate-900">{ref.referrerName}</div>
+                                                    <div className="text-[10px] text-slate-500 font-bold uppercase">Code: {ref.referrerId}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-xs font-medium text-slate-600">Referred: {ref.referredName}</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <div className="text-sm font-black text-indigo-600">₹500 Reward</div>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <span className="px-2 py-1 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-black uppercase tracking-tighter">
+                                                        Unclaimed
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="4" className="px-6 py-20 text-center">
+                                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                                    <Gift size={40} className="text-slate-200 mb-2" />
+                                                    <p className="text-xs font-bold uppercase tracking-widest">No converted referrals to reward yet</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
                     )}
                 </div>
