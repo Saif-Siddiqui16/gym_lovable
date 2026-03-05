@@ -183,6 +183,17 @@ const createTemplate = async (req, res) => {
     }
 };
 
+// DELETE Template
+const deleteTemplate = async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.messageTemplate.delete({ where: { id: parseInt(id) } });
+        res.json({ message: 'Template deleted successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 // GET Chat Contacts (Members + Staff + Trainers)
 const getChatContacts = async (req, res) => {
     try {
@@ -296,6 +307,7 @@ module.exports = {
     createAnnouncement,
     getTemplates,
     createTemplate,
+    deleteTemplate,
     sendBroadcast,
     getCommLogs,
     getChatContacts

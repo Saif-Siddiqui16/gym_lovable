@@ -82,12 +82,17 @@ const LeadsPipeline = () => {
     };
 
     const handleDeleteLead = async (id) => {
-        if (!window.confirm('Are you sure you want to delete this lead?')) return;
+        if (!window.confirm('Are you sure you want to delete this lead?')) {
+            setActiveMenu(null);
+            return;
+        }
+        setActiveMenu(null);
         try {
             await apiClient.delete(`/crm/leads/${id}`);
             fetchLeads();
         } catch (error) {
             console.error('Delete error:', error);
+            alert('Failed to delete lead: ' + (error.response?.data?.message || error.message));
         }
     };
 

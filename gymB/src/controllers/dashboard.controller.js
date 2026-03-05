@@ -3,10 +3,11 @@ const prisma = new PrismaClient();
 
 exports.getManagerDashboard = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
+        const tenantId = req.headers['x-tenant-id'] || req.query.tenantId ? parseInt(req.headers['x-tenant-id'] || req.query.tenantId) : req.user.tenantId;
+
 
         const activeMembers = await prisma.member.count({
-            where: { tenantId, status: 'Active' }
+            where: { tenantId, status: { in: ['Active', 'active'] } }
         });
 
         const classesToday = await prisma.class.count({
@@ -14,7 +15,7 @@ exports.getManagerDashboard = async (req, res) => {
         });
 
         const paymentsDue = await prisma.invoice.count({
-            where: { tenantId, status: 'Overdue' }
+            where: { tenantId, status: { in: ['Overdue', 'unpaid', 'Unpaid'] } }
         });
 
         // Financials
@@ -31,10 +32,16 @@ exports.getManagerDashboard = async (req, res) => {
         }).catch(() => []);
 
         // Filter classes scheduled for today
+        const todayStr = today.toISOString().split('T')[0]; // "YYYY-MM-DD"
         const todaysRealClasses = allClasses.filter(cls => {
             try {
-                const scheduleArr = JSON.parse(cls.schedule || "[]");
-                return scheduleArr.some(s => s.day === currentDayName);
+                const scheduleObj = JSON.parse(cls.schedule || "{}");
+                // Check if it's an array format (old) or object with date (new)
+                if (Array.isArray(scheduleObj)) {
+                    return scheduleObj.some(s => s.day === currentDayName);
+                } else {
+                    return scheduleObj.date === todayStr;
+                }
             } catch (e) {
                 return false;
             }
@@ -42,11 +49,21 @@ exports.getManagerDashboard = async (req, res) => {
 
         // Use top 3 upcoming classes for the dashboard
         const attendance = todaysRealClasses.slice(0, 3).map(cls => {
-            const sch = JSON.parse(cls.schedule || "[]").find(s => s.day === currentDayName);
+            let timeStr = cls.startTime || '10:00 AM';
+            try {
+                const scheduleObj = JSON.parse(cls.schedule || "{}");
+                if (Array.isArray(scheduleObj)) {
+                    const sch = scheduleObj.find(s => s.day === currentDayName);
+                    if (sch) timeStr = sch.time;
+                } else if (scheduleObj.time) {
+                    timeStr = scheduleObj.time;
+                }
+            } catch (e) {}
+            
             return {
                 id: cls.id,
                 name: cls.name,
-                time: sch ? sch.time : (cls.startTime || '10:00 AM'),
+                time: timeStr,
                 attendees: cls.bookings ? cls.bookings.length : 0,
                 capacity: cls.maxCapacity || cls.capacity || 20
             };
@@ -98,7 +115,7 @@ exports.getManagerDashboard = async (req, res) => {
         const collectionToday = todayInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
 
         const overdueInvoices = await prisma.invoice.findMany({
-            where: { tenantId, status: 'Overdue' }
+            where: { tenantId, status: { in: ['Overdue', 'unpaid', 'Unpaid'] } }
         });
         const pendingDuesAmount = overdueInvoices.reduce((sum, inv) => sum + Number(inv.amount), 0);
 

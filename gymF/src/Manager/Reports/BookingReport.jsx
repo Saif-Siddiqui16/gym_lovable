@@ -421,8 +421,8 @@ const BookingReport = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : bookings.length > 0 ? (
-                                bookings.map((row) => (
+                            ) : currentBookings.length > 0 ? (
+                                currentBookings.map((row) => (
                                     <tr key={row.id} className="flex flex-col sm:table-row hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-purple-50/30 transition-colors duration-200 group p-4 sm:p-0 border-b sm:border-0 border-slate-100">
                                         <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Booking ID">
                                             <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Booking ID</span>

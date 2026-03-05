@@ -11,7 +11,9 @@ export const getTenantSettings = async () => {
 
 export const updateTenantSettings = async (settingsData) => {
     try {
-        const response = await apiClient.patch('/admin/settings/tenant', settingsData);
+        const isFormData = settingsData instanceof FormData;
+        const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+        const response = await apiClient.patch('/admin/settings/tenant', settingsData, config);
         return response.data;
     } catch (error) {
         throw error;

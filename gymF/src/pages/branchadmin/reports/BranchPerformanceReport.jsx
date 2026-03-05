@@ -59,7 +59,8 @@ const BranchPerformanceReport = () => {
     const fetchReport = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get(`/branch-admin/reports/performance?branchId=${selectedBranch}`);
+            const branchId = selectedBranch?.id || selectedBranch;
+            const response = await apiClient.get(`/branch-admin/reports/performance?branchId=${branchId}`);
             if (response.data) {
                 if (response.data.stats) setStatsData(response.data.stats);
                 if (response.data.earnings) setEarningsData(response.data.earnings);

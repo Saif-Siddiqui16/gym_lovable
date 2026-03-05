@@ -319,8 +319,7 @@ const getRevenueReport = async (req, res) => {
         const pendingPayments = await prisma.invoice.aggregate({
             where: {
                 ...whereClause,
-                status: { in: ['Unpaid', 'Partial'] },
-                dueDate: { gte: startOfMonth, lt: endOfMonth }
+                status: { in: ['Unpaid', 'unpaid', 'Partial'] }
             },
             _sum: { amount: true }
         });
@@ -555,16 +554,16 @@ const getPerformanceReport = async (req, res) => {
         const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
         // 1. Basic Stats
-        const totalMembers = await prisma.member.count({ where: whereClause });
+        const totalMembers = await prisma.member.count({ where: { ...whereClause, status: { in: ['Active', 'active'] } } });
 
         const revenueThisMonthStr = await prisma.invoice.aggregate({
-            where: { ...whereClause, status: 'Paid', paidDate: { gte: startOfThisMonth } },
+            where: { ...whereClause, status: { in: ['Paid', 'paid'] }, paidDate: { gte: startOfThisMonth } },
             _sum: { amount: true }
         });
         const revenueThisMonth = Number(revenueThisMonthStr._sum.amount || 0);
 
         const pendingDuesStr = await prisma.invoice.aggregate({
-            where: { ...whereClause, status: { in: ['Unpaid', 'Partial'] } },
+            where: { ...whereClause, status: { in: ['Unpaid', 'unpaid', 'Partial', 'Overdue'] } },
             _sum: { amount: true }
         });
         const pendingDues = Number(pendingDuesStr._sum.amount || 0);
@@ -591,7 +590,7 @@ const getPerformanceReport = async (req, res) => {
             const endStr = new Date(date.getFullYear(), date.getMonth() + 1, 1);
 
             const monthRev = await prisma.invoice.aggregate({
-                where: { ...whereClause, status: 'Paid', paidDate: { gte: startStr, lt: endStr } },
+                where: { ...whereClause, status: { in: ['Paid', 'paid'] }, paidDate: { gte: startStr, lt: endStr } },
                 _sum: { amount: true }
             });
             const monthExp = await prisma.expense.aggregate({
@@ -623,7 +622,7 @@ const getPerformanceReport = async (req, res) => {
             nextD.setDate(d.getDate() + 1);
 
             const dRev = await prisma.invoice.aggregate({
-                where: { ...whereClause, status: 'Paid', paidDate: { gte: d, lt: nextD } },
+                where: { ...whereClause, status: { in: ['Paid', 'paid'] }, paidDate: { gte: d, lt: nextD } },
                 _sum: { amount: true }
             });
             weeklyDays.push(d.toLocaleString('default', { weekday: 'short' }).toUpperCase());
@@ -653,10 +652,9 @@ const getPerformanceReport = async (req, res) => {
             growthMonths.push(count);
         }
 
-        // 6. Revenue by Plan
         const revByPlan = await prisma.invoice.groupBy({
             by: ['notes'], // Note: Assuming notes or a relation links back to plans in current schema. 
-            where: { ...whereClause, status: 'Paid' },
+            where: { ...whereClause, status: { in: ['Paid', 'paid'] } },
             _sum: { amount: true }
         });
         // Trying to get plan names based on Member relation if available
@@ -665,7 +663,7 @@ const getPerformanceReport = async (req, res) => {
             select: {
                 plan: { select: { name: true } },
                 invoices: {
-                    where: { status: 'Paid' },
+                    where: { status: { in: ['Paid', 'paid'] } },
                     select: { amount: true }
                 }
             }

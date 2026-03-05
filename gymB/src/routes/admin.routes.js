@@ -1,5 +1,6 @@
 // gym_backend/src/routes/admin.routes.js
 const express = require('express');
+const upload = require('../middleware/upload.middleware');
 const { getAuditLogs: getSuperAdminAuditLogs } = require('../controllers/superadmin.controller');
 const {
     getAllMembers,
@@ -81,8 +82,9 @@ router.use(protect);
 router.use(authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER', 'STAFF', 'TRAINER'));
 
 // Settings
+// Settings
 router.get('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getTenantSettings);
-router.patch('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateTenantSettings);
+router.patch('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), upload.single('logo'), updateTenantSettings);
 
 // Members — STAFF can view only, cannot create/edit/delete
 router.get('/members', getAllMembers);

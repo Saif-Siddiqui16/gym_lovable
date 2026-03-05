@@ -10,6 +10,7 @@ import { KPIS } from '../../finance/data/mockFinance';
 import FacilityStatusOverview from '../../operations/components/widgets/FacilityStatusOverview';
 import { EQUIPMENT_INVENTORY } from '../../operations/data/equipmentData';
 import apiClient from '../../../api/apiClient';
+import { useBranchContext } from '../../../context/BranchContext';
 
 const INITIAL_MANAGER_DATA = {
     stats: [
@@ -33,13 +34,17 @@ const INITIAL_MANAGER_DATA = {
 
 const ManagerDashboard = () => {
     const navigate = useNavigate();
+    const { selectedBranch } = useBranchContext();
     const [data, setData] = useState(INITIAL_MANAGER_DATA);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                const response = await apiClient.get('/dashboard/manager');
+                setLoading(true);
+                const branchId = selectedBranch?.id;
+                const headers = branchId ? { 'x-tenant-id': branchId } : {};
+                const response = await apiClient.get('/dashboard/manager', { headers });
                 const apiData = response.data;
                 setData(prev => ({
                     ...prev,
@@ -64,7 +69,7 @@ const ManagerDashboard = () => {
             }
         };
         fetchDashboardData();
-    }, []);
+    }, [selectedBranch]);
 
     if (loading) {
         return (

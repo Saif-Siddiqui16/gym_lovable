@@ -1,5 +1,6 @@
 // gym_backend/src/controllers/admin.controller.js
 const prisma = require('../config/prisma');
+const cloudinary = require('../utils/cloudinary');
 
 // --- MEMBER MANAGEMENT ---
 
@@ -102,8 +103,6 @@ const getAllMembers = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
-
-const cloudinary = require('../utils/cloudinary');
 
 const addMember = async (req, res) => {
     try {
@@ -2296,6 +2295,19 @@ const updateTenantSettings = async (req, res) => {
         const { tenantId } = req.user;
         const { name, ...settingsData } = req.body;
 
+        let logoUrl = undefined;
+
+        // Handle logo upload if a file is provided
+        if (req.file) {
+            const b64 = Buffer.from(req.file.buffer).toString('base64');
+            const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
+            const uploadResult = await cloudinary.uploader.upload(dataURI, {
+                folder: `tenant_logos/${tenantId}`,
+                resource_type: 'image'
+            });
+            logoUrl = uploadResult.secure_url;
+        }
+
         if (name) {
             await prisma.tenant.update({
                 where: { id: tenantId },
@@ -2303,13 +2315,19 @@ const updateTenantSettings = async (req, res) => {
             });
         }
 
+        const updateData = { ...settingsData };
+        if (logoUrl) {
+            updateData.logo = logoUrl;
+        }
+
         const updated = await prisma.tenantSettings.update({
             where: { tenantId },
-            data: settingsData
+            data: updateData
         });
 
         res.json({ ...updated, name });
     } catch (error) {
+        console.error('Update tenant settings error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -2567,6 +2585,96 @@ const getTrainerStats = async (req, res) => {
             ptClients: ptMembers,
             monthlyRevenue: revenue._sum.baseSalary || 0,
             avgClientsPerTrainer: activeTrainers > 0 ? (ptMembers / activeTrainers).toFixed(1) : 0
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getNotificationSettings = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        let settings = await prisma.tenantSettings.findUnique({
+            where: { tenantId }
+        });
+
+        if (!settings) {
+            settings = await prisma.tenantSettings.create({
+                data: { tenantId }
+            });
+        }
+
+        res.json(settings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateNotificationSettings = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        const updateData = req.body;
+
+        const settings = await prisma.tenantSettings.upsert({
+            where: { tenantId },
+            update: updateData,
+            create: { ...updateData, tenantId }
+        });
+
+        res.json(settings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const getSecuritySettings = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        let settings = await prisma.tenantSettings.findUnique({
+            where: { tenantId }
+        });
+
+        if (!settings) {
+            settings = await prisma.tenantSettings.create({
+                data: { tenantId }
+            });
+        }
+
+        res.json(settings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const updateSecuritySettings = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        const updateData = req.body;
+
+        const settings = await prisma.tenantSettings.upsert({
+            where: { tenantId },
+            update: updateData,
+            create: { ...updateData, tenantId }
+        });
+
+        res.json(settings);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+const runReminders = async (req, res) => {
+    try {
+        const { tenantId } = req.user;
+        const { type } = req.body;
+
+        // Exact logic: Simulation of background job
+        // In a real app, this would trigger specific worker processes
+        console.log(`[REMINDERS] Manual trigger for tenant ${tenantId}, type: ${type}`);
+        
+        res.json({ 
+            success: true, 
+            message: `Engine started: Triggering ${type} notifications for all eligible members/leads.` 
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

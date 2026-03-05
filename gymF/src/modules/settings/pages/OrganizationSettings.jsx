@@ -13,6 +13,8 @@ const OrganizationSettings = ({ role }) => {
         currency: 'INR',
         fiscalYearStart: 'April'
     });
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(null);
 
     useEffect(() => {
         loadSettings();
@@ -28,6 +30,9 @@ const OrganizationSettings = ({ role }) => {
                 currency: data.currency || 'INR',
                 fiscalYearStart: data.fiscalYearStart || 'April'
             });
+            if (data.logo) {
+                setLogoPreview(data.logo);
+            }
         } catch (error) {
             console.error('Failed to stringify settings:', error);
             toast.error('Failed to load settings');
@@ -39,7 +44,16 @@ const OrganizationSettings = ({ role }) => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            await updateTenantSettings(formData);
+            const payload = new FormData();
+            payload.append('name', formData.name);
+            payload.append('timezone', formData.timezone);
+            payload.append('currency', formData.currency);
+            payload.append('fiscalYearStart', formData.fiscalYearStart);
+            if (logoFile) {
+                payload.append('logo', logoFile);
+            }
+
+            await updateTenantSettings(payload);
             toast.success('Organization settings updated successfully');
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -51,6 +65,14 @@ const OrganizationSettings = ({ role }) => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
     };
 
     if (loading) {
