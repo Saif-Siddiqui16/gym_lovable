@@ -284,17 +284,10 @@ const Referrals = ({ role }) => {
 
     // Existing Admin/Staff UI
     const kpiCards = [
-<<<<<<< HEAD
         { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'from-blue-500 to-indigo-600', iconColor: 'text-blue-600' },
         { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'from-emerald-500 to-teal-600', iconColor: 'text-emerald-600' },
         { label: 'Pending', value: referrals.filter(r => r.status === 'Pending').length, icon: Clock, color: 'from-amber-500 to-orange-600', iconColor: 'text-amber-600' },
-        { label: 'Total Rewards', value: '₹0', subtext: '₹0 claimed', icon: Gift, color: 'from-violet-500 to-purple-600', iconColor: 'text-violet-600' }
-=======
-        { label: 'Total Referrals', value: referrals.length, icon: Users, color: 'text-blue-500' },
-        { label: 'Converted', value: referrals.filter(r => r.status === 'Converted').length, icon: CheckCircle, color: 'text-emerald-500' },
-        { label: 'Pending', value: referrals.filter(r => r.status === 'Pending').length, icon: Clock, color: 'text-amber-500' },
-        { label: 'Total Rewards', value: `₹${referrals.filter(r => r.status === 'Converted').length * 500}`, subtext: 'Potential', icon: Gift, color: 'text-violet-500' }
->>>>>>> 7398ac64fa134565a6f55bbb5d66df4c2e15255a
+        { label: 'Total Rewards', value: `₹${referrals.filter(r => r.status === 'Converted').length * 500}`, subtext: 'Potential', icon: Gift, color: 'from-violet-500 to-purple-600', iconColor: 'text-violet-600' }
     ];
 
     return (
@@ -395,14 +388,10 @@ const Referrals = ({ role }) => {
                                                 <td className="px-6 py-4" data-label="Referrer">
                                                     <div className="text-sm font-medium text-slate-900">{ref.referrerName || 'N/A'}</div>
                                                 </td>
-<<<<<<< HEAD
-                                                <td className="px-6 py-4 text-sm text-slate-500" data-label="Date">
-=======
-                                                <td className="px-6 py-4">
+                                                <td className="px-6 py-4" data-label="Branch">
                                                     <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{ref.branchName || '-'}</div>
                                                 </td>
-                                                <td className="px-6 py-4 text-sm text-slate-500">
->>>>>>> 7398ac64fa134565a6f55bbb5d66df4c2e15255a
+                                                <td className="px-6 py-4 text-sm text-slate-500" data-label="Date">
                                                     {new Date(ref.createdAt).toLocaleDateString()}
                                                 </td>
                                                 <td className="px-6 py-4" data-label="Status">
