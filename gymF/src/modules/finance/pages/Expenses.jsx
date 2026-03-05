@@ -114,10 +114,10 @@ const Expenses = () => {
         <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 via-white to-violet-50/30 min-h-screen font-sans">
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
                     <div>
-                        <h1 className="text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                            <TrendingDown size={36} className="text-violet-600" />
+                        <h1 className="text-2xl sm:text-4xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                            <TrendingDown size={28} className="text-violet-600 sm:w-9 sm:h-9 shrink-0" />
                             Operations Expenses
                         </h1>
                         <p className="text-gray-500 font-medium mt-1.5 flex items-center gap-2 text-sm">
@@ -126,7 +126,7 @@ const Expenses = () => {
                     </div>
                     <button
                         onClick={() => setShowAddDrawer(true)}
-                        className="flex items-center justify-center gap-2 px-6 py-4 bg-violet-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-violet-200 hover:bg-violet-700 transition-all hover:scale-105 active:scale-95 uppercase tracking-widest"
+                        className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-4 bg-violet-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-violet-200 hover:bg-violet-700 transition-all hover:scale-105 active:scale-95 uppercase tracking-widest"
                     >
                         <Plus size={18} />
                         Log New Expense

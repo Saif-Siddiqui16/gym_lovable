@@ -142,27 +142,26 @@ const LeadsPipeline = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-0 md:p-8 space-y-8 animate-fadeIn">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-4 sm:p-0 md:p-8 space-y-6 sm:space-y-8 animate-fadeIn">
 
-            {/* Header Section */}
             <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-violet-500 via-purple-500 to-fuchsia-500 rounded-3xl blur-2xl opacity-10 pointer-events-none"></div>
-                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-2 sm:p-8">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex items-center gap-5">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-lg shadow-violet-200">
-                                <Users size={32} />
+                <div className="relative bg-white/80 backdrop-blur-md rounded-3xl shadow-xl border border-slate-100 p-4 sm:p-8">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white shadow-lg shadow-violet-200 shrink-0">
+                                <Users size={24} className="sm:w-8 sm:h-8" />
                             </div>
                             <div>
-                                <h1 className="text-4xl font-black text-slate-900 tracking-tight">Lead Management</h1>
-                                <p className="text-slate-500 font-bold text-sm uppercase tracking-widest mt-1">
+                                <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">Lead Management</h1>
+                                <p className="text-slate-500 font-bold text-[10px] sm:text-sm uppercase tracking-widest mt-1">
                                     Track and convert your fitness prospects
                                 </p>
                             </div>
                         </div>
                         <button
                             onClick={openAddDrawer}
-                            className="flex items-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:scale-105 transition-all"
+                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-violet-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-violet-200 hover:scale-105 transition-all"
                         >
                             <UserPlus size={18} /> Add Lead
                         </button>
@@ -180,7 +179,7 @@ const LeadsPipeline = () => {
             </div>
 
             {/* Lead Sources Section */}
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-2 sm:p-8">
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-4 sm:p-8">
                 <div className="flex items-center gap-3 mb-8">
                     <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
                         <BarChart3 size={20} />
@@ -239,9 +238,9 @@ const LeadsPipeline = () => {
 
             {/* All Leads Section */}
             <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                <div className="p-2 sm:p-8 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-6 bg-slate-50/30">
+                <div className="p-4 sm:p-8 border-b border-slate-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 sm:gap-6 bg-slate-50/30">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center shrink-0">
                             <Users size={20} />
                         </div>
                         <div>
@@ -284,14 +283,14 @@ const LeadsPipeline = () => {
                             ) : filteredLeads.length > 0 ? (
                                 filteredLeads.map((lead) => (
                                     <tr key={lead.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                                        <td className="px-8 py-4 font-bold text-slate-900">{lead.name}</td>
-                                        <td className="px-8 py-4 text-slate-600 text-sm">
+                                        <td className="px-8 py-4 font-bold text-slate-900" data-label="Name">{lead.name}</td>
+                                        <td className="px-8 py-4 text-slate-600 text-sm" data-label="Contact">
                                             <div className="flex flex-col">
                                                 <span>{lead.phone}</span>
                                                 <span className="text-[10px] text-slate-400 font-bold">{lead.email || 'No email'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-8 py-4" data-label="Status">
                                             <div className="flex flex-col gap-1">
                                                 <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest w-fit ${lead.status === 'New' ? 'bg-blue-50 text-blue-600' :
                                                     lead.status === 'Converted' ? 'bg-green-50 text-green-600' :
@@ -302,17 +301,17 @@ const LeadsPipeline = () => {
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-4 text-slate-600 text-sm font-bold uppercase tracking-widest text-[10px]">{lead.source}</td>
-                                        <td className="px-8 py-4 text-slate-500 text-[10px] font-bold">
+                                        <td className="px-8 py-4 text-slate-600 text-sm font-bold uppercase tracking-widest text-[10px]" data-label="Source">{lead.source}</td>
+                                        <td className="px-8 py-4 text-slate-500 text-[10px] font-bold" data-label="Created">
                                             {new Date(lead.createdAt).toLocaleDateString()}
                                         </td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-8 py-4" data-label="Follow-up">
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-bold text-slate-700">{lead.nextFollowUp ? new Date(lead.nextFollowUp).toLocaleDateString() : 'No date'}</span>
                                                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{lead.followUpTime || 'Time not set'}</span>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-4 text-right">
+                                        <td className="px-8 py-4 text-right" data-label="Actions">
                                             <div className="relative inline-block text-left">
                                                 <button
                                                     onClick={(e) => setActiveMenu(activeMenu === lead.id ? null : lead.id)}

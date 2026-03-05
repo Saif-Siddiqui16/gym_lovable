@@ -188,14 +188,14 @@ const BroadcastMessageDrawer = ({ isOpen, onClose, onSuccess }) => {
                     </div>
 
                     {/* Information Notice */}
-                    <div className="p-6 bg-slate-900 rounded-2xl space-y-3 relative overflow-hidden group shadow-xl shadow-slate-200">
+                    <div className="p-6 bg-slate-50 border border-slate-100 rounded-2xl space-y-3 relative overflow-hidden group shadow-sm transition-all hover:bg-white hover:shadow-md">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white transition-transform">
+                            <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-indigo-600 transition-transform">
                                 <Info size={16} />
                             </div>
-                            <h4 className="text-[11px] font-black text-white uppercase tracking-widest">Configuration Note</h4>
+                            <h4 className="text-[11px] font-black text-slate-900 uppercase tracking-widest">Configuration Note</h4>
                         </div>
-                        <p className="text-[11px] font-bold text-slate-400 leading-relaxed uppercase tracking-tight">
+                        <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-tight">
                             Note: External delivery requires API configuration in Settings. Broadcasts are logged in the history tab.
                         </p>
                     </div>

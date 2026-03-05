@@ -64,17 +64,23 @@ const CategoryDrawer = ({ isOpen, onClose, category, mode = 'add', onSubmit }) =
                     <div className="relative w-screen sm:max-w-[400px] transform transition-transform duration-300 ease-in-out shadow-2xl translate-x-0">
                         <div className="flex h-full flex-col bg-white overflow-y-auto shadow-2xl">
                             {/* Header */}
-                            <div className="px-6 py-8 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white relative">
-                                <button onClick={onClose} type="button" className="absolute top-4 right-4 p-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition-all">
+                            <div className={`px-6 py-8 relative ${mode === 'edit' ? 'bg-white border-b border-slate-100' : 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white'}`}>
+                                <button
+                                    onClick={onClose}
+                                    type="button"
+                                    className={`absolute top-4 right-4 p-2 rounded-xl transition-all ${mode === 'edit' ? 'bg-slate-50 text-slate-400 hover:text-slate-600 hover:bg-slate-100' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                                >
                                     <X className="h-6 w-6" />
                                 </button>
                                 <div className="flex items-center gap-4 mb-2">
-                                    <div className="w-12 h-12 rounded-2xl bg-orange-500/20 flex items-center justify-center border border-orange-500/30 text-orange-400">
+                                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${mode === 'edit' ? 'bg-orange-500/10 border-orange-100 text-orange-600' : 'bg-orange-500/20 border-orange-500/30 text-orange-400'}`}>
                                         <Layers size={24} />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl font-black tracking-tight">{mode === 'edit' ? 'Edit Category' : 'Add Category'}</h2>
-                                        <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">
+                                        <h2 className={`text-2xl font-black tracking-tight ${mode === 'edit' ? 'text-slate-900' : ''}`}>
+                                            {mode === 'edit' ? 'Edit Category' : 'Add Category'}
+                                        </h2>
+                                        <p className={`${mode === 'edit' ? 'text-slate-500' : 'text-slate-400'} text-xs font-bold uppercase tracking-widest mt-1`}>
                                             {mode === 'edit' ? 'Update Details' : 'Create a new product category'}
                                         </p>
                                     </div>

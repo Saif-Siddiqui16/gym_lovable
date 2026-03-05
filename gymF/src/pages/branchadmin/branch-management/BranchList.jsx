@@ -268,9 +268,9 @@ const BranchList = () => {
                     </div>
                 </div>
 
-                <div className="w-full">
+                <div className="w-full overflow-x-auto scrollbar-hide">
                     {/* Desktop Table View */}
-                    <table className="w-full text-left border-collapse table-auto hidden md:table">
+                    <table className="w-full text-left border-collapse table-auto hidden md:table min-w-[1000px] lg:min-w-full">
                         <thead className="bg-slate-50/50 border-b border-slate-200">
                             <tr>
                                 <th className="px-8 py-6 text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Branch</th>

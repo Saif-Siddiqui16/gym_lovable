@@ -26,6 +26,7 @@ import StatsCard from '../../dashboard/components/StatsCard';
 import DashboardGrid from '../../dashboard/components/DashboardGrid';
 import apiClient from '../../../api/apiClient';
 import toast from 'react-hot-toast';
+import RightDrawer from '../../../components/common/RightDrawer';
 
 const MemberProgress = () => {
     const [activeTab, setActiveTab] = useState('Measurements');
@@ -431,64 +432,57 @@ const MemberProgress = () => {
                 </div>
             </div>
 
-            {/* ── LOG PROGRESS MODAL ── */}
-            {showLogModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <Card className="w-full max-w-lg p-8 bg-white rounded-[32px] shadow-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-3">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                    <TrendingUp size={24} />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-slate-900">Log Progress</h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Record your measurements</p>
-                                </div>
-                            </div>
-                            <button onClick={() => setShowLogModal(false)} className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-all">
-                                <X size={20} />
-                            </button>
+            {/* ── LOG PROGRESS DRAWER ── */}
+            <RightDrawer
+                isOpen={showLogModal}
+                onClose={() => setShowLogModal(false)}
+                title={
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600">
+                            <TrendingUp size={24} />
                         </div>
+                        <span className="text-xl font-black text-slate-900">Log Progress</span>
+                    </div>
+                }
+                subtitle="Record your measurements"
+            >
+                <form onSubmit={handleLogSubmit} className="space-y-5">
+                    <div className="grid grid-cols-2 gap-4">
+                        <FormField label="Weight (kg)" type="number" step="0.1" placeholder="e.g. 72.5"
+                            value={logForm.weight} onChange={v => setLogForm({ ...logForm, weight: v })} />
+                        <FormField label="Body Fat (%)" type="number" step="0.1" placeholder="e.g. 16.0"
+                            value={logForm.bodyFat} onChange={v => setLogForm({ ...logForm, bodyFat: v })} />
+                    </div>
 
-                        <form onSubmit={handleLogSubmit} className="space-y-5">
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField label="Weight (kg)" type="number" step="0.1" placeholder="e.g. 72.5"
-                                    value={logForm.weight} onChange={v => setLogForm({ ...logForm, weight: v })} />
-                                <FormField label="Body Fat (%)" type="number" step="0.1" placeholder="e.g. 16.0"
-                                    value={logForm.bodyFat} onChange={v => setLogForm({ ...logForm, bodyFat: v })} />
-                            </div>
+                    <div>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Body Measurements (cm)</p>
+                        <div className="grid grid-cols-2 gap-3">
+                            {['chest', 'waist', 'hips', 'arms', 'thighs'].map(key => (
+                                <FormField key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} type="number" step="0.1" placeholder="cm"
+                                    value={logForm.measurements[key]}
+                                    onChange={v => setLogForm({ ...logForm, measurements: { ...logForm.measurements, [key]: v } })} />
+                            ))}
+                        </div>
+                    </div>
 
-                            <div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Body Measurements (cm)</p>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['chest', 'waist', 'hips', 'arms', 'thighs'].map(key => (
-                                        <FormField key={key} label={key.charAt(0).toUpperCase() + key.slice(1)} type="number" step="0.1" placeholder="cm"
-                                            value={logForm.measurements[key]}
-                                            onChange={v => setLogForm({ ...logForm, measurements: { ...logForm.measurements, [key]: v } })} />
-                                    ))}
-                                </div>
-                            </div>
+                    <FormField label="Date" type="date" value={logForm.date} onChange={v => setLogForm({ ...logForm, date: v })} />
 
-                            <FormField label="Date" type="date" value={logForm.date} onChange={v => setLogForm({ ...logForm, date: v })} />
+                    <div>
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes (optional)</label>
+                        <textarea value={logForm.notes} rows={3}
+                            onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
+                            placeholder="How are you feeling? Any observations..."
+                            className="w-full mt-2 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:border-indigo-600 outline-none transition-all resize-none"
+                        />
+                    </div>
 
-                            <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes (optional)</label>
-                                <textarea value={logForm.notes} rows={3}
-                                    onChange={e => setLogForm({ ...logForm, notes: e.target.value })}
-                                    placeholder="How are you feeling? Any observations..."
-                                    className="w-full mt-2 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-sm font-medium focus:border-indigo-600 outline-none transition-all resize-none"
-                                />
-                            </div>
-
-                            <button type="submit" disabled={submitting}
-                                className="w-full h-14 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
-                                Save Progress Entry
-                            </button>
-                        </form>
-                    </Card>
-                </div>
-            )}
+                    <button type="submit" disabled={submitting}
+                        className="w-full h-14 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
+                        {submitting ? <Loader2 size={16} className="animate-spin" /> : <Check size={16} />}
+                        Save Progress Entry
+                    </button>
+                </form>
+            </RightDrawer>
         </div>
     );
 };

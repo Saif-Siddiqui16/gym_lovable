@@ -12,6 +12,10 @@ import { getAllStaff } from '../../../api/manager/managerApi';
 import { useAuth } from '../../../context/AuthContext';
 import { useBranchContext } from '../../../context/BranchContext';
 import { toast } from 'react-hot-toast';
+import Button from '../../../components/ui/Button';
+import Card from '../../../components/ui/Card';
+import Input from '../../../components/ui/Input';
+import Select from '../../../components/ui/Select';
 
 const ClassesList = () => {
     const { role, user } = useAuth();
@@ -216,29 +220,41 @@ const ClassesList = () => {
     const classTypes = ['General', 'Yoga', 'HIIT', 'Spin', 'Pilates', 'Zumba', 'Strength', 'Boxing', 'Sauna'];
 
     return (
-        <div className="min-h-screen bg-[#F8F9FC] p-6 lg:p-8">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 px-6 py-6">
             {/* Header Area */}
-            <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                <div>
-                    <h1 className="text-2xl font-black text-slate-900 tracking-tight">Classes</h1>
-                    <p className="text-slate-500 text-sm font-medium mt-1">Manage group classes and bookings</p>
+            <div className="relative overflow-hidden bg-card p-8 rounded-[2rem] border border-border shadow-md mb-8 group">
+                {/* Premium Glow Effect */}
+                <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700" />
+                <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-violet-500/5 rounded-full blur-3xl group-hover:bg-violet-500/10 transition-all duration-700" />
+
+                <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div className="flex items-center gap-5">
+                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-violet-600 flex items-center justify-center text-white shadow-lg shadow-primary/20 ring-4 ring-primary/10">
+                            <Dumbbell size={28} />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold text-foreground tracking-tight">Classes</h1>
+                            <p className="text-muted-foreground text-sm font-medium mt-1">Manage group classes and bookings</p>
+                        </div>
+                    </div>
+                    <Button
+                        onClick={() => setShowPanel(true)}
+                        variant="primary"
+                        className="h-11 px-8 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all transform active:scale-95"
+                        icon={Plus}
+                    >
+                        Create Class
+                    </Button>
                 </div>
-                <button
-                    onClick={() => setShowPanel(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
-                >
-                    <Plus size={18} />
-                    Create Class
-                </button>
             </div>
 
             {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <KPICard
                     title="Upcoming Classes"
                     value={filteredClasses.filter(c => c.status === 'Scheduled').length}
-                    icon={<Calendar size={20} />}
-                    color="blue"
+                    icon={<Calendar size={22} />}
+                    gradient="from-blue-500 to-indigo-600"
                 />
                 <KPICard
                     title="Today's Classes"
@@ -246,33 +262,33 @@ const ClassesList = () => {
                         const todayStr = new Date().toISOString().split('T')[0];
                         return c.schedule && c.schedule.startsWith(todayStr);
                     }).length}
-                    icon={<Clock size={20} />}
-                    color="indigo"
+                    icon={<Clock size={22} />}
+                    gradient="from-violet-500 to-purple-600"
                 />
                 <KPICard
                     title="Total Bookings"
                     value={filteredClasses.reduce((sum, c) => sum + (parseInt(c.enrolled) || 0), 0)}
-                    icon={<Users size={20} />}
-                    color="blue"
+                    icon={<Users size={22} />}
+                    gradient="from-emerald-500 to-teal-600"
                 />
                 <KPICard
                     title="Active Trainers"
                     value={trainers.length}
-                    icon={<User size={20} />}
-                    color="blue"
+                    icon={<User size={22} />}
+                    gradient="from-orange-500 to-rose-600"
                 />
             </div>
 
             {/* Filters Section */}
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mb-6">
-                <div className="p-4 border-b border-slate-50 flex flex-col md:flex-row items-center gap-4">
+            <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-8">
+                <div className="p-5 border-b border-border flex flex-col md:flex-row items-center gap-6">
                     {/* Status Tabs */}
-                    <div className="flex bg-slate-100 p-1 rounded-xl">
+                    <div className="flex bg-muted p-1 rounded-xl">
                         {['Upcoming', 'Past', 'All'].map((tab) => (
                             <button
                                 key={tab}
                                 onClick={() => setActiveTab(tab)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                className={`px-5 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${activeTab === tab ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 {tab}
                             </button>
@@ -280,44 +296,62 @@ const ClassesList = () => {
                     </div>
 
                     {/* Search */}
-                    <div className="relative flex-1 group">
-                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="relative flex-1 w-full md:w-auto">
+                        <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
                         <input
                             type="text"
                             placeholder="Search classes or trainers..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border-transparent rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none"
+                            className="w-full pl-11 pr-4 py-2.5 bg-muted border-transparent rounded-xl text-sm focus:bg-card focus:ring-2 focus:ring-primary/20 transition-all outline-none border border-transparent focus:border-primary/30"
                         />
                     </div>
 
                     {/* Dropdowns */}
-                    <div className="flex items-center gap-3">
-                        <div className="relative">
-                            <Filter size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <div className="relative flex-1 md:flex-none">
+                            <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                             <select
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
-                                className="pl-10 pr-8 py-2.5 bg-slate-50 border-transparent rounded-xl text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100"
+                                className="w-full pl-10 pr-9 py-2.5 bg-muted border-transparent rounded-xl text-xs font-semibold text-foreground outline-none appearance-none cursor-pointer hover:bg-muted/80 transition-colors"
                             >
                                 <option value="All">All Types</option>
                                 {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
                             </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         </div>
-                        <div className="relative">
-                            <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                        <div className="relative flex-1 md:flex-none">
+                            <User size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                             <select
                                 value={trainerFilter}
                                 onChange={(e) => setTrainerFilter(e.target.value)}
-                                className="pl-10 pr-8 py-2.5 bg-slate-50 border-transparent rounded-xl text-xs font-bold text-slate-700 outline-none appearance-none cursor-pointer hover:bg-slate-100"
+                                className="w-full pl-10 pr-9 py-2.5 bg-muted border-transparent rounded-xl text-xs font-semibold text-foreground outline-none appearance-none cursor-pointer hover:bg-muted/80 transition-colors"
                             >
                                 <option value="All">All Trainers</option>
                                 {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
-                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
                         </div>
                     </div>
+                </div>
+
+                {/* Sub-tabs */}
+                <div className="px-5 py-3 flex items-center gap-8 border-b border-border bg-slate-50/30">
+                    <button
+                        onClick={() => setContentTab('Schedule')}
+                        className={`text-sm font-semibold pb-2 transition-all relative ${contentTab === 'Schedule' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Schedule ({filteredClasses.length})
+                        {contentTab === 'Schedule' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+                    </button>
+                    <button
+                        onClick={() => setContentTab('Attendance')}
+                        className={`text-sm font-semibold pb-2 transition-all relative ${contentTab === 'Attendance' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Attendance
+                        {contentTab === 'Attendance' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />}
+                    </button>
                 </div>
 
                 {/* Sub-tabs */}
@@ -340,136 +374,146 @@ const ClassesList = () => {
                 <div className="p-6">
                     {contentTab === 'Attendance' ? (
                         <div className="flex flex-col items-center justify-center py-20 text-center">
-                            <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4">
-                                <CheckCircle2 size={28} className="text-blue-300" />
+                            <div className="w-20 h-20 bg-primary/5 rounded-3xl flex items-center justify-center mb-6 ring-8 ring-primary/5">
+                                <CheckCircle2 size={36} className="text-primary/40" />
                             </div>
-                            <p className="text-sm font-bold text-slate-700 mb-1">Select a class from the schedule to view attendance</p>
-                            <p className="text-xs text-slate-400">Switch to the Schedule tab and choose a class to manage its attendance.</p>
+                            <p className="text-base font-semibold text-foreground mb-2">Select a class to view attendance</p>
+                            <p className="text-sm text-muted-foreground max-w-xs mx-auto">Switch to the Schedule tab and choose a class to manage its member attendance records.</p>
                         </div>
                     ) : loading ? (
-                        <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
-                            <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mb-4" />
-                            <p className="text-sm font-black text-slate-900 uppercase tracking-widest">Loading classes...</p>
+                        <div className="flex flex-col items-center justify-center py-24">
+                            <div className="w-12 h-12 border-4 border-muted border-t-primary rounded-full animate-spin mb-4" />
+                            <p className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Gathering classes...</p>
                         </div>
                     ) : filteredClasses.length > 0 ? (
-                        <div className="w-full overflow-visible pb-32">
-                            <table className="w-full min-w-[800px]">
-                                <thead>
-                                    <tr className="bg-slate-50 border-b border-slate-100">
-                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Class Info</th>
-                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Trainer</th>
-                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Schedule</th>
-                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Bookings</th>
-                                        <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                                        <th className="text-right py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {filteredClasses.map((cls) => (
-                                        <tr key={cls.id} className="hover:bg-slate-50/50 transition-colors group">
-                                            <td className="py-4 px-6" data-label="Class Info">
-                                                <div className="flex items-center gap-3 justify-end sm:justify-start">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                                        <Dumbbell size={20} />
-                                                    </div>
-                                                    <div className="text-right sm:text-left">
-                                                        <div className="text-sm font-bold text-slate-900">{cls.name}</div>
-                                                        <div className="text-[10px] font-bold text-slate-400 uppercase">{cls.requiredBenefit || 'General'}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6" data-label="Trainer">
-                                                <div className="flex items-center gap-2 justify-end sm:justify-start">
-                                                    <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-black">
-                                                        {cls.trainerName?.charAt(0)}
-                                                    </div>
-                                                    <span className="text-xs font-bold text-slate-700">{cls.trainerName}</span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6" data-label="Schedule">
-                                                <div className="text-right sm:text-left">
-                                                    <div className="text-xs font-bold text-slate-700">{cls.schedule}</div>
-                                                    <div className="text-[10px] text-slate-400">{cls.duration}</div>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6" data-label="Bookings">
-                                                <div className="flex flex-col items-end sm:items-start gap-1">
-                                                    <div className="text-xs font-bold text-slate-700">{cls.enrolled} / {cls.capacity}</div>
-                                                    <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`h-full rounded-full ${cls.enrolled >= cls.capacity ? 'bg-red-500' : 'bg-indigo-600'}`}
-                                                            style={{ width: `${Math.min(100, (cls.enrolled / cls.capacity) * 100)}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-6" data-label="Status">
-                                                <div className="flex justify-end sm:justify-start">
-                                                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${cls.status === 'Scheduled' ? 'bg-indigo-50 text-indigo-600' :
-                                                        cls.status === 'Completed' ? 'bg-emerald-50 text-emerald-600' :
-                                                            'bg-slate-100 text-slate-500'
-                                                        }`}>
-                                                        {cls.status}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="py-4 px-2 text-right relative">
-                                                <button
-                                                    onClick={(e) => { e.stopPropagation(); setActiveActionId(activeActionId === cls.id ? null : cls.id); }}
-                                                    className={`p-2 rounded-lg transition-colors ${activeActionId === cls.id ? 'bg-slate-100 text-slate-900' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}`}
-                                                >
-                                                    <MoreHorizontal size={18} />
-                                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                            {filteredClasses.map((cls) => (
+                                <div key={cls.id} className="group bg-card border border-border rounded-2xl p-5 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 transform md:hover:-translate-y-1 flex flex-col h-full relative overflow-hidden">
+                                    {/* Class Type Badge */}
+                                    <div className="absolute -right-12 -top-12 w-24 h-24 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-all" />
 
-                                                {/* Action Dropdown */}
-                                                {activeActionId === cls.id && (
-                                                    <>
-                                                        <div className="fixed inset-0 z-[40]" onClick={() => setActiveActionId(null)} />
-                                                        <div className="absolute right-2 top-14 w-36 bg-white rounded-xl shadow-xl border border-slate-100 z-[50] py-1 flex flex-col overflow-hidden origin-top-right animate-scale-in">
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleEditClick(cls); }}
-                                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2"
-                                                            >
-                                                                <Edit2 size={14} className="text-slate-400" /> Edit Class
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); handleDeleteClass(cls.id); }}
-                                                                disabled={deletingId === cls.id}
-                                                                className="w-full text-left px-4 py-2.5 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50"
-                                                            >
-                                                                {deletingId === cls.id ? (
-                                                                    <div className="w-3.5 h-3.5 border-2 border-red-200 border-t-red-600 rounded-full animate-spin" />
-                                                                ) : (
-                                                                    <Trash2 size={14} className="text-red-400" />
-                                                                )}
-                                                                Delete Class
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table >
-                        </div >
+                                    {/* Header: Icon + Name */}
+                                    <div className="flex items-start justify-between mb-5 relative">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary transform group-hover:scale-110 transition-transform duration-300">
+                                                <Dumbbell size={24} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-bold text-foreground line-clamp-1 group-hover:text-primary transition-colors">{cls.name}</h3>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{cls.requiredBenefit || 'General'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="relative">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); setActiveActionId(activeActionId === cls.id ? null : cls.id); }}
+                                                className={`p-2 rounded-lg transition-all ${activeActionId === cls.id ? 'bg-muted text-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+                                            >
+                                                <MoreHorizontal size={18} />
+                                            </button>
+
+                                            {/* Action Dropdown */}
+                                            {activeActionId === cls.id && (
+                                                <>
+                                                    <div className="fixed inset-0 z-[40]" onClick={() => setActiveActionId(null)} />
+                                                    <div className="absolute right-0 top-11 w-40 bg-white rounded-xl shadow-2xl border border-border z-[50] py-1 flex flex-col overflow-hidden origin-top-right animate-in fade-in zoom-in slide-in-from-top-2 duration-200">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleEditClick(cls); }}
+                                                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors flex items-center gap-2"
+                                                        >
+                                                            <Edit2 size={14} className="text-muted-foreground" /> Edit Class
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteClass(cls.id); }}
+                                                            disabled={deletingId === cls.id}
+                                                            className="w-full text-left px-4 py-2.5 text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+                                                        >
+                                                            {deletingId === cls.id ? (
+                                                                <div className="w-3.5 h-3.5 border-2 border-red-200 border-t-red-600 rounded-full animate-spin" />
+                                                            ) : (
+                                                                <Trash2 size={14} className="text-red-400" />
+                                                            )}
+                                                            Delete Class
+                                                        </button>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Info Grid */}
+                                    <div className="space-y-4 flex-1">
+                                        <div className="flex items-center gap-3 text-sm text-foreground/80">
+                                            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-[11px] font-bold text-muted-foreground border border-border shadow-sm">
+                                                {cls.trainerName?.charAt(0)}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">Trainer</span>
+                                                <span className="font-semibold">{cls.trainerName}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-4">
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Calendar size={14} className="text-primary/60" />
+                                                <span className="text-xs font-medium">{cls.schedule}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Clock size={14} className="text-primary/60" />
+                                                <span className="text-xs font-medium">{cls.duration}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-2">
+                                            <div className="flex justify-between items-center mb-2">
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Bookings</span>
+                                                <span className="text-xs font-bold text-foreground">{cls.enrolled} / {cls.capacity}</span>
+                                            </div>
+                                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden shadow-inner">
+                                                <div
+                                                    className={`h-full rounded-full transition-all duration-500 ${cls.enrolled >= cls.capacity ? 'bg-rose-500' : 'bg-primary'}`}
+                                                    style={{ width: `${Math.min(100, (cls.enrolled / cls.capacity) * 100)}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Footer: Status + Action */}
+                                    <div className="mt-6 pt-4 border-t border-border flex items-center justify-between">
+                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${cls.status === 'Scheduled' ? 'bg-primary/10 text-primary' :
+                                            cls.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-600' :
+                                                'bg-muted text-muted-foreground'
+                                            }`}>
+                                            {cls.status}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            className="h-8 px-4 text-[11px] rounded-lg border-primary/20 hover:border-primary text-primary hover:bg-primary/5 font-bold uppercase tracking-wider"
+                                            onClick={() => navigate(`/classes/${cls.id}`)}
+                                        >
+                                            View Details
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     ) : (
-                        <div className="flex flex-col items-center justify-center py-20 text-center">
-                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mb-4">
-                                <Calendar size={28} className="text-slate-300" />
+                        <div className="flex flex-col items-center justify-center py-24 text-center">
+                            <div className="w-24 h-24 bg-muted rounded-[2rem] flex items-center justify-center mb-6 ring-8 ring-muted/50">
+                                <Calendar size={40} className="text-muted-foreground/30" />
                             </div>
-                            <p className="text-sm font-bold text-slate-700 mb-1">No upcoming classes scheduled.</p>
-                            <p className="text-xs text-slate-400 mb-6">Get started by scheduling your first group class.</p>
-                            <button
+                            <h3 className="text-lg font-bold text-foreground mb-2">No upcoming classes scheduled</h3>
+                            <p className="text-sm text-muted-foreground mb-8 max-w-sm">There are no classes matching your filters. <br />Start by scheduling your first group class.</p>
+                            <Button
                                 onClick={() => { setEditingClassId(null); resetForm(); setShowPanel(true); }}
-                                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all"
+                                variant="primary"
+                                icon={Plus}
+                                className="h-11 px-8 rounded-xl shadow-lg shadow-primary/20"
                             >
-                                <Plus size={16} />
                                 Schedule a Class
-                            </button>
+                            </Button>
                         </div>
                     )}
-                </div >
+                </div>
             </div >
 
             {/* Side Panel Overlay */}
@@ -480,14 +524,14 @@ const ClassesList = () => {
                         <div className="absolute inset-y-0 right-0 max-w-full flex">
                             <div className="w-screen max-w-md bg-white shadow-2xl animate-slide-in-right flex flex-col">
                                 {/* Panel Header */}
-                                <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                <div className="p-6 border-b border-border flex items-center justify-between bg-muted/30">
                                     <div>
-                                        <h2 className="text-xl font-black text-slate-900">{editingClassId ? 'Edit Class' : 'Create New Class'}</h2>
-                                        <p className="text-xs font-medium text-slate-500 mt-1">{editingClassId ? 'Update existing class details' : 'Schedule a new group class'}</p>
+                                        <h2 className="text-xl font-bold text-foreground tracking-tight">{editingClassId ? 'Edit Class' : 'Create New Class'}</h2>
+                                        <p className="text-xs font-medium text-muted-foreground mt-1">{editingClassId ? 'Update existing class details' : 'Schedule a new group class'}</p>
                                     </div>
                                     <button
                                         onClick={() => setShowPanel(false)}
-                                        className="p-2 hover:bg-slate-100 rounded-xl transition-colors text-slate-400 hover:text-slate-900"
+                                        className="p-2 hover:bg-muted rounded-xl transition-all duration-200 text-muted-foreground hover:text-foreground active:scale-90"
                                         disabled={submitting}
                                     >
                                         <X size={20} />
@@ -495,125 +539,117 @@ const ClassesList = () => {
                                 </div>
 
                                 {/* Panel Form */}
-                                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6 flex flex-col">
+                                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-8 space-y-8 flex flex-col bg-white">
                                     {/* Class Name */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Name *</label>
-                                        <input
-                                            type="text"
+                                    <Input
+                                        label="Class Name *"
+                                        required
+                                        placeholder="Yoga, HIIT, Spin, etc."
+                                        value={formData.name}
+                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    />
+
+                                    {/* Class Type & Capacity */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="space-y-3">
+                                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Class Type</label>
+                                            <Select
+                                                value={formData.type}
+                                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                                            >
+                                                <option value="">Select type</option>
+                                                {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </Select>
+                                        </div>
+                                        <Input
+                                            label="Capacity *"
+                                            type="number"
                                             required
-                                            placeholder="Yoga, HIIT, Spin, etc."
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
+                                            min="1"
+                                            value={formData.capacity}
+                                            onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                                         />
                                     </div>
 
-                                    {/* Class Type & Capacity */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Class Type</label>
-                                            <div className="relative">
-                                                <select
-                                                    value={formData.type}
-                                                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium text-slate-700"
-                                                >
-                                                    <option value="">Select type</option>
-                                                    {classTypes.map(t => <option key={t} value={t}>{t}</option>)}
-                                                </select>
-                                                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Capacity *</label>
-                                            <input
-                                                type="number"
-                                                required
-                                                min="1"
-                                                value={formData.capacity}
-                                                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                            />
-                                        </div>
-                                    </div>
-
                                     {/* Date & Time & Duration */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-1.5">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Date & Time *</label>
-                                            <input
-                                                type="date"
-                                                required
-                                                value={formData.date}
-                                                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                            />
-                                            <input
-                                                type="time"
-                                                required
-                                                value={formData.time}
-                                                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                                                className="w-full px-3 py-3 bg-slate-50 border border-slate-100 rounded-xl text-xs focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
-                                            />
-                                            <p className="text-[10px] text-slate-400 italic pl-1">dd-mm-yyyy --:--</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                            <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Schedule *</label>
+                                            <div className="space-y-3">
+                                                <Input
+                                                    type="date"
+                                                    required
+                                                    value={formData.date}
+                                                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                                                />
+                                                <Input
+                                                    type="time"
+                                                    required
+                                                    value={formData.time}
+                                                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                                                />
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 italic pl-1 flex items-center gap-1">
+                                                <AlertCircle size={10} /> format: day-month-year 12h/24h
+                                            </p>
                                         </div>
-                                        <div className="space-y-1.5">
-                                            <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Duration (minutes)</label>
-                                            <input
+                                        <div className="space-y-4">
+                                            <Input
+                                                label="Duration (min)"
                                                 type="number"
                                                 value={formData.duration}
                                                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium"
                                             />
+                                            <p className="text-[10px] text-gray-400 italic pl-1">Typically 30, 45 or 60 min</p>
                                         </div>
                                     </div>
 
                                     {/* Trainer */}
-                                    <div className="space-y-1.5">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Trainer</label>
-                                        <div className="relative">
-                                            <select
-                                                value={formData.trainerId}
-                                                onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none appearance-none font-medium"
-                                            >
-                                                <option value="">No trainer</option>
-                                                {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                            </select>
-                                            <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
-                                        </div>
+                                    <div className="space-y-3">
+                                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Assign Trainer</label>
+                                        <Select
+                                            value={formData.trainerId}
+                                            onChange={(e) => setFormData({ ...formData, trainerId: e.target.value })}
+                                        >
+                                            <option value="">No trainer</option>
+                                            {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                        </Select>
                                     </div>
 
                                     {/* Description */}
-                                    <div className="space-y-1.5 flex-1 flex flex-col">
-                                        <label className="text-[11px] font-black text-slate-500 uppercase tracking-wider">Description</label>
+                                    <div className="space-y-3 flex-1 flex flex-col">
+                                        <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">Class Description</label>
                                         <textarea
-                                            placeholder="Class description..."
+                                            placeholder="What will members learn in this class?"
                                             value={formData.description}
                                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            className="w-full flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm focus:bg-white focus:ring-4 focus:ring-slate-100 transition-all outline-none font-medium resize-none"
+                                            className="w-full flex-1 min-h-[120px] px-4 py-3 bg-gray-50 border border-transparent rounded-xl text-sm font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all placeholder:text-gray-400 resize-none"
                                         />
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 mt-auto border-t border-slate-50">
-                                        <button
+                                    <div className="grid grid-cols-2 gap-4 pt-6 mt-auto border-t border-border">
+                                        <Button
                                             type="button"
+                                            variant="outline"
                                             disabled={submitting}
                                             onClick={() => setShowPanel(false)}
-                                            className="px-6 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-sm hover:bg-slate-100 transition-all"
+                                            className="h-12 rounded-xl font-bold uppercase tracking-wider text-[11px]"
                                         >
                                             Cancel
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
                                             type="submit"
+                                            variant="primary"
                                             disabled={submitting}
-                                            className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold text-sm hover:shadow-lg hover:shadow-blue-500/30 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                                            className="h-12 rounded-xl font-bold uppercase tracking-wider text-[11px] shadow-lg shadow-primary/20"
                                         >
-                                            {submitting && <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
-                                            {editingClassId ? 'Update Class' : 'Create Class'}
-                                        </button>
+                                            {submitting ? (
+                                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                            ) : (
+                                                editingClassId ? 'Update Class' : 'Create Class'
+                                            )}
+                                        </Button>
                                     </div>
                                 </form>
                             </div>
@@ -625,24 +661,20 @@ const ClassesList = () => {
     );
 };
 
-const KPICard = ({ title, value, icon, color }) => {
-    const colorClasses = {
-        indigo: 'bg-indigo-50 text-indigo-600',
-        emerald: 'bg-emerald-50 text-emerald-600',
-        orange: 'bg-orange-50 text-orange-600',
-        blue: 'bg-blue-50 text-blue-600'
-    };
-
+const KPICard = ({ title, value, icon, gradient }) => {
     return (
-        <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all group">
-            <div className="flex items-center justify-between mb-4">
-                <div className={`p-2.5 rounded-xl ${colorClasses[color] || 'bg-slate-50 text-slate-600'} group-hover:scale-110 transition-transform`}>
+        <div className="bg-card p-6 rounded-2xl border border-border shadow-sm hover:shadow-lg transition-all duration-300 group relative overflow-hidden">
+            <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-slate-50 rounded-full blur-2xl group-hover:bg-primary/5 transition-all" />
+
+            <div className="flex items-center gap-5 relative">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center text-white shadow-lg transform group-hover:rotate-6 group-hover:scale-110 transition-all duration-300`}>
                     {icon}
                 </div>
-                {/* Optional mini Sparkline or indicator */}
+                <div>
+                    <div className="text-2xl font-bold text-foreground leading-none mb-1">{value}</div>
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">{title}</div>
+                </div>
             </div>
-            <div className="text-2xl font-black text-slate-900 mb-1">{value}</div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-widest">{title}</div>
         </div>
     );
 };

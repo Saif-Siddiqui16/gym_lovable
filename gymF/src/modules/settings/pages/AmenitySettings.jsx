@@ -25,6 +25,7 @@ import {
 import amenityApi from '../../../api/amenityApi';
 import { toast } from 'react-hot-toast';
 import { useBranchContext } from '../../../context/BranchContext';
+import RightDrawer from '../../../components/common/RightDrawer';
 
 const ICON_OPTIONS = [
     { name: 'Wifi', icon: Wifi },
@@ -242,113 +243,101 @@ const AmenitySettings = () => {
                 </div>
             )}
 
-            {/* Modal */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl animate-in zoom-in-95 duration-300 overflow-hidden">
-                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white relative z-10">
-                            <h2 className="text-xl font-black text-slate-800">
-                                {editingAmenity ? 'Edit Amenity' : 'New Amenity'}
-                            </h2>
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                            >
-                                <X size={20} className="text-slate-400" />
-                            </button>
-                        </div>
+            {/* Amenity Drawer */}
+            <RightDrawer
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                title={editingAmenity ? 'Edit Amenity' : 'New Amenity'}
+                subtitle={editingAmenity ? 'Update facility details and visibility' : 'Create a new facility for your gym'}
+                maxWidth="max-w-md"
+            >
+                <form onSubmit={handleSubmit} className="space-y-6 pb-10">
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Amenity Name</label>
+                        <input
+                            required
+                            type="text"
+                            placeholder="e.g. Luxury Sauna"
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        />
+                    </div>
 
-                        <div className="overflow-y-auto max-h-[calc(100vh-160px)] custom-scrollbar">
-                            <form onSubmit={handleSubmit} className="p-6 space-y-5">
-                                <div>
-                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Amenity Name</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        placeholder="e.g. Luxury Sauna"
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold"
-                                        value={formData.name}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                    />
-                                </div>
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Description</label>
+                        <textarea
+                            rows="3"
+                            placeholder="Brief details about the facility..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-medium resize-none"
+                            value={formData.description}
+                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        />
+                    </div>
 
-                                <div>
-                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Description</label>
-                                    <textarea
-                                        rows="3"
-                                        placeholder="Brief details about the facility..."
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-medium resize-none"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                    />
-                                </div>
-
-                                <div>
-                                    <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Choose Icon</label>
-                                    <div className="grid grid-cols-6 gap-2">
-                                        {ICON_OPTIONS.map((opt) => (
-                                            <button
-                                                key={opt.name}
-                                                type="button"
-                                                onClick={() => setFormData({ ...formData, icon: opt.name })}
-                                                className={`p-3 rounded-xl flex items-center justify-center transition-all ${formData.icon === opt.name
-                                                    ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 ring-2 ring-violet-600 ring-offset-2'
-                                                    : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
-                                                    }`}
-                                            >
-                                                <opt.icon size={20} />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Gender Scope</label>
-                                        <select
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
-                                            value={formData.gender}
-                                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                                        >
-                                            <option value="UNISEX">Unisex</option>
-                                            <option value="MALE">Male Only</option>
-                                            <option value="FEMALE">Female Only</option>
-                                        </select>
-                                    </div>
-                                    <div className="flex-1">
-                                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Status</label>
-                                        <select
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
-                                            value={formData.status}
-                                            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                                        >
-                                            <option value="Active">Active</option>
-                                            <option value="Inactive">Inactive</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 flex gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsModalOpen(false)}
-                                        className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="flex-1 px-6 py-3 bg-violet-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all"
-                                    >
-                                        <Save size={18} />
-                                        {editingAmenity ? 'Save Changes' : 'Create Amenity'}
-                                    </button>
-                                </div>
-                            </form>
+                    <div>
+                        <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Choose Icon</label>
+                        <div className="grid grid-cols-4 gap-2">
+                            {ICON_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.name}
+                                    type="button"
+                                    onClick={() => setFormData({ ...formData, icon: opt.name })}
+                                    className={`p-3 rounded-xl flex items-center justify-center transition-all ${formData.icon === opt.name
+                                        ? 'bg-violet-600 text-white shadow-lg shadow-violet-200 ring-2 ring-violet-600 ring-offset-2'
+                                        : 'bg-slate-50 text-slate-400 hover:bg-slate-100'
+                                        }`}
+                                >
+                                    <opt.icon size={20} />
+                                </button>
+                            ))}
                         </div>
                     </div>
-                </div>
-            )}
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Gender Scope</label>
+                            <select
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
+                                value={formData.gender}
+                                onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                            >
+                                <option value="UNISEX">Unisex</option>
+                                <option value="MALE">Male Only</option>
+                                <option value="FEMALE">Female Only</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Status</label>
+                            <select
+                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition-all font-bold appearance-none"
+                                value={formData.status}
+                                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                            >
+                                <option value="Active">Active</option>
+                                <option value="Inactive">Inactive</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="pt-6 flex gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsModalOpen(false)}
+                            className="flex-1 px-6 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-all text-sm uppercase tracking-widest font-black"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            className="flex-1 px-6 py-3 bg-violet-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all text-sm uppercase tracking-widest font-black"
+                        >
+                            <Save size={18} />
+                            {editingAmenity ? 'Save Changes' : 'Create Amenity'}
+                        </button>
+                    </div>
+                </form>
+            </RightDrawer>
         </div>
     );
 };
