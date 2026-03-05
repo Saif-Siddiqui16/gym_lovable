@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, FileText, User, CheckCircle, Users, Package } from 'lucide-react';
-import { getSessionsByDateRange, getAssignedMembers } from '../../api/trainer/trainerApi';
 import { ptApi } from '../../api/ptApi';
+import { useAuth } from '../../context/AuthContext';
+import { useBranchContext } from '../../context/BranchContext';
+import toast from 'react-hot-toast';
 
 const SessionCalendar = () => {
+    const { user } = useAuth();
+    const { selectedBranch } = useBranchContext();
     const [ptClients, setPtClients] = useState([]);
     const [clients, setClients] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -12,7 +16,8 @@ const SessionCalendar = () => {
 
     const [formData, setFormData] = useState({
         clientId: '',
-        sessionDate: '',
+        ptAccountId: '',
+        sessionDate: new Date().toISOString().split('T')[0],
         sessionTime: '10:00',
         duration: 60,
         notes: ''
@@ -20,12 +25,12 @@ const SessionCalendar = () => {
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [selectedBranch]);
 
     const loadData = async () => {
         try {
-            // Load PT accounts (active memberships)
-            const accountsRes = await ptApi.getAccounts('');
+            // Load PT accounts (active memberships) for the specific branch
+            const accountsRes = await ptApi.getAccounts(selectedBranch === 'all' ? '' : selectedBranch);
             const accounts = accountsRes.data || [];
             setPtClients(accounts);
 
@@ -38,34 +43,65 @@ const SessionCalendar = () => {
                     uniqueClients.push({
                         id: acc.member.id,
                         name: acc.member.name,
-                        ptAccountId: acc.id
+                        ptAccountId: acc.id,
+                        fullAccount: acc
                     });
                 }
             });
             setClients(uniqueClients);
         } catch (err) {
-            // silently fail
+            console.error('Error loading PT clients:', err);
+            toast.error('Failed to load PT clients');
         }
     };
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+
+        // If client is changed, update the selected client object and ptAccountId
+        if (field === 'clientId') {
+            const client = clients.find(c => c.id == value);
+            if (client) {
+                setSelectedClient(client.fullAccount);
+                setFormData(prev => ({ ...prev, ptAccountId: client.ptAccountId }));
+            } else {
+                setSelectedClient(null);
+                setFormData(prev => ({ ...prev, ptAccountId: '' }));
+            }
+        }
     };
 
-    const handleClientSelect = (client) => {
-        setSelectedClient(client);
-        setFormData(prev => ({ ...prev, clientId: client.member?.id || '' }));
+    const handleClientSelect = (account) => {
+        setSelectedClient(account);
+        setFormData(prev => ({
+            ...prev,
+            clientId: account.member?.id || '',
+            ptAccountId: account.id
+        }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (!user?.id) return toast.error('Trainer information missing');
+
         setLoading(true);
         try {
-            // Backend call intentionally left as-is — do NOT modify API
-            // await createSession(formData);
+            const sessionData = {
+                memberId: parseInt(formData.clientId),
+                trainerId: user.id,
+                ptAccountId: parseInt(formData.ptAccountId),
+                date: formData.sessionDate,
+                time: formData.sessionTime,
+                duration: parseInt(formData.duration),
+                notes: formData.notes
+            };
+
+            await ptApi.logSession(sessionData);
             setSubmitted(true);
+            toast.success('Session scheduled successfully!');
         } catch (err) {
-            // handle error
+            console.error('Error scheduling session:', err);
+            toast.error(err.response?.data?.message || 'Failed to schedule session');
         } finally {
             setLoading(false);
         }

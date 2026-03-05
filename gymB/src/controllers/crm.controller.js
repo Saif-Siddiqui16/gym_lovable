@@ -4,13 +4,12 @@ const prisma = require('../config/prisma');
 
 const createLead = async (req, res) => {
     try {
-        // Use Header for Multi-Branch selector, or User's primary tenantId as fallback
-        const headerTenantId = req.headers['x-tenant-id'];
-        const tenantId = headerTenantId ? parseInt(headerTenantId) : req.user.tenantId;
+        const { tenantId } = req.user;
 
         if (!tenantId) {
-            return res.status(400).json({ message: 'Tenant ID is required. Please select a branch or ensure your account is associated with a gym.' });
+            return res.status(403).json({ message: 'Unauthorized: Your account is not associated with a specific branch.' });
         }
+
         const {
             name, phone, email, gender, age, interests, source,
             budgetRange, preferredContact, assignedTo, followUpDate, followUpTime, notes
@@ -45,18 +44,6 @@ const createLead = async (req, res) => {
             }
         });
 
-        // Create initial follow-up task if date is provided
-        if (nextFollowUp) {
-            await prisma.followUp.create({
-                data: {
-                    leadId: lead.id,
-                    status: 'Pending',
-                    nextDate: nextFollowUp,
-                    notes: 'Initial Follow-up Schedule'
-                }
-            });
-        }
-
         res.status(201).json(lead);
     } catch (error) {
         console.error('Create Lead Error:', error);
@@ -66,27 +53,15 @@ const createLead = async (req, res) => {
 
 const getLeads = async (req, res) => {
     try {
-        const headerTenantId = req.headers['x-tenant-id'];
-        const tenantId = headerTenantId ? parseInt(headerTenantId) : req.user.tenantId;
-
+        const { tenantId, role } = req.user;
         const where = {};
 
-        if (tenantId) {
+        // Security: Limit by tenant unless Super Admin
+        if (role !== 'SUPER_ADMIN') {
+            if (!tenantId) {
+                return res.json([]); // No branch access, no leads
+            }
             where.tenantId = tenantId;
-        } else if (req.user.role === 'BRANCH_ADMIN') {
-            // If BRANCH_ADMIN has no specific tenant selected (All Branches),
-            // we should show all branches they have access to.
-            const branches = await prisma.tenant.findMany({
-                where: {
-                    OR: [
-                        { id: req.user.tenantId },
-                        { owner: req.user.email },
-                        { owner: req.user.name }
-                    ]
-                },
-                select: { id: true }
-            });
-            where.tenantId = { in: branches.map(b => b.id) };
         }
 
         // Search & Filter
@@ -95,7 +70,7 @@ const getLeads = async (req, res) => {
         if (status && status !== 'All') where.status = status;
 
         // Strict: Trainers only see their assigned leads
-        if (req.user.role === 'TRAINER') {
+        if (role === 'TRAINER') {
             where.assignedToId = req.user.id;
         } else if (assignedTo) {
             where.assignedToId = parseInt(assignedTo);
@@ -112,10 +87,6 @@ const getLeads = async (req, res) => {
         const leads = await prisma.lead.findMany({
             where,
             include: {
-                followUps: {
-                    orderBy: { createdAt: 'desc' },
-                    take: 1
-                },
                 assignedTo: {
                     select: { id: true, name: true }
                 }
@@ -125,6 +96,7 @@ const getLeads = async (req, res) => {
 
         res.json(leads);
     } catch (error) {
+        console.error('Get Leads Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -238,7 +210,11 @@ const deleteLead = async (req, res) => {
 
 const getTodayFollowUps = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
+        const { tenantId, role } = req.user;
+
+        if (!tenantId && role !== 'SUPER_ADMIN') {
+            return res.json([]);
+        }
 
         const startOfDay = new Date();
         startOfDay.setHours(0, 0, 0, 0);
@@ -246,16 +222,17 @@ const getTodayFollowUps = async (req, res) => {
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Find leads that have a nextFollowUp date within today
+        const where = {
+            nextFollowUp: { gte: startOfDay, lte: endOfDay },
+            status: { notIn: ['Converted', 'Lost'] }
+        };
+
+        if (role !== 'SUPER_ADMIN') {
+            where.tenantId = tenantId;
+        }
+
         const leads = await prisma.lead.findMany({
-            where: {
-                tenantId: tenantId ? tenantId : undefined,
-                nextFollowUp: {
-                    gte: startOfDay,
-                    lte: endOfDay
-                },
-                status: { notIn: ['Converted', 'Lost'] }
-            },
+            where,
             include: {
                 assignedTo: { select: { id: true, name: true } }
             }
@@ -263,6 +240,7 @@ const getTodayFollowUps = async (req, res) => {
 
         res.json(leads);
     } catch (error) {
+        console.error('Get Followups Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

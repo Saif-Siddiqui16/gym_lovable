@@ -25,7 +25,12 @@ const {
     getDietPlans,
     deleteSavedCard,
     getRewardCatalog,
-    redeemReward
+    redeemReward,
+    getMyReferrals,
+    getMemberDashboard,
+    updateMemberProfile,
+    changePassword,
+    getMemberAttendance
 } = require('../controllers/member.controller');
 const {
     getProgress,
@@ -41,6 +46,9 @@ router.use(protect);
 const memberOnly = authorize('MEMBER');
 const memberOrTrainer = authorize('MEMBER', 'TRAINER');
 
+// Dashboard
+router.get('/dashboard', memberOnly, getMemberDashboard);
+
 // Membership
 router.post('/plan/upgrade', memberOnly, upgradePlan);
 router.post('/plan/cancel', memberOnly, cancelMembership);
@@ -50,6 +58,9 @@ router.get('/membership-details', memberOnly, getMembershipDetails);
 router.get('/service-requests', memberOnly, getServiceRequests);
 router.post('/service-requests', memberOnly, addServiceRequest);
 router.get('/profile', memberOnly, getMemberProfile);
+router.put('/profile', memberOnly, updateMemberProfile);
+router.post('/change-password', memberOnly, changePassword);
+router.get('/attendance', memberOnly, getMemberAttendance);
 router.get('/classes', memberOnly, getAvailableClasses);
 
 // Progress
@@ -81,5 +92,8 @@ router.get('/workout-plans', memberOnly, getWorkoutPlans);
 
 // Diet Plans
 router.get('/diet-plans', memberOnly, getDietPlans);
+
+// Referrals
+router.get('/referrals', memberOnly, getMyReferrals);
 
 module.exports = router;

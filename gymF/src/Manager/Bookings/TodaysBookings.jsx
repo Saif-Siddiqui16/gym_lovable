@@ -153,13 +153,13 @@ const TodaysBookings = () => {
                     bookings.map((booking) => (
                         <MobileCard
                             key={booking.id}
-                            title={booking.member}
-                            subtitle={booking.type}
+                            title={booking.member?.name || 'Unknown'}
+                            subtitle={booking.class?.name || 'Class'}
                             badge={booking.status}
                             badgeColor={booking.status === 'Completed' ? 'emerald' : booking.status === 'Cancelled' ? 'rose' : 'blue'}
                             fields={[
-                                { label: 'Trainer', value: booking.trainer },
-                                { label: 'Time Slot', value: booking.slot, icon: Clock }
+                                { label: 'Trainer', value: booking.class?.trainer?.name || 'Staff' },
+                                { label: 'Time Slot', value: booking.class?.startTime || '-', icon: Clock }
                             ]}
                             actions={booking.status === 'Upcoming' ? [
                                 { label: 'Complete', icon: CheckCircle, variant: 'primary', onClick: () => handleUpdateStatus(booking.id, 'Completed') },
@@ -205,21 +205,21 @@ const TodaysBookings = () => {
                                         <td data-label="Member Name">
                                             <div className="flex items-center gap-3">
                                                 <div className="h-8 w-8 rounded-full bg-gradient-to-br from-violet-100 to-purple-100 text-violet-700 flex items-center justify-center font-bold text-xs group-hover:scale-125 group-hover:rotate-6 group-hover:shadow-lg transition-all duration-500 border-2 border-violet-200">
-                                                    {(booking.member || '?').charAt(0)}
+                                                    {(booking.member?.name || '?').charAt(0)}
                                                 </div>
-                                                <span className="text-sm font-medium text-gray-900 group-hover:text-violet-700 group-hover:translate-x-1 transition-all duration-300">{booking.member}</span>
+                                                <span className="text-sm font-medium text-gray-900 group-hover:text-violet-700 group-hover:translate-x-1 transition-all duration-300">{booking.member?.name}</span>
                                             </div>
                                         </td>
                                         <td data-label="Booking Type">
-                                            <span className="text-sm text-gray-700 font-medium group-hover:text-violet-700 group-hover:scale-105 inline-block transition-all duration-300">{booking.type}</span>
+                                            <span className="text-sm text-gray-700 font-medium group-hover:text-violet-700 group-hover:scale-105 inline-block transition-all duration-300">{booking.class?.name}</span>
                                         </td>
                                         <td data-label="Trainer">
-                                            <span className="text-sm text-gray-500 group-hover:text-violet-600 transition-colors duration-300">{booking.trainer}</span>
+                                            <span className="text-sm text-gray-500 group-hover:text-violet-600 transition-colors duration-300">{booking.class?.trainer?.name || 'Staff'}</span>
                                         </td>
                                         <td data-label="Time Slot">
                                             <div className="flex items-center gap-2 text-sm text-gray-600 group-hover:text-indigo-600 transition-colors duration-300">
                                                 <Clock size={14} className="text-gray-400 group-hover:text-indigo-500 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300" />
-                                                {booking.slot}
+                                                {booking.class?.startTime || '-'}
                                             </div>
                                         </td>
                                         <td data-label="Status">

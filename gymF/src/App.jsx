@@ -82,6 +82,7 @@ import { MemberProgress } from './modules/progress';
 // Module: Manager (Reused for Branch Admin & Manager Role)
 import MemberList from './Manager/Members/MemberList';
 import BookingCalendar from './Manager/Bookings/BookingCalendar';
+import TodaysBookings from './Manager/Bookings/TodaysBookings';
 import TaskList from './Manager/Tasks/TaskList';
 import AssignTask from './Manager/Tasks/AssignTask';
 import DailyAttendanceReport from './Manager/Reports/DailyAttendanceReport';
@@ -229,6 +230,7 @@ export default function App() {
           <Route path="/trainer/members/assigned" element={<AssignedMembers />} />
           <Route path="/trainer/profile/me" element={<TrainerProfile />} />
           <Route path="/trainer/earnings" element={<TrainerEarnings />} />
+          <Route path="/staff/attendance/me" element={<TrainerAttendance />} />
           <Route path="/trainer/attendance" element={<TrainerAttendance />} />
           <Route path="/trainer/announcements" element={<TrainerAnnouncements />} />
           <Route path="/trainer/availability" element={<AvailabilitySettingsPage />} />
@@ -348,7 +350,7 @@ export default function App() {
           {/* MODULE: HR (Shared) */}
           <Route path="/hr/payroll" element={<Payroll />} />
           <Route path="/hr/leave-requests" element={<LeaveRequests />} />
-          <Route path="/hr/staff/management" element={<StaffManagement role={currentRole} branchId={1} />} />
+          <Route path="/hr/staff/management" element={<StaffManagement role={currentRole} />} />
           <Route path="/hr/staff/create" element={<StaffForm />} />
           <Route path="/hr/staff/edit/:id" element={<StaffForm />} />
           <Route path="/hr/trainers" element={<Trainers />} />
@@ -408,6 +410,7 @@ export default function App() {
               <Route path="/branchadmin/store/coupons" element={<Coupons />} />
               <Route path="/branchadmin/members/list" element={<MemberList />} />
               <Route path="/branchadmin/bookings/calendar" element={<BookingCalendar />} />
+              <Route path="/branchadmin/bookings/today" element={<TodaysBookings />} />
               <Route path="/branchadmin/tasks/list" element={<TaskList />} />
               <Route path="/branchadmin/tasks/assign" element={<AssignTask />} />
               <Route path="/branchadmin/reports/daily-attendance" element={<DailyAttendanceReport />} />

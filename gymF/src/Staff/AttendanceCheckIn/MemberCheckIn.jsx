@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, QrCode, User, Calendar, AlertCircle, CheckCircle, ScanLine, X } from 'lucide-react';
+import { Search, QrCode, User, Calendar, AlertCircle, CheckCircle, ScanLine, X, CameraOff, Camera, Phone, CreditCard } from 'lucide-react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import '../../styles/GlobalDesign.css';
 import { searchMember, checkInMember, getMemberSuggestions } from '../../api/staff/memberCheckInApi';
+import toast from 'react-hot-toast';
 
 const MemberCheckIn = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -9,7 +11,46 @@ const MemberCheckIn = () => {
     const [isExpired, setIsExpired] = useState(false);
     const [suggestions, setSuggestions] = useState([]);
     const [showSuggestions, setShowSuggestions] = useState(false);
+    const [isScanning, setIsScanning] = useState(false);
     const searchRef = useRef(null);
+
+    useEffect(() => {
+        let sc = null;
+        const initScanner = async () => {
+            if (isScanning) {
+                // Small delay to ensure DOM is ready
+                await new Promise(r => setTimeout(r, 100));
+                const element = document.getElementById('member-reader');
+                if (element) {
+                    sc = new Html5QrcodeScanner('member-reader', {
+                        fps: 10,
+                        qrbox: { width: 250, height: 250 },
+                        aspectRatio: 1.0,
+                        showTorchButtonIfSupported: true,
+                    });
+                    sc.render(onScanSuccess, onScanError);
+                }
+            }
+        };
+
+        initScanner();
+
+        return () => {
+            if (sc) {
+                sc.clear().catch(err => console.error("Failed to clear scanner:", err));
+            }
+        };
+    }, [isScanning]);
+
+    const onScanSuccess = (decodedText) => {
+        setIsScanning(false);
+        setSearchQuery(decodedText);
+        handleSearch(null, decodedText);
+    };
+
+    const onScanError = (err) => {
+        // console.warn(err);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -45,17 +86,20 @@ const MemberCheckIn = () => {
         setShowSuggestions(false);
     };
 
-    const handleSearch = async (e) => {
+    const handleSearch = async (e, providedQuery) => {
         if (e) e.preventDefault();
-        const member = await searchMember(searchQuery);
+        const query = providedQuery || searchQuery;
+        if (!query) return;
+
+        const member = await searchMember(query);
         if (member) {
             setFoundMember(member);
-            setIsExpired(member.status === 'Expired');
+            setIsExpired(member.status !== 'Active');
             setSuggestions([]);
             setShowSuggestions(false);
         } else {
             setFoundMember(null);
-            alert("No member found");
+            toast.error('No member found with this code/name/phone');
         }
     };
 
@@ -63,9 +107,11 @@ const MemberCheckIn = () => {
         if (foundMember) {
             const result = await checkInMember(foundMember.id);
             if (result.success) {
-                alert(result.message);
+                toast.success(`${foundMember.name} checked in successfully!`);
                 setFoundMember(null);
                 setSearchQuery('');
+            } else {
+                toast.error(result.message || 'Check-in failed');
             }
         }
     };
@@ -103,7 +149,19 @@ const MemberCheckIn = () => {
                     <div className="absolute inset-0 bg-gradient-to-br from-violet-50/20 to-purple-50/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                     <div className="relative z-10 p-5 sm:p-8">
-                        <div className="relative" ref={searchRef}>
+                        <div className="relative mb-8" ref={searchRef}>
+                            {isScanning && (
+                                <div className="mb-8 relative bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border-4 border-violet-500/20 max-w-sm mx-auto w-full animate-in zoom-in-95 duration-300">
+                                    <div id="member-reader" className="w-full"></div>
+                                    <button
+                                        onClick={() => setIsScanning(false)}
+                                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white transition-all z-50"
+                                    >
+                                        <X size={20} />
+                                    </button>
+                                </div>
+                            )}
+
                             <form onSubmit={handleSearch} className="flex gap-4">
                                 <div className="relative flex-1 group/input">
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -164,11 +222,15 @@ const MemberCheckIn = () => {
                             <div className="absolute w-full h-px bg-slate-100 left-0"></div>
                         </div>
 
-                        <button className="w-full mt-8 py-4 border-2 border-dashed border-slate-300 rounded-xl flex items-center justify-center gap-3 text-slate-500 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600 transition-all duration-300 group/scan">
-                            <div className="p-2 bg-slate-100 rounded-lg group-hover/scan:bg-white group-hover/scan:text-violet-600 transition-colors">
-                                <ScanLine size={24} />
+                        <button
+                            type="button"
+                            onClick={() => setIsScanning(!isScanning)}
+                            className={`w-full mt-8 py-4 border-2 border-dashed rounded-xl flex items-center justify-center gap-3 transition-all duration-300 group/scan ${isScanning ? 'bg-rose-50 border-rose-300 text-rose-600' : 'border-slate-300 text-slate-500 hover:bg-violet-50 hover:border-violet-300 hover:text-violet-600'}`}
+                        >
+                            <div className={`p-2 rounded-lg transition-colors ${isScanning ? 'bg-white text-rose-600' : 'bg-slate-100 group-hover/scan:bg-white group-hover/scan:text-violet-600'}`}>
+                                {isScanning ? <CameraOff size={24} /> : <ScanLine size={24} />}
                             </div>
-                            <span className="font-bold">Scan QR / Barcode</span>
+                            <span className="font-bold">{isScanning ? 'Stop Scanning' : 'Scan QR / Barcode'}</span>
                         </button>
                     </div>
                 </div>
@@ -211,13 +273,25 @@ const MemberCheckIn = () => {
                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Expiration</div>
                                         <div className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
                                             <Calendar size={14} className="text-violet-500" />
-                                            {foundMember.expiry}
+                                            {foundMember.expiryDate ? new Date(foundMember.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'No expiry'}
                                         </div>
                                     </div>
                                     <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
                                         <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Plan</div>
-                                        <div className="text-sm font-bold text-slate-800">Premium Annual</div>
+                                        <div className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                            <CreditCard size={14} className="text-violet-500" />
+                                            {foundMember.plan?.name || 'No Plan'}
+                                        </div>
                                     </div>
+                                    {foundMember.phone && (
+                                        <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 col-span-2">
+                                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone</div>
+                                            <div className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                                                <Phone size={14} className="text-violet-500" />
+                                                {foundMember.phone}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -228,9 +302,10 @@ const MemberCheckIn = () => {
                                     <AlertCircle size={24} strokeWidth={2.5} />
                                 </div>
                                 <div>
-                                    <h4 className="font-bold text-red-800 text-sm mb-1">Membership Expired</h4>
+                                    <h4 className="font-bold text-red-800 text-sm mb-1">Membership Not Active</h4>
                                     <p className="text-xs text-red-600 font-medium leading-relaxed">
-                                        This member's plan expired on {foundMember.expiry}. Please request renewal before granting entry.
+                                        This member's status is <strong>{foundMember.status}</strong>.
+                                        {foundMember.expiryDate && ` Expired on ${new Date(foundMember.expiryDate).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}.`} Please request renewal before granting entry.
                                     </p>
                                 </div>
                             </div>

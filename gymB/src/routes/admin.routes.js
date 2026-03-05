@@ -77,7 +77,7 @@ const router = express.Router();
 router.use(protect);
 // Default: BRANCH_ADMIN and MANAGER can access everything
 // STAFF gets read-only access to specific routes defined below with inline authorize
-router.use(authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER', 'STAFF'));
+router.use(authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER', 'STAFF', 'TRAINER'));
 
 // Settings
 router.get('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getTenantSettings);

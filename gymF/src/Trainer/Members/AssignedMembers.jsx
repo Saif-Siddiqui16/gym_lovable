@@ -9,8 +9,11 @@ import MemberProfileView from './MemberProfileView';
 import RightDrawer from '../../components/common/RightDrawer';
 import QuickAssignPlanDrawer from './components/QuickAssignPlanDrawer';
 
+import { useBranchContext } from '../../context/BranchContext';
+
 const AssignedMembers = () => {
     const navigate = useNavigate();
+    const { selectedBranch } = useBranchContext();
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -32,22 +35,30 @@ const AssignedMembers = () => {
     const [isAssignOpen, setIsAssignOpen] = useState(false);
     const [flagReason, setFlagReason] = useState('');
 
-    // attendance logs loaded dynamically now from selectedMember.recentWorkouts
-
     useEffect(() => {
         loadMembers();
-    }, [searchTerm, statusFilter, currentPage, itemsPerPage]);
+    }, [searchTerm, statusFilter, currentPage, itemsPerPage, selectedBranch]);
 
     const loadMembers = async () => {
         setLoading(true);
-        const filters = {
-            search: searchTerm,
-            status: statusFilter === 'All' ? '' : statusFilter
-        };
-        const result = await getAssignedMembers({ filters, page: currentPage, limit: itemsPerPage });
-        setMembers(result?.data || []);
-        setTotalItems(result?.total || 0);
-        setLoading(false);
+        try {
+            const filters = {
+                search: searchTerm,
+                status: statusFilter === 'All' ? '' : statusFilter
+            };
+            const result = await getAssignedMembers({
+                filters,
+                page: currentPage,
+                limit: itemsPerPage,
+                branchId: selectedBranch
+            });
+            setMembers(result?.data || []);
+            setTotalItems(result?.total || 0);
+        } catch (error) {
+            console.error('Failed to load members:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSearch = (e) => {

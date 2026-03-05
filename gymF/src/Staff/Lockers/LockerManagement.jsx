@@ -7,9 +7,15 @@ import LockerDetailDrawer from './LockerDetailDrawer';
 import CreateLockerDrawer from './CreateLockerDrawer';
 import BulkCreateLockersDrawer from '../../modules/operations/pages/BulkCreateLockersDrawer';
 
+import { useBranchContext } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
+import toast from 'react-hot-toast';
+
 const LockerManagement = () => {
+    const { selectedBranch } = useBranchContext();
+    const { user } = useAuth();
     const [lockers, setLockers] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState('All Status');
     const [activeTab, setActiveTab] = useState('Overview');
@@ -21,6 +27,25 @@ const LockerManagement = () => {
     const [isBulkCreateOpen, setIsBulkCreateOpen] = useState(false);
     const [selectedLocker, setSelectedLocker] = useState(null);
 
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            const data = await getLockers();
+            // Filter by branch if selectedBranch is not 'all'
+            // Although backend already filters by user.tenantId for staff
+            setLockers(data);
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to load lockers');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, [selectedBranch]);
+
     // Initial mock stats to match screenshot
     const stats = {
         total: lockers.length,
@@ -29,6 +54,12 @@ const LockerManagement = () => {
         maintenance: lockers.filter(l => l.status === 'Maintenance').length,
         occupancy: lockers.length > 0 ? `${Math.round((lockers.filter(l => l.status !== 'Available').length / lockers.length) * 100)}%` : '0%'
     };
+
+    const filteredLockers = lockers.filter(locker => {
+        const matchesSearch = locker.number.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = filterStatus === 'All Status' || locker.status === filterStatus;
+        return matchesSearch && matchesStatus;
+    });
 
     const handleAction = (locker) => {
         setSelectedLocker(locker);
@@ -154,11 +185,16 @@ const LockerManagement = () => {
                     <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden min-h-[500px] flex flex-col">
                         <div className="p-5 sm:p-8 border-b border-slate-50 flex justify-between items-center">
                             <h3 className="text-xl font-black text-slate-800 tracking-tight">Locker Map</h3>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lockers.length} lockers</span>
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{filteredLockers.length} / {lockers.length} lockers</span>
                         </div>
 
                         <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 text-center space-y-4">
-                            {lockers.length === 0 ? (
+                            {loading ? (
+                                <div className="flex flex-col items-center gap-4">
+                                    <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin" />
+                                    <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Loading lockers...</p>
+                                </div>
+                            ) : filteredLockers.length === 0 ? (
                                 <>
                                     <div className="w-20 h-20 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200">
                                         <Lock size={40} strokeWidth={1.5} />
@@ -167,13 +203,21 @@ const LockerManagement = () => {
                                 </>
                             ) : (
                                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 w-full">
-                                    {lockers.map(locker => (
+                                    {filteredLockers.map(locker => (
                                         <div
                                             key={locker.id}
                                             onClick={() => handleAction(locker)}
-                                            className="aspect-square bg-slate-50 rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-violet-50 hover:border-violet-200 border border-transparent transition-all group"
+                                            className={`aspect-square rounded-2xl flex flex-col items-center justify-center gap-2 cursor-pointer border-2 transition-all group scale-100 hover:scale-105 ${locker.status === 'Available' ? 'bg-emerald-50 border-emerald-100 hover:border-emerald-300' :
+                                                locker.status === 'Occupied' || locker.status === 'Assigned' ? 'bg-slate-50 border-slate-100 hover:border-slate-300' :
+                                                    locker.status === 'Maintenance' ? 'bg-amber-50 border-amber-100 hover:border-amber-300' :
+                                                        'bg-blue-50 border-blue-100 hover:border-blue-300'
+                                                }`}
                                         >
-                                            <Lock size={20} className="text-slate-300 group-hover:text-violet-500 transition-colors" />
+                                            <Lock size={20} className={`${locker.status === 'Available' ? 'text-emerald-500' :
+                                                locker.status === 'Occupied' || locker.status === 'Assigned' ? 'text-slate-400' :
+                                                    locker.status === 'Maintenance' ? 'text-amber-500' :
+                                                        'text-blue-500'
+                                                }`} />
                                             <span className="text-xs font-black text-slate-700">{locker.number}</span>
                                         </div>
                                     ))}
@@ -204,41 +248,77 @@ const LockerManagement = () => {
                             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stats.assigned} active assignments</span>
                         </div>
 
-                        {/* Table Header */}
-                        <div className="hidden sm:grid grid-cols-6 px-10 py-5 border-b border-slate-50 bg-white">
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Locker</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Member</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Start Date</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">End Date</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1">Fee</span>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] col-span-1 text-right">Actions</span>
-                        </div>
-
-                        {/* Table Body / Empty State */}
-                        <div className="flex-1 flex flex-col items-center justify-center p-10 md:p-20 text-center animate-fadeIn">
-                            <div className="relative mb-8">
-                                <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-br from-slate-50 to-slate-100/50 flex items-center justify-center text-slate-200 rotation-slow">
-                                    <Key size={48} className="md:w-16 md:h-16 text-slate-300" />
+                        {stats.assigned > 0 ? (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-slate-50 bg-white">
+                                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Locker</th>
+                                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Member</th>
+                                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Status</th>
+                                            <th className="px-10 py-5 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {lockers.filter(l => l.status === 'Occupied' || l.status === 'Assigned').map(locker => (
+                                            <tr key={locker.id} className="hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-10 py-5 text-sm font-bold text-slate-700">Locker #{locker.number}</td>
+                                                <td className="px-10 py-5">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center text-[10px] font-black">
+                                                            {locker.assignedTo?.name?.charAt(0) || '?'}
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-bold text-slate-800">{locker.assignedTo?.name || 'N/A'}</p>
+                                                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{locker.assignedTo?.memberId || 'MEM-XXX'}</p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-10 py-5">
+                                                    <span className="px-3 py-1 bg-rose-50 text-rose-600 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                                        {locker.status}
+                                                    </span>
+                                                </td>
+                                                <td className="px-10 py-5 text-right">
+                                                    <button
+                                                        onClick={() => handleAction(locker)}
+                                                        className="p-2.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                                    >
+                                                        <Info size={20} />
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            /* Table Body / Empty State */
+                            <div className="flex-1 flex flex-col items-center justify-center p-10 md:p-20 text-center animate-fadeIn">
+                                <div className="relative mb-8">
+                                    <div className="w-24 h-24 md:w-32 md:h-32 rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-br from-slate-50 to-slate-100/50 flex items-center justify-center text-slate-200 rotation-slow">
+                                        <Key size={48} className="md:w-16 md:h-16 text-slate-300" />
+                                    </div>
+                                    <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-50 flex items-center justify-center text-indigo-500 animate-bounce">
+                                        <Lock size={20} />
+                                    </div>
                                 </div>
-                                <div className="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-xl shadow-slate-200 border border-slate-50 flex items-center justify-center text-indigo-500 animate-bounce">
-                                    <Lock size={20} />
+
+                                <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">No lockers currently assigned</h3>
+                                <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-4 max-w-xs leading-relaxed opacity-70">
+                                    Assigned lockers will appear here in a detailed list once members rent them
+                                </p>
+
+                                <div className="mt-10">
+                                    <button
+                                        onClick={() => setActiveTab('Overview')}
+                                        className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+                                    >
+                                        Go to Map to Assign
+                                    </button>
                                 </div>
                             </div>
-
-                            <h3 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">No lockers currently assigned</h3>
-                            <p className="text-slate-400 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-4 max-w-xs leading-relaxed opacity-70">
-                                Assigned lockers will appear here in a detailed list once members rent them
-                            </p>
-
-                            <div className="mt-10">
-                                <button
-                                    onClick={() => setActiveTab('Overview')}
-                                    className="px-6 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
-                                >
-                                    Go to Map to Assign
-                                </button>
-                            </div>
-                        </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -248,18 +328,20 @@ const LockerManagement = () => {
                 isOpen={isAssignDrawerOpen}
                 onClose={() => setIsAssignDrawerOpen(false)}
                 selectedLocker={selectedLocker}
+                onSuccess={loadData}
             />
 
             <LockerDetailDrawer
                 isOpen={isDetailDrawerOpen}
                 onClose={() => setIsDetailDrawerOpen(false)}
                 selectedLocker={selectedLocker}
+                onSuccess={loadData}
             />
 
             <CreateLockerDrawer
                 isOpen={isCreateDrawerOpen}
                 onClose={() => setIsCreateDrawerOpen(false)}
-                onSuccess={() => { }}
+                onSuccess={loadData}
             />
 
             <RightDrawer
@@ -268,7 +350,7 @@ const LockerManagement = () => {
             >
                 <BulkCreateLockersDrawer
                     onClose={() => setIsBulkCreateOpen(false)}
-                    onSuccess={() => { }}
+                    onSuccess={loadData}
                 />
             </RightDrawer>
         </div>

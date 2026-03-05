@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Calendar as CalendarIcon,
     Clock,
@@ -9,26 +9,64 @@ import {
     Search,
     UserCheck,
     TrendingUp,
-    MapPin
+    MapPin,
+    Loader2
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import StatsCard from '../../modules/dashboard/components/StatsCard';
 import DashboardGrid from '../../modules/dashboard/components/DashboardGrid';
+import apiClient from '../../api/apiClient';
+import toast from 'react-hot-toast';
 
 const MyAttendance = () => {
-    // Current date state for calendar navigation
-    const [viewDate, setViewDate] = useState(new Date(2026, 1, 1)); // Feb 1, 2026
+    const [viewDate, setViewDate] = useState(new Date());
+    const [attendanceData, setAttendanceData] = useState({ logs: [], stats: {} });
+    const [loading, setLoading] = useState(true);
+
+    const fetchAttendance = async () => {
+        try {
+            const res = await apiClient.get('/member/attendance');
+            setAttendanceData(res.data);
+        } catch (err) {
+            console.error("Failed to fetch attendance", err);
+            toast.error("Failed to load attendance history");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchAttendance();
+    }, []);
 
     const stats = [
-        { title: 'Total Visits', value: '0', icon: CheckCircle2, color: 'primary' },
-        { title: 'Days Visited', value: '0', icon: CalendarIcon, color: 'success' },
-        { title: 'Avg Duration', value: '0 min', icon: Clock, color: 'warning' },
-        { title: 'Consistency', value: '0%', icon: Activity, color: 'info' }
+        {
+            title: 'Total Visits',
+            value: attendanceData.stats.totalVisits?.toString() || '0',
+            icon: CheckCircle2,
+            color: 'primary'
+        },
+        {
+            title: 'Days This Month',
+            value: attendanceData.stats.visitsThisMonth?.toString() || '0',
+            icon: CalendarIcon,
+            color: 'success'
+        },
+        {
+            title: 'Avg Duration',
+            value: attendanceData.stats.avgDuration || '0 min',
+            icon: Clock,
+            color: 'warning'
+        },
+        {
+            title: 'Consistency',
+            value: attendanceData.stats.consistency || '0%',
+            icon: Activity,
+            color: 'info'
+        }
     ];
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    // Calendar Logic
     const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
     const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
@@ -41,13 +79,23 @@ const MyAttendance = () => {
     const dates = Array.from({ length: daysInMonth }, (_, i) => i + 1);
     const blanks = Array.from({ length: firstDay }, (_, i) => i);
 
-    const handlePrevMonth = () => {
-        setViewDate(new Date(currentYear, currentMonth - 1, 1));
+    const handlePrevMonth = () => setViewDate(new Date(currentYear, currentMonth - 1, 1));
+    const handleNextMonth = () => setViewDate(new Date(currentYear, currentMonth + 1, 1));
+
+    const isVisited = (date) => {
+        return attendanceData.logs.some(log => {
+            const d = new Date(log.date);
+            return d.getDate() === date && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+        });
     };
 
-    const handleNextMonth = () => {
-        setViewDate(new Date(currentYear, currentMonth + 1, 1));
-    };
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
+                <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -86,7 +134,7 @@ const MyAttendance = () => {
                 ))}
             </DashboardGrid>
 
-            {/* Calendar Section - Full Width */}
+            {/* Calendar Section */}
             <div className="space-y-6">
                 <div className="flex items-center gap-3 px-1">
                     <div className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
@@ -126,36 +174,65 @@ const MyAttendance = () => {
                         {blanks.map(blank => (
                             <div key={`blank-${blank}`} className="aspect-square" />
                         ))}
-                        {dates.map(date => (
-                            <div
-                                key={date}
-                                className="aspect-square flex flex-col items-center justify-center rounded-[24px] border border-slate-100 bg-slate-50/30 hover:border-indigo-200 hover:bg-white hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group cursor-pointer relative"
-                            >
-                                <span className="text-sm font-black text-slate-700 group-hover:text-indigo-600 transition-colors">{date}</span>
-                                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-slate-200 group-hover:bg-indigo-400 transition-colors" />
-                            </div>
-                        ))}
+                        {dates.map(date => {
+                            const visited = isVisited(date);
+                            return (
+                                <div
+                                    key={date}
+                                    className={`aspect-square flex flex-col items-center justify-center rounded-[24px] border ${visited ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'border-slate-100 bg-slate-50/30 text-slate-700 hover:border-indigo-200'} transition-all duration-300 group cursor-pointer relative`}
+                                >
+                                    <span className={`text-sm font-black transition-colors ${visited ? 'text-white' : 'group-hover:text-indigo-600'}`}>{date}</span>
+                                    {visited && <div className="absolute bottom-3 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-200" />}
+                                </div>
+                            );
+                        })}
                     </div>
                 </Card>
             </div>
 
-            {/* Recent Visits Section - Full Width Below */}
+            {/* Recent Visits List */}
             <div className="space-y-6">
                 <div className="flex items-center gap-3 px-1">
                     <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
                         <Clock size={16} />
                     </div>
-                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Recent Visits</h2>
+                    <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">Recent Activity</h2>
                 </div>
 
-                <Card className="p-10 border-2 border-slate-100 shadow-2xl shadow-slate-100/20 rounded-3xl bg-white min-h-[300px] flex flex-col items-center justify-center text-center">
-                    <div className="w-20 h-20 bg-slate-50 rounded-[32px] flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-100 mb-6">
-                        <Search size={32} strokeWidth={1.5} />
-                    </div>
-                    <h3 className="text-lg font-black text-slate-400 tracking-tight uppercase mb-2 leading-none">Recent Visits</h3>
-                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest leading-relaxed">
-                        No visits this month
-                    </p>
+                <Card className="p-6 border-2 border-slate-100 shadow-2xl shadow-slate-100/20 rounded-3xl bg-white">
+                    {attendanceData.logs.length > 0 ? (
+                        <div className="space-y-4">
+                            {attendanceData.logs.map((log, idx) => (
+                                <div key={log.id} className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-indigo-600 shadow-sm">
+                                            <CalendarIcon size={20} />
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-black text-slate-900">{new Date(log.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">General Check-in</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="flex items-center gap-2 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                                            <Clock size={14} />
+                                            {log.checkInTime || 'No Time'}
+                                        </div>
+                                        {log.checkOutTime && (
+                                            <p className="text-[10px] font-bold text-slate-400 mt-1 uppercase">Out: {log.checkOutTime}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-20 text-center">
+                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-200 mb-4">
+                                <Search size={24} />
+                            </div>
+                            <h4 className="text-sm font-black text-slate-400 uppercase tracking-widest">No activity found</h4>
+                        </div>
+                    )}
                 </Card>
             </div>
         </div>

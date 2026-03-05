@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
@@ -15,13 +15,33 @@ import {
     Search,
     IndianRupee,
     Activity,
-    Users
+    Users,
+    Loader2
 } from 'lucide-react';
 import Card from '../../../components/ui/Card';
+import apiClient from '../../../api/apiClient';
+import toast from 'react-hot-toast';
 
 const MemberDashboard = () => {
-    const today = "Saturday, February 28, 2026";
     const navigate = useNavigate();
+    const [data, setData] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    const fetchDashboardData = async () => {
+        try {
+            const res = await apiClient.get('/member/dashboard');
+            setData(res.data);
+        } catch (err) {
+            console.error("Failed to fetch dashboard data", err);
+            toast.error("Failed to load dashboard statistics");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
 
     const StatCard = ({ title, value, subtitle, icon: Icon, color = 'primary' }) => {
         const colorClasses = {
@@ -54,14 +74,29 @@ const MemberDashboard = () => {
         );
     };
 
-    const QuickAction = ({ icon: Icon, label, color = 'bg-slate-50' }) => (
-        <button className={`w-full p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group ${color} text-left`}>
+    const QuickAction = ({ icon: Icon, label, onClick, color = 'bg-slate-50' }) => (
+        <button
+            onClick={onClick}
+            className={`w-full p-4 rounded-2xl border border-slate-100 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/5 transition-all duration-300 group ${color} text-left`}
+        >
             <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm mb-3 group-hover:scale-110 transition-transform">
                 <Icon size={18} />
             </div>
             <span className="text-[10px] font-black text-slate-900 uppercase tracking-widest leading-none block">{label}</span>
         </button>
     );
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-6rem)]">
+                <Loader2 className="w-12 h-12 text-indigo-600 animate-spin" />
+            </div>
+        );
+    }
+
+    if (!data) return null;
+
+    const { memberInfo, membership, stats, recentAttendance, upcomingClass, trainer, locker } = data;
 
     return (
         <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
@@ -73,20 +108,20 @@ const MemberDashboard = () => {
                     </div>
                     <div className="min-w-0">
                         <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight mb-1 truncate">
-                            Welcome, <span className="text-indigo-600">Demo!</span>
+                            Welcome, <span className="text-indigo-600">{memberInfo.name || 'Member'}!</span>
                         </h1>
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border border-indigo-100 whitespace-nowrap">Member ID: MEM001</span>
+                            <span className="px-2 py-0.5 sm:px-3 sm:py-1 bg-indigo-50 text-indigo-600 rounded-lg sm:rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest border border-indigo-100 whitespace-nowrap">Member ID: {memberInfo.memberId}</span>
                             <div className="hidden sm:block w-1.5 h-1.5 rounded-full bg-slate-300" />
                             <p className="text-slate-500 font-bold text-[9px] sm:text-xs uppercase tracking-widest">
-                                Main Branch Access
+                                {memberInfo.branchName} Access
                             </p>
                         </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2.5 sm:py-3 bg-white rounded-xl sm:rounded-2xl border-2 border-slate-100 shadow-sm self-start sm:self-auto">
                     <Calendar size={16} className="text-indigo-600 shrink-0" />
-                    <span className="text-[9px] sm:text-xs font-black text-slate-700 uppercase tracking-widest">{today}</span>
+                    <span className="text-[9px] sm:text-xs font-black text-slate-700 uppercase tracking-widest">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
             </div>
 
@@ -95,28 +130,28 @@ const MemberDashboard = () => {
                 <StatCard
                     title="Active Membership"
                     value="Membership Status"
-                    subtitle="Premium Gold Plan • 30 days"
+                    subtitle={`${membership.planName} • ${membership.daysRemaining} days`}
                     icon={Shield}
                     color="primary"
                 />
                 <StatCard
                     title="PT Sessions"
-                    value="5"
+                    value={stats.ptSessionsRemaining}
                     subtitle="Remaining Sessions"
                     icon={Clock}
                     color="success"
                 />
                 <StatCard
                     title="This Month Visits"
-                    value="2"
+                    value={stats.visitsThisMonth}
                     subtitle="Visit Frequency"
                     icon={Activity}
                     color="warning"
                 />
                 <StatCard
                     title="Pending Dues"
-                    value="₹NaN"
-                    subtitle="1 Active Invoice"
+                    value={`₹${stats.pendingDues.toLocaleString()}`}
+                    subtitle={`${stats.activeInvoices} Active Invoice${stats.activeInvoices !== 1 ? 's' : ''}`}
                     icon={IndianRupee}
                     color="danger"
                 />
@@ -127,10 +162,10 @@ const MemberDashboard = () => {
                 <div className="lg:col-span-8 space-y-6">
                     {/* Quick Actions Grid */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <QuickAction icon={Calendar} label="Book & Schedule" />
-                        <QuickAction icon={TrendingUp} label="View Progress" />
-                        <QuickAction icon={ShoppingCart} label="Shop Products" />
-                        <QuickAction icon={UserPlus} label="Refer & Earn" />
+                        <QuickAction icon={Calendar} label="Book & Schedule" onClick={() => navigate('/member/bookings')} />
+                        <QuickAction icon={TrendingUp} label="View Progress" onClick={() => navigate('/progress')} />
+                        <QuickAction icon={ShoppingCart} label="Shop Products" onClick={() => navigate('/member/store')} />
+                        <QuickAction icon={UserPlus} label="Refer & Earn" onClick={() => navigate('/referrals')} />
                     </div>
 
                     {/* Membership Details & Entitlements */}
@@ -143,10 +178,10 @@ const MemberDashboard = () => {
                             </div>
                             <div className="space-y-4">
                                 {[
-                                    { label: 'Plan', value: 'Premium Gold Plan' },
-                                    { label: 'Status', value: 'Active', color: 'text-emerald-600' },
-                                    { label: 'Start Date', value: '28 Feb 2026' },
-                                    { label: 'End Date', value: '30 Mar 2026' },
+                                    { label: 'Plan', value: membership.planName },
+                                    { label: 'Status', value: memberInfo.status, color: memberInfo.status === 'Active' ? 'text-emerald-600' : 'text-rose-600' },
+                                    { label: 'Start Date', value: membership.startDate ? new Date(membership.startDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A' },
+                                    { label: 'End Date', value: membership.expiryDate ? new Date(membership.expiryDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'N/A' },
                                 ].map((item, idx) => (
                                     <div key={idx} className="flex justify-between items-center">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.label}</span>
@@ -156,7 +191,7 @@ const MemberDashboard = () => {
                                 <div className="pt-4 border-t border-slate-50">
                                     <div className="flex justify-between items-center bg-indigo-50/50 p-4 rounded-xl border border-indigo-50">
                                         <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Days Remaining</span>
-                                        <span className="text-xs font-black text-indigo-700 uppercase">30 days</span>
+                                        <span className="text-xs font-black text-indigo-700 uppercase">{membership.daysRemaining} days</span>
                                     </div>
                                 </div>
                             </div>
@@ -169,12 +204,28 @@ const MemberDashboard = () => {
                                 <LayoutDashboard size={16} className="text-fuchsia-200" />
                             </div>
                             <div className="flex-1 flex flex-col items-center justify-center text-center py-6">
-                                <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-200 mb-3">
-                                    <Search size={24} />
-                                </div>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">No benefits configured</p>
+                                {membership.benefits ? (
+                                    <div className="w-full text-left space-y-3">
+                                        {membership.benefits.split(/[,\n]/).slice(0, 3).map((benefit, idx) => (
+                                            <div key={idx} className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-400" />
+                                                <span className="text-[10px] font-black text-slate-700 uppercase tracking-tight truncate">{benefit.trim()}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="w-12 h-12 bg-slate-50 rounded-xl flex items-center justify-center text-slate-200 mb-3">
+                                            <Search size={24} />
+                                        </div>
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-relaxed">No benefits configured</p>
+                                    </>
+                                )}
                             </div>
-                            <button className="w-full h-11 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2">
+                            <button
+                                onClick={() => navigate('/member/benefits')}
+                                className="w-full h-11 bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-600 hover:text-white transition-all rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm flex items-center justify-center gap-2"
+                            >
                                 Upgrade Plan <ChevronRight size={14} strokeWidth={3} />
                             </button>
                         </Card>
@@ -194,14 +245,18 @@ const MemberDashboard = () => {
                             </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {['28 Feb 2026 — 17:34', '27 Feb 2026 — 17:34'].map((date, idx) => (
+                            {recentAttendance.length > 0 ? recentAttendance.map((att, idx) => (
                                 <div key={idx} className="p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-indigo-100 transition-all flex items-center gap-3 group">
                                     <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center text-indigo-600 shadow-sm group-hover:bg-indigo-600 group-hover:text-white transition-all">
                                         <Calendar size={16} />
                                     </div>
-                                    <span className="text-[11px] font-black text-slate-700 uppercase">{date}</span>
+                                    <span className="text-[11px] font-black text-slate-700 uppercase">
+                                        {new Date(att.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })} — {att.time}
+                                    </span>
                                 </div>
-                            ))}
+                            )) : (
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest italic py-4">No recent attendance found</p>
+                            )}
                         </div>
                     </Card>
                 </div>
@@ -212,18 +267,37 @@ const MemberDashboard = () => {
                     <Card className="p-6 border border-slate-100 rounded-2xl bg-white shadow-xl h-full">
                         <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-50">
                             <h3 className="text-xs font-black uppercase tracking-widest text-emerald-600">Upcoming Classes</h3>
-                            <button className="text-[10px] font-black text-emerald-600">VIEW MORE</button>
+                            <button
+                                onClick={() => navigate('/member/bookings')}
+                                className="text-[10px] font-black text-emerald-600"
+                            >
+                                VIEW MORE
+                            </button>
                         </div>
-                        <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-50 flex flex-col gap-4">
-                            <div className="flex items-center justify-between">
-                                <span className="px-2.5 py-1 bg-white text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">Booked</span>
-                                <Clock size={16} className="text-indigo-200" />
+                        {upcomingClass ? (
+                            <div className="bg-indigo-50/50 p-5 rounded-2xl border border-indigo-50 flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <span className="px-2.5 py-1 bg-white text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-indigo-100 shadow-sm">{upcomingClass.status}</span>
+                                    <Clock size={16} className="text-indigo-200" />
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase mb-0.5">{upcomingClass.className}</h4>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        {new Date(upcomingClass.date).toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })} • {new Date(upcomingClass.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </p>
+                                </div>
                             </div>
-                            <div>
-                                <h4 className="text-lg font-black text-slate-900 tracking-tight uppercase mb-0.5">Morning Yoga</h4>
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sat, 28 Feb • 18:34</p>
+                        ) : (
+                            <div className="text-center py-10">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">No upcoming classes</p>
+                                <button
+                                    onClick={() => navigate('/member/bookings')}
+                                    className="mt-4 text-[10px] font-black text-indigo-600 border-b border-indigo-200"
+                                >
+                                    BOOK NOW
+                                </button>
                             </div>
-                        </div>
+                        )}
                     </Card>
 
                     {/* My Trainer */}
@@ -237,8 +311,8 @@ const MemberDashboard = () => {
                                 <User size={28} />
                             </div>
                             <div>
-                                <h4 className="text-md font-black text-slate-900 uppercase leading-tight mb-0.5">Trainer</h4>
-                                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">PT Package Trainer</p>
+                                <h4 className="text-md font-black text-slate-900 uppercase leading-tight mb-0.5">{trainer?.name || 'Trainer'}</h4>
+                                <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">{trainer?.specialization || 'PT Package Trainer'}</p>
                             </div>
                         </div>
                         <button className="w-full h-11 mt-6 border-2 border-slate-50 rounded-xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-amber-100 hover:text-amber-600 hover:bg-amber-50 transition-all">MESSAGE</button>
@@ -252,8 +326,15 @@ const MemberDashboard = () => {
                                 <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">My Locker</h3>
                                 <Lock size={16} className="text-slate-100" />
                             </div>
-                            <p className="text-sm font-black text-slate-900 uppercase">No locker assigned</p>
-                            <button className="w-full h-11 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all">Request Locker</button>
+                            <p className="text-sm font-black text-slate-900 uppercase">{locker ? `Locker #${locker.number}` : 'No locker assigned'}</p>
+                            {!locker && (
+                                <button
+                                    onClick={() => navigate('/member/requests')}
+                                    className="w-full h-11 bg-rose-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-rose-100 hover:bg-rose-700 transition-all"
+                                >
+                                    Request Locker
+                                </button>
+                            )}
                         </div>
                     </Card>
                 </div>

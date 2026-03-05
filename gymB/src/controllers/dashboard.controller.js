@@ -23,31 +23,48 @@ exports.getManagerDashboard = async (req, res) => {
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Fetch Today's Classes (Attendance substitute)
-        const realClasses = await prisma.class.findMany({
-            where: { tenantId },
-            take: 3
+        // Fetch Today's Classes
+        const currentDayName = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][today.getDay()];
+        const allClasses = await prisma.class.findMany({
+            where: { tenantId, status: 'Scheduled' },
+            include: { bookings: { where: { date: { gte: today, lt: tomorrow } } } }
         }).catch(() => []);
 
-        const attendance = realClasses.map((cls, i) => ({
-            id: cls.id,
-            name: cls.name,
-            time: cls.startTime || '10:00 AM',
-            attendees: 0, // Should be calculated using Bookings relation if extended
-            capacity: cls.capacity || 20
-        }));
+        // Filter classes scheduled for today
+        const todaysRealClasses = allClasses.filter(cls => {
+            try {
+                const scheduleArr = JSON.parse(cls.schedule || "[]");
+                return scheduleArr.some(s => s.day === currentDayName);
+            } catch (e) {
+                return false;
+            }
+        });
+
+        // Use top 3 upcoming classes for the dashboard
+        const attendance = todaysRealClasses.slice(0, 3).map(cls => {
+            const sch = JSON.parse(cls.schedule || "[]").find(s => s.day === currentDayName);
+            return {
+                id: cls.id,
+                name: cls.name,
+                time: sch ? sch.time : (cls.startTime || '10:00 AM'),
+                attendees: cls.bookings ? cls.bookings.length : 0,
+                capacity: cls.maxCapacity || cls.capacity || 20
+            };
+        });
 
         // Fetch Tasks and Notices
         const tasksAndNotices = [];
+
+        // 1. Maintenance Requests
         const maintenanceTasks = await prisma.maintenanceRequest.findMany({
-            where: { equipment: { tenantId }, status: { not: 'Resolved' } },
-            take: 1,
+            where: { equipment: { tenantId }, status: { notIn: ['Resolved', 'Completed'] } },
+            take: 2,
             include: { equipment: true }
         }).catch(() => []);
 
         maintenanceTasks.forEach(t => {
             tasksAndNotices.push({
-                id: t.id,
+                id: `m_${t.id}`,
                 type: 'urgent',
                 title: 'Equipment Service Due',
                 description: `${t.equipment?.name || 'Equipment'} needs maintenance.`,
@@ -55,9 +72,25 @@ exports.getManagerDashboard = async (req, res) => {
             });
         });
 
-        // Remove fallback
+        // 2. Pending Standard Tasks assigned within tenant
+        const pendingTasks = await prisma.task.findMany({
+            where: { tenantId, status: 'Pending' },
+            take: 3,
+            orderBy: { dueDate: 'asc' }
+        }).catch(() => []);
 
+        pendingTasks.forEach(t => {
+            tasksAndNotices.push({
+                id: `t_${t.id}`,
+                type: t.priority === 'High' ? 'urgent' : 'notice',
+                title: t.title,
+                description: t.description || 'Pending task completion.',
+                dueDate: new Date(t.dueDate).toLocaleDateString()
+            });
+        });
 
+        // Sort tasks globally by urgency
+        tasksAndNotices.sort((a, b) => a.type === 'urgent' ? -1 : 1);
 
         const todayInvoices = await prisma.invoice.findMany({
             where: { tenantId, paidDate: { gte: today, lt: tomorrow } }
@@ -106,7 +139,7 @@ exports.getManagerDashboard = async (req, res) => {
 
 exports.getStaffDashboard = async (req, res) => {
     try {
-        const tenantId = req.user.tenantId;
+        const tenantId = req.query.tenantId ? parseInt(req.query.tenantId) : req.user.tenantId;
         const staffId = req.user.id;
 
         const today = new Date();
@@ -199,7 +232,7 @@ exports.getStaffDashboard = async (req, res) => {
         const memberUserIds = checkinRecords.map(c => c.userId).filter(id => id);
         const members = await prisma.member.findMany({
             where: { userId: { in: memberUserIds } },
-            include: { plan: true, wallet: true }
+            include: { plan: true }
         });
 
         const formattedCheckins = checkinRecords.map((c, i) => {

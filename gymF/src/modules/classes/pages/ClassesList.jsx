@@ -7,13 +7,14 @@ import {
     AlertCircle, Edit2, Trash2
 } from 'lucide-react';
 import { getClasses, createClass, updateClass, deleteClass } from '../../../api/manager/classesApi';
+import { getTrainerClasses } from '../../../api/trainer/trainerApi';
 import { getAllStaff } from '../../../api/manager/managerApi';
 import { useAuth } from '../../../context/AuthContext';
 import { useBranchContext } from '../../../context/BranchContext';
 import { toast } from 'react-hot-toast';
 
 const ClassesList = () => {
-    const { role } = useAuth();
+    const { role, user } = useAuth();
     const { selectedBranch } = useBranchContext();
     const navigate = useNavigate();
 
@@ -25,7 +26,7 @@ const ClassesList = () => {
     const [activeTab, setActiveTab] = useState('Upcoming'); // Upcoming, Past, All
     const [contentTab, setContentTab] = useState('Schedule'); // Schedule, Attendance
     const [typeFilter, setTypeFilter] = useState('All');
-    const [trainerFilter, setTrainerFilter] = useState('All');
+    const [trainerFilter, setTrainerFilter] = useState(role === 'TRAINER' ? user?.id?.toString() : 'All');
     const [activeActionId, setActiveActionId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
     const [editingClassId, setEditingClassId] = useState(null);
@@ -40,7 +41,7 @@ const ClassesList = () => {
         date: '',
         time: '',
         duration: 60,
-        trainerId: '',
+        trainerId: role === 'TRAINER' ? user?.id?.toString() : '',
         description: ''
     });
 
@@ -52,7 +53,12 @@ const ClassesList = () => {
     const loadClasses = async () => {
         try {
             setLoading(true);
-            const data = await getClasses({ branchId: selectedBranch });
+            let data;
+            if (role === 'TRAINER') {
+                data = await getTrainerClasses({ branchId: selectedBranch });
+            } else {
+                data = await getClasses({ branchId: selectedBranch });
+            }
             setClasses(data || []);
         } catch (error) {
             console.error('Error loading classes:', error);
@@ -107,17 +113,18 @@ const ClassesList = () => {
             date: '',
             time: '',
             duration: 60,
-            trainerId: '',
+            trainerId: role === 'TRAINER' ? user?.id?.toString() : '',
             description: ''
         });
         setEditingClassId(null);
     };
 
     const handleEditClick = (cls) => {
-        let parsedDate = '';
-        let parsedTime = '';
+        // Use raw fields from backend if available, otherwise fallback to parsing schedule string
+        let parsedDate = cls.rawDate || '';
+        let parsedTime = cls.rawTime || '';
 
-        if (cls.schedule && typeof cls.schedule === 'string') {
+        if (!parsedDate && cls.schedule && typeof cls.schedule === 'string') {
             if (cls.schedule.includes(' at ')) {
                 const parts = cls.schedule.split(' at ');
                 parsedDate = parts[0];
@@ -127,6 +134,9 @@ const ClassesList = () => {
             }
         }
 
+        // Handle case where time might have AM/PM but input[type="time"] needs 24h
+        // If the backend sends rawTime as "10:00", it's perfect.
+
         let dur = 60;
         if (cls.duration) {
             dur = parseInt(String(cls.duration).replace(/\D/g, '')) || 60;
@@ -134,7 +144,7 @@ const ClassesList = () => {
 
         setFormData({
             name: cls.name || '',
-            type: cls.requiredBenefit || '',
+            type: cls.rawType || cls.requiredBenefit || '',
             capacity: cls.capacity || 20,
             date: parsedDate,
             time: parsedTime,
@@ -203,7 +213,7 @@ const ClassesList = () => {
         return matchesSearch && matchesType && matchesTrainer && matchesTab;
     });
 
-    const classTypes = ['Yoga', 'HIIT', 'Spin', 'Pilates', 'Zumba', 'Strength'];
+    const classTypes = ['General', 'Yoga', 'HIIT', 'Spin', 'Pilates', 'Zumba', 'Strength', 'Boxing', 'Sauna'];
 
     return (
         <div className="min-h-screen bg-[#F8F9FC] p-6 lg:p-8">
@@ -224,10 +234,33 @@ const ClassesList = () => {
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <KPICard title="Upcoming Classes" value={filteredClasses.filter(c => c.status === 'Scheduled').length} icon={<Calendar size={20} />} color="blue" />
-                <KPICard title="Today's Classes" value={0} icon={<Clock size={20} />} color="indigo" />
-                <KPICard title="Total Bookings" value={0} icon={<Users size={20} />} color="blue" />
-                <KPICard title="Active Trainers" value={trainers.length} icon={<User size={20} />} color="blue" />
+                <KPICard
+                    title="Upcoming Classes"
+                    value={filteredClasses.filter(c => c.status === 'Scheduled').length}
+                    icon={<Calendar size={20} />}
+                    color="blue"
+                />
+                <KPICard
+                    title="Today's Classes"
+                    value={filteredClasses.filter(c => {
+                        const todayStr = new Date().toISOString().split('T')[0];
+                        return c.schedule && c.schedule.startsWith(todayStr);
+                    }).length}
+                    icon={<Clock size={20} />}
+                    color="indigo"
+                />
+                <KPICard
+                    title="Total Bookings"
+                    value={filteredClasses.reduce((sum, c) => sum + (parseInt(c.enrolled) || 0), 0)}
+                    icon={<Users size={20} />}
+                    color="blue"
+                />
+                <KPICard
+                    title="Active Trainers"
+                    value={trainers.length}
+                    icon={<User size={20} />}
+                    color="blue"
+                />
             </div>
 
             {/* Filters Section */}

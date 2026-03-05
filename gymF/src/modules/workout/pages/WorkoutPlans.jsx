@@ -25,6 +25,7 @@ import { ROLES } from '../../../config/roles';
 import Card from '../../../components/ui/Card';
 import '../../../styles/GlobalDesign.css';
 import { toast } from 'react-hot-toast';
+import apiClient from '../../../api/apiClient';
 
 const DAY_LABELS = [
     { key: 'day1', label: 'Day 1', focus: 'Chest & Triceps' },
@@ -42,6 +43,27 @@ const WorkoutPlans = ({ role }) => {
 
     // View States
     const [memberActiveTab, setMemberActiveTab] = useState('today');
+    const [myPlans, setMyPlans] = useState([]);
+    const [loadingPlans, setLoadingPlans] = useState(false);
+    const [memberActiveDay, setMemberActiveDay] = useState('day1');
+
+    React.useEffect(() => {
+        if (isMember) {
+            fetchMyPlans();
+        }
+    }, [isMember]);
+
+    const fetchMyPlans = async () => {
+        try {
+            setLoadingPlans(true);
+            const res = await apiClient.get('/member/workout-plans');
+            setMyPlans(res.data || []);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingPlans(false);
+        }
+    };
 
     // Trainer States
     const [planName, setPlanName] = useState('');
@@ -91,6 +113,26 @@ const WorkoutPlans = ({ role }) => {
     };
 
     if (isMember) {
+        const activePlan = myPlans.length > 0 ? myPlans[0] : null;
+
+        let parsedDays = {};
+        if (activePlan && activePlan.days) {
+            try {
+                parsedDays = JSON.parse(activePlan.days);
+            } catch (e) {
+                console.error("Error parsing plan days", e);
+            }
+        }
+
+        // Today's fallback logic
+        const currentDayIndex = new Date().getDay(); // 0 is Sunday
+        const mapToDayKey = ['day7', 'day1', 'day2', 'day3', 'day4', 'day5', 'day6']; // mapping JS day to day1-7
+        const todayKey = mapToDayKey[currentDayIndex];
+
+        const dayToRender = memberActiveTab === 'today' ? todayKey : memberActiveDay;
+        const exercisesToRender = parsedDays[dayToRender] || [];
+        const dayLabelObj = DAY_LABELS.find(d => d.key === dayToRender);
+
         return (
             <div className="saas-container h-[calc(100vh-6rem)] overflow-y-auto pr-2 pb-8 space-y-8 fade-in scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
                 {/* Header Section */}
@@ -101,21 +143,18 @@ const WorkoutPlans = ({ role }) => {
                         </div>
                         <div className="min-w-0">
                             <h1 className="text-xl md:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mb-0.5 md:mb-1 truncate">
-                                My Workout
+                                {activePlan ? activePlan.name : 'My Workout'}
                             </h1>
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="text-slate-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest shrink-0">
                                     Goal:
                                 </span>
                                 <span className="px-2 md:px-3 py-0.5 md:py-1 bg-indigo-50 text-indigo-600 rounded-lg text-[8px] md:text-[10px] font-black uppercase tracking-widest border border-indigo-100 truncate">
-                                    Weight Loss, Strength
+                                    {activePlan ? activePlan.goal : 'No Plan Assigned'}
                                 </span>
                             </div>
                         </div>
                     </div>
-                    <button className="w-full sm:w-auto px-6 md:px-8 h-12 bg-indigo-600 text-white rounded-xl md:rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-1 transition-all flex items-center justify-center gap-2 group">
-                        <RefreshCcw size={16} strokeWidth={3} className="group-hover:rotate-180 transition-transform duration-500" /> Request New Plan
-                    </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-8 max-w-4xl">
@@ -145,58 +184,126 @@ const WorkoutPlans = ({ role }) => {
                                 size={16}
                                 className={`transition-colors ${memberActiveTab === 'plan' ? 'text-indigo-600' : 'text-slate-400 opacity-60'}`}
                             />
-                            My Plan
+                            Full Plan
                         </button>
                     </div>
 
+                    {memberActiveTab === 'plan' && (
+                        <div className="flex overflow-x-auto border-b border-gray-100 bg-[#FCFCFE] rounded-t-xl mb-4">
+                            {DAY_LABELS.map((day) => (
+                                <button
+                                    key={day.key}
+                                    onClick={() => setMemberActiveDay(day.key)}
+                                    className={`flex-shrink-0 px-6 py-4 text-[10px] md:text-[11px] font-black uppercase tracking-widest transition-all border-b-4 whitespace-nowrap ${memberActiveDay === day.key
+                                        ? 'text-indigo-600 border-indigo-600 bg-white'
+                                        : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-white/60'
+                                        }`}
+                                >
+                                    {day.label}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="space-y-6">
-
-                        {/* Today's Workout Card - Progress Info */}
-                        <Card className="p-4 md:p-6 border-2 border-slate-100 shadow-sm rounded-3xl bg-white space-y-4 md:space-y-6">
-                            {/* Workout Header Info */}
-                            <div className="space-y-1">
-                                <h3 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">
-                                    Saturday — Full Body
-                                </h3>
-                                <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                    Current Focus
-                                </p>
-                            </div>
-
-                            {/* Status & Progress Section */}
-                            <div className="grid grid-cols-1 gap-4 pt-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                                    <span className="text-xs font-black text-slate-700 uppercase tracking-widest">Shuffle</span>
-                                </div>
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Progress</p>
-                                        <p className="text-[10px] font-black text-slate-900 uppercase tracking-widest">0/0 exercises completed</p>
+                        {loadingPlans ? (
+                            <div className="flex justify-center p-10"><Zap className="animate-pulse text-indigo-400" /></div>
+                        ) : activePlan ? (
+                            <>
+                                {/* Today's Workout Card - Progress Info */}
+                                <Card className="p-4 md:p-6 border-2 border-slate-100 shadow-sm rounded-3xl bg-white space-y-4 md:space-y-6">
+                                    <div className="space-y-1">
+                                        <h3 className="text-lg md:text-xl font-black text-slate-900 uppercase tracking-tight">
+                                            {dayLabelObj?.label} — {dayLabelObj?.focus}
+                                        </h3>
+                                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                            Current Focus
+                                        </p>
                                     </div>
-                                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-600 w-0 transition-all duration-1000" />
+                                    <div className="grid grid-cols-1 gap-4 pt-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                                            <span className="text-xs font-black text-slate-700 uppercase tracking-widest">To Do: {exercisesToRender.length || 0} Sets</span>
+                                        </div>
+                                    </div>
+                                </Card>
+
+                                {exercisesToRender.length > 0 ? (
+                                    <div className="space-y-4">
+                                        {exercisesToRender.map((ex, idx) => (
+                                            <Card key={idx} className="p-5 border-2 border-slate-50 hover:border-indigo-100 bg-[#FCFCFE] rounded-2xl transition-all">
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[12px] font-black text-indigo-600">
+                                                            {idx + 1}
+                                                        </span>
+                                                        <h4 className="text-sm font-black text-slate-900 uppercase tracking-widest">{ex.name}</h4>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-4 mt-4 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+                                                    <div className="text-center">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Sets</p>
+                                                        <p className="text-sm font-bold text-slate-800">{ex.sets}</p>
+                                                    </div>
+                                                    <div className="text-center border-x border-slate-100">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Reps</p>
+                                                        <p className="text-sm font-bold text-slate-800">{ex.reps}</p>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Rest</p>
+                                                        <p className="text-sm font-bold text-slate-800">{ex.rest}s</p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-4 flex flex-col sm:flex-row gap-4">
+                                                    {ex.equipment && (
+                                                        <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+                                                            <Target size={12} /> {ex.equipment}
+                                                        </span>
+                                                    )}
+                                                    {ex.notes && (
+                                                        <p className="text-[11px] text-slate-500 italic flex-1 border-l-2 border-indigo-200 pl-3 py-1 bg-white rounded-r-lg">
+                                                            "{ex.notes}"
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </Card>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <Card className="p-6 md:p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
+                                        <div className="flex flex-col items-center justify-center text-center space-y-4">
+                                            <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl md:rounded-2xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 shrink-0">
+                                                <Info size={24} className="md:w-8 md:h-8" strokeWidth={1.5} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <h4 className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tight">
+                                                    Rest Day or No Exercises
+                                                </h4>
+                                                <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                                                    There are no routines assigned for this day segment.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                )}
+                            </>
+                        ) : (
+                            <Card className="p-6 md:p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
+                                <div className="flex flex-col items-center justify-center text-center space-y-4">
+                                    <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl md:rounded-2xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 shrink-0">
+                                        <Dumbbell size={24} className="md:w-8 md:h-8" strokeWidth={1.5} />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h4 className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tight">
+                                            No Active Program Found
+                                        </h4>
+                                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                                            Contact your trainer or branch admin to generate and assign your new training block!
+                                        </p>
                                     </div>
                                 </div>
-                            </div>
-                        </Card>
-
-                        {/* Empty State Card - Separated Section */}
-                        <Card className="p-6 md:p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
-                            <div className="flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="w-12 h-12 md:w-16 md:h-16 bg-slate-50 rounded-xl md:rounded-2xl flex items-center justify-center text-slate-300 border-2 border-dashed border-slate-100 shrink-0">
-                                    <Info size={24} className="md:w-8 md:h-8" strokeWidth={1.5} />
-                                </div>
-                                <div className="space-y-1">
-                                    <h4 className="text-[11px] md:text-sm font-black text-slate-900 uppercase tracking-tight">
-                                        No exercises found for full_body.
-                                    </h4>
-                                    <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
-                                        Ask your admin to seed exercises and assign them to your plan.
-                                    </p>
-                                </div>
-                            </div>
-                        </Card>
+                            </Card>
+                        )}
                     </div>
 
                     {/* Tips Section */}

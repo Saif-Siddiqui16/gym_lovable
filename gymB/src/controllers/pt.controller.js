@@ -171,12 +171,24 @@ const getActiveAccounts = async (req, res) => {
 
 const logSession = async (req, res) => {
     try {
-        const { tenantId } = req.user;
+        const { tenantId: userTenantId } = req.user;
         const { memberId, trainerId, ptAccountId, date, time, duration, notes } = req.body;
+
+        // Try to get tenantId from account first to ensure consistency
+        let effectiveTenantId = userTenantId;
+        if (ptAccountId) {
+            const account = await prisma.pTMemberAccount.findUnique({
+                where: { id: parseInt(ptAccountId) },
+                select: { tenantId: true, remainingSessions: true }
+            });
+            if (account) {
+                effectiveTenantId = account.tenantId;
+            }
+        }
 
         const session = await prisma.pTSession.create({
             data: {
-                tenantId: tenantId ? tenantId : 1,
+                tenantId: effectiveTenantId || 1,
                 memberId: parseInt(memberId),
                 trainerId: parseInt(trainerId),
                 ptAccountId: ptAccountId ? parseInt(ptAccountId) : null,
@@ -204,6 +216,7 @@ const logSession = async (req, res) => {
 
         res.status(201).json(session);
     } catch (error) {
+        console.error('Log Session Error:', error);
         res.status(500).json({ message: error.message });
     }
 };

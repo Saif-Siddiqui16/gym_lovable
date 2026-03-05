@@ -23,6 +23,7 @@ import { getMembers } from '../../../api/manager/managerApi';
 import { ROLES } from '../../../config/roles';
 import Card from '../../../components/ui/Card';
 import toast from 'react-hot-toast';
+import apiClient from '../../../api/apiClient';
 import '../../../styles/GlobalDesign.css';
 
 const Referrals = ({ role }) => {
@@ -92,13 +93,39 @@ const Referrals = ({ role }) => {
         }
     };
 
+    // MEMBER ONLY STATE
+    const [memberReferrals, setMemberReferrals] = useState([]);
+    const [memberStats, setMemberStats] = useState({ referralsSent: 0, successfulSignups: 0, rewardsEarned: 0 });
+    const [memberCode, setMemberCode] = useState('MEM000');
+
+    useEffect(() => {
+        if (role === ROLES.MEMBER) {
+            fetchMemberReferrals();
+        }
+    }, [role]);
+
+    const fetchMemberReferrals = async () => {
+        try {
+            setLoading(true);
+            const response = await apiClient.get('/member/referrals');
+            const { referralCode, referrals: dataReferrals, stats } = response.data;
+            setMemberCode(referralCode || 'MEM000');
+            setMemberReferrals(dataReferrals || []);
+            setMemberStats(stats || { referralsSent: 0, successfulSignups: 0, rewardsEarned: 0 });
+        } catch (error) {
+            console.error('Failed to load member referrals:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleCopyCode = () => {
-        navigator.clipboard.writeText('MEM001');
+        navigator.clipboard.writeText(memberCode);
         toast.success('Referral code copied!');
     };
 
     const handleWhatsAppShare = () => {
-        const text = encodeURIComponent('Join me at the gym! Use my referral code MEM001 to get special rewards.');
+        const text = encodeURIComponent(`Join me at the gym! Use my referral code ${memberCode} to get special rewards.`);
         window.open(`https://wa.me/?text=${text}`, '_blank');
     };
 
@@ -142,7 +169,7 @@ const Referrals = ({ role }) => {
                                 </div>
 
                                 <div className="bg-slate-50 border-2 border-dashed border-slate-200 px-8 py-4 rounded-2xl">
-                                    <h3 className="text-3xl font-black text-slate-900 tracking-[0.2em]">MEM001</h3>
+                                    <h3 className="text-3xl font-black text-slate-900 tracking-[0.2em]">{memberCode}</h3>
                                 </div>
 
                                 <div className="flex flex-wrap items-center justify-center gap-4 w-full">
@@ -181,21 +208,21 @@ const Referrals = ({ role }) => {
                                     <Users size={20} />
                                 </div>
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Referrals Sent</h4>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">0</p>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">{memberStats.referralsSent}</p>
                             </Card>
                             <Card className="p-8 border-2 border-slate-100 shadow-sm rounded-3xl bg-white text-center space-y-2">
                                 <div className="w-10 h-10 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                                     <UserCheck size={20} />
                                 </div>
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Successful Signups</h4>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">0</p>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">{memberStats.successfulSignups}</p>
                             </Card>
                             <Card className="p-8 border-2 border-slate-100 shadow-sm rounded-3xl bg-white text-center space-y-2">
                                 <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4">
                                     <IndianRupee size={20} />
                                 </div>
                                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rewards Earned</h4>
-                                <p className="text-3xl font-black text-slate-900 tracking-tight">₹0</p>
+                                <p className="text-3xl font-black text-slate-900 tracking-tight">₹{memberStats.rewardsEarned}</p>
                             </Card>
                         </div>
                     </div>
@@ -209,19 +236,40 @@ const Referrals = ({ role }) => {
                             <h2 className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Referral History</h2>
                         </div>
                         <Card className="p-12 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">
-                            <div className="flex flex-col items-center justify-center text-center space-y-6">
-                                <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-100">
-                                    <Users size={48} strokeWidth={1.5} />
+                            {memberReferrals.length > 0 ? (
+                                <div className="space-y-4">
+                                    {memberReferrals.map((ref) => (
+                                        <div key={ref.id} className="flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-slate-50 transition-colors">
+                                            <div>
+                                                <h4 className="text-sm font-bold text-slate-900">{ref.referredName}</h4>
+                                                <p className="text-[10px] text-slate-500 font-semibold mt-0.5">{new Date(ref.createdAt).toLocaleDateString()}</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${ref.status === 'Converted' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                                                        ref.status === 'Pending' ? 'bg-amber-50 text-amber-600 border-amber-200' :
+                                                            'bg-slate-100 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                    {ref.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
-                                        No Referrals Yet
-                                    </h3>
-                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
-                                        No referrals yet. Share your code to get started!
-                                    </p>
+                            ) : (
+                                <div className="flex flex-col items-center justify-center text-center space-y-6">
+                                    <div className="w-24 h-24 bg-slate-50 rounded-[2.5rem] flex items-center justify-center text-slate-200 border-2 border-dashed border-slate-100">
+                                        <Users size={48} strokeWidth={1.5} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">
+                                            No Referrals Yet
+                                        </h3>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed max-w-xs mx-auto">
+                                            No referrals yet. Share your code to get started!
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </Card>
                     </div>
                 </div>

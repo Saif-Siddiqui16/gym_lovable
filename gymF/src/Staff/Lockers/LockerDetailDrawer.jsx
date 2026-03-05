@@ -75,11 +75,16 @@ const LockerDetailDrawer = ({ isOpen, onClose, selectedLocker, onSuccess }) => {
                             <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 space-y-6">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 text-violet-600 flex items-center justify-center font-black">
-                                        {selectedLocker.assignee?.charAt(0) || '?'}
+                                        {selectedLocker.assignedTo?.name?.charAt(0) || '?'}
                                     </div>
                                     <div>
-                                        <p className="text-lg font-bold text-slate-800">{selectedLocker.assignee || 'Anonymous Member'}</p>
-                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Member ID: MEM-2931-X</p>
+                                        <p className="text-lg font-bold text-slate-800">{selectedLocker.assignedTo?.name || 'Anonymous Member'}</p>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                            Member ID: {selectedLocker.assignedTo?.memberId || 'N/A'}
+                                        </p>
+                                        {selectedLocker.assignedTo?.phone && (
+                                            <p className="text-[10px] font-medium text-slate-400 mt-0.5">{selectedLocker.assignedTo.phone}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -89,14 +94,18 @@ const LockerDetailDrawer = ({ isOpen, onClose, selectedLocker, onSuccess }) => {
                                             <Calendar size={14} />
                                             <span className="text-[10px] font-black uppercase tracking-wider">Assigned On</span>
                                         </div>
-                                        <p className="text-sm font-bold text-slate-700">Oct 12, 2023</p>
+                                        <p className="text-sm font-bold text-slate-700">
+                                            {selectedLocker.updatedAt ? new Date(selectedLocker.updatedAt).toLocaleDateString() : 'N/A'}
+                                        </p>
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 text-slate-400 mb-1">
                                             <Clock size={14} />
-                                            <span className="text-[10px] font-black uppercase tracking-wider">Expires On</span>
+                                            <span className="text-[10px] font-black uppercase tracking-wider">Status</span>
                                         </div>
-                                        <p className="text-sm font-bold text-rose-600">Dec 31, 2023</p>
+                                        <p className={`text-sm font-bold ${selectedLocker.status === 'Maintenance' ? 'text-amber-600' : 'text-rose-600'}`}>
+                                            {selectedLocker.status}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -105,8 +114,8 @@ const LockerDetailDrawer = ({ isOpen, onClose, selectedLocker, onSuccess }) => {
                         {/* Notes Section */}
                         <div className="space-y-4">
                             <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest">Internal Notes</h4>
-                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 italic text-sm text-slate-500 font-medium">
-                                "Member requested locker near the showers. Storing gym bag and personal training equipment."
+                            <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 italic text-sm text-slate-500 font-medium whitespace-pre-wrap">
+                                {selectedLocker.notes || "No special notes for this locker."}
                             </div>
                         </div>
 

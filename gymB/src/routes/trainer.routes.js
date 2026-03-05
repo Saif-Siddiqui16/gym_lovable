@@ -31,7 +31,8 @@ const {
     getWorkoutPlans,
     createWorkoutPlan,
     updateWorkoutPlan,
-    toggleWorkoutPlanStatus
+    toggleWorkoutPlanStatus,
+    getTrainerDashboardStats
 } = require('../controllers/trainer.controller');
 const { getMemberProgressById } = require('../controllers/progress.controller');
 const { protect, authorize } = require('../middleware/auth.middleware');
@@ -92,5 +93,8 @@ router.get('/workout-plans', getWorkoutPlans);
 router.post('/workout-plans', createWorkoutPlan);
 router.patch('/workout-plans/:id', updateWorkoutPlan);
 router.patch('/workout-plans/:id/status', toggleWorkoutPlanStatus);
+
+// Dashboard
+router.get('/dashboard-stats', getTrainerDashboardStats);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Download, Users, TrendingUp, IndianRupee, BarChart3, ShoppingBag, Package, ArrowUpRight } from 'lucide-react';
 import '../../../styles/GlobalDesign.css';
 
@@ -27,35 +27,38 @@ const BranchPerformanceReport = () => {
         document.body.removeChild(link);
     };
 
-    // ─── ORIGINAL STATE & LOGIC (SAFELY COMMENTED OUT) ───
-    /*
-    const getToday = () => {
-        const d = new Date();
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
+    const [statsData, setStatsData] = useState({
+        totalMembers: 0,
+        revenueThisMonth: 0,
+        collectionRate: 0,
+        pendingDues: 0
+    });
 
-    const [selectedDate, setSelectedDate] = useState(getToday());
-    const [searchTerm, setSearchTerm] = useState('');
-    const [stats, setStats] = useState([
-        { label: 'Revenue vs Expense', value: '0%', icon: TrendingUp, bg: 'bg-indigo-50', color: 'text-indigo-600', trend: 'up' },
-        { label: 'Lead Conv. Rate', value: '0%', icon: Target, bg: 'bg-purple-50', color: 'text-purple-600', trend: 'up' },
-        { label: 'Member Retention', value: '0%', icon: Activity, bg: 'bg-emerald-50', color: 'text-emerald-600', trend: 'up' },
-    ]);
-    const [performanceData, setPerformanceData] = useState([]);
+    const [earningsData, setEarningsData] = useState({
+        months: ['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan', 'Feb'],
+        revenue: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        profit: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        expenses: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        totalIncome: 0,
+        totalExpenses: 0
+    });
+
+    const [weeklyData, setWeeklyData] = useState({
+        days: ['Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun', 'Mon'],
+        values: [0, 0, 0, 0, 0, 0, 0]
+    });
+
     const [loading, setLoading] = useState(true);
 
     const fetchReport = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/branch-admin/reports/performance', {
-                params: { date: selectedDate }
-            });
-            const iconMap = { TrendingUp, Target, Activity };
-            setStats(response.data.stats.map(s => ({ ...s, icon: iconMap[s.icon] || Activity })));
-            setPerformanceData(response.data.performanceData);
+            const response = await apiClient.get('/branch-admin/reports/performance');
+            if (response.data) {
+                if (response.data.stats) setStatsData(response.data.stats);
+                if (response.data.earnings) setEarningsData(response.data.earnings);
+                if (response.data.weekly) setWeeklyData(response.data.weekly);
+            }
         } catch (error) {
             console.error('Failed to fetch performance report:', error);
         } finally {
@@ -63,24 +66,7 @@ const BranchPerformanceReport = () => {
         }
     };
 
-    useEffect(() => { fetchReport(); }, [selectedDate]);
-
-    const handleExport = () => {
-        if (performanceData.length === 0) { alert("No data available to export."); return; }
-        const headers = ["Month", "Revenue", "Expense", "Profit", "Margin", "Status"];
-        const csvContent = [headers.join(","), ...performanceData.map(row =>
-            [`"${row.month}"`, `"${row.revenue}"`, `"${row.expense}"`, `"${row.profit}"`, `"${row.margin}"`, `"${row.status}"`].join(",")
-        )].join("\n");
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        link.setAttribute("href", URL.createObjectURL(blob));
-        link.setAttribute("download", `performance_report_${selectedDate}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-    */
+    useEffect(() => { fetchReport(); }, []);
 
     const weeklyDays = ['Tue', 'Thu', 'Fri', 'Sat', 'Sun'];
     const weeklyValues = [0, 0, 0, 0, 0];
@@ -116,10 +102,10 @@ const BranchPerformanceReport = () => {
             {/* ── Top KPI Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 {[
-                    { label: 'Total Members', value: '0', icon: Users, from: 'from-violet-500', to: 'to-purple-600' },
-                    { label: 'Total Revenue', value: '₹0k', icon: IndianRupee, from: 'from-emerald-500', to: 'to-emerald-600' },
-                    { label: 'Collection Rate', value: '0%', icon: TrendingUp, from: 'from-blue-500', to: 'to-blue-600' },
-                    { label: 'Pending Dues', value: '₹0k', icon: Activity, from: 'from-fuchsia-500', to: 'to-fuchsia-600' },
+                    { label: 'Total Members', value: statsData.totalMembers.toString(), icon: Users, from: 'from-violet-500', to: 'to-purple-600' },
+                    { label: 'Total Revenue', value: `₹${(statsData.revenueThisMonth / 1000).toFixed(1)}k`, icon: IndianRupee, from: 'from-emerald-500', to: 'to-emerald-600' },
+                    { label: 'Collection Rate', value: `${statsData.collectionRate}%`, icon: TrendingUp, from: 'from-blue-500', to: 'to-blue-600' },
+                    { label: 'Pending Dues', value: `₹${(statsData.pendingDues / 1000).toFixed(1)}k`, icon: Activity, from: 'from-fuchsia-500', to: 'to-fuchsia-600' },
                 ].map((kpi, i) => (
                     <div key={i} className="group bg-white rounded-2xl shadow-lg border border-slate-100 p-4 sm:p-6 transition-all duration-200 md:hover:shadow-xl md:hover:-translate-y-0.5">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -128,7 +114,7 @@ const BranchPerformanceReport = () => {
                                 <h3 className="text-3xl font-black text-slate-900 mb-2">{kpi.value}</h3>
                                 <p className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                                     <ArrowUpRight size={14} className="text-emerald-500" />
-                                    0% from last month
+                                    Live Data
                                 </p>
                             </div>
                             <div className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-xl bg-gradient-to-br ${kpi.from} ${kpi.to} flex items-center justify-center text-white shadow-lg transition-transform duration-300`}>
@@ -150,16 +136,17 @@ const BranchPerformanceReport = () => {
                         <p className="text-xs text-slate-500 font-semibold">Revenue trends over the last 12 months</p>
                     </div>
                     <div className="h-52 flex items-end justify-between gap-1.5 px-2 pb-6 mt-6 border-b border-slate-100">
-                        {earningsMonths.map((month, i) => {
-                            const h = earningsValues[i] * 20;
+                        {earningsData.months.map((month, i) => {
+                            const maxValue = Math.max(...earningsData.revenue, 1);
+                            const h = (earningsData.revenue[i] / maxValue) * 100;
                             return (
                                 <div key={month} className="w-full bg-indigo-50 rounded-t-lg relative group/bar">
                                     <div
                                         className="absolute bottom-0 w-full bg-gradient-to-t from-indigo-600 to-purple-500 rounded-t-lg transition-all duration-500 cursor-pointer"
                                         style={{ height: `${h || 2}%` }}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                                            ₹{earningsValues[i]}k
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                            ₹{earningsData.revenue[i]}k
                                         </div>
                                     </div>
                                     <div className="absolute -bottom-6 w-full text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -173,9 +160,9 @@ const BranchPerformanceReport = () => {
                     {/* Earnings Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
                         {[
-                            { label: 'Earnings', value: '₹0', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-                            { label: 'Profit', value: '₹0', color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                            { label: 'Expenses', value: '₹0', color: 'text-rose-600', bg: 'bg-rose-50' },
+                            { label: 'Earnings', value: `₹${(earningsData.totalIncome / 1000).toFixed(1)}k`, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                            { label: 'Profit', value: `₹${((earningsData.totalIncome - earningsData.totalExpenses) / 1000).toFixed(1)}k`, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+                            { label: 'Expenses', value: `₹${(earningsData.totalExpenses / 1000).toFixed(1)}k`, color: 'text-rose-600', bg: 'bg-rose-50' },
                         ].map((item) => (
                             <div key={item.label} className={`${item.bg} rounded-xl p-3 sm:p-4 text-center sm:text-left flex flex-col items-center sm:items-start`}>
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{item.label}</p>
@@ -214,16 +201,17 @@ const BranchPerformanceReport = () => {
                         <p className="text-xs text-slate-500 font-semibold">This week's daily revenue</p>
                     </div>
                     <div className="h-36 flex items-end justify-between gap-2 px-2 pb-6 mt-6 border-b border-slate-100">
-                        {weeklyDays.map((day, i) => {
-                            const h = weeklyValues[i] * 20;
+                        {weeklyData.days.map((day, i) => {
+                            const maxValue = Math.max(...weeklyData.values, 1);
+                            const h = (weeklyData.values[i] / maxValue) * 100;
                             return (
                                 <div key={day} className="w-full bg-emerald-50 rounded-t-lg relative group/bar">
                                     <div
                                         className="absolute bottom-0 w-full bg-gradient-to-t from-emerald-600 to-teal-500 rounded-t-lg transition-all duration-500 cursor-pointer"
                                         style={{ height: `${h || 2}%` }}
                                     >
-                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap">
-                                            ₹{weeklyValues[i]}k
+                                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                            ₹{weeklyData.values[i]}k
                                         </div>
                                     </div>
                                     <div className="absolute -bottom-6 w-full text-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
@@ -246,20 +234,20 @@ const BranchPerformanceReport = () => {
                     </div>
                     <div className="flex flex-col items-center justify-center py-8">
                         <div className="w-28 h-28 rounded-full border-8 border-slate-100 flex flex-col items-center justify-center">
-                            <p className="text-3xl font-black text-slate-900">₹0</p>
+                            <p className="text-3xl font-black text-slate-900">₹{(weeklyData.values.reduce((a, b) => a + Number(b), 0)).toFixed(1)}k</p>
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Net</p>
                         </div>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                         <div className="bg-emerald-50 rounded-xl p-4 text-center sm:text-left flex flex-col items-center sm:items-start">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Income</p>
-                            <p className="text-lg sm:text-base font-black text-emerald-600">₹0</p>
-                            <p className="text-[9px] text-slate-400 font-medium">Payments collected</p>
+                            <p className="text-lg sm:text-base font-black text-emerald-600">₹{(weeklyData.values.reduce((a, b) => a + Number(b), 0)).toFixed(1)}k</p>
+                            <p className="text-[9px] text-slate-400 font-medium">This Week</p>
                         </div>
                         <div className="bg-rose-50 rounded-xl p-4 text-center sm:text-left flex flex-col items-center sm:items-start">
                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Expenses</p>
                             <p className="text-lg sm:text-base font-black text-rose-600">₹0</p>
-                            <p className="text-[9px] text-slate-400 font-medium">Approved expenses</p>
+                            <p className="text-[9px] text-slate-400 font-medium">This Week</p>
                         </div>
                     </div>
                 </div>

@@ -270,13 +270,14 @@ const LeadsPipeline = () => {
                                 <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
                                 <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Source</th>
                                 <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Created</th>
+                                <th className="text-left py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Next Follow-up</th>
                                 <th className="text-right py-4 px-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="6" className="px-8 py-24 text-center">
+                                    <td colSpan="7" className="px-8 py-24 text-center">
                                         <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto" />
                                     </td>
                                 </tr>
@@ -305,56 +306,60 @@ const LeadsPipeline = () => {
                                         <td className="px-8 py-4 text-slate-500 text-[10px] font-bold">
                                             {new Date(lead.createdAt).toLocaleDateString()}
                                         </td>
+                                        <td className="px-8 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-slate-700">{lead.nextFollowUp ? new Date(lead.nextFollowUp).toLocaleDateString() : 'No date'}</span>
+                                                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">{lead.followUpTime || 'Time not set'}</span>
+                                            </div>
+                                        </td>
                                         <td className="px-8 py-4 text-right">
-                                            <button
-                                                onClick={(e) => toggleMenu(e, lead.id)}
-                                                className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeMenu === lead.id
-                                                    ? 'bg-violet-600 text-white shadow-xl shadow-violet-200 rotate-90 scale-110'
-                                                    : 'text-slate-400 hover:text-violet-600 hover:bg-violet-50'
-                                                    }`}
-                                            >
-                                                <MoreHorizontal size={22} />
-                                            </button>
+                                            <div className="relative inline-block text-left">
+                                                <button
+                                                    onClick={(e) => setActiveMenu(activeMenu === lead.id ? null : lead.id)}
+                                                    className={`w-10 h-10 flex items-center justify-center rounded-2xl transition-all duration-300 ${activeMenu === lead.id
+                                                        ? 'bg-violet-600 text-white shadow-xl shadow-violet-200 rotate-90 scale-110'
+                                                        : 'text-slate-400 hover:text-violet-600 hover:bg-violet-50'
+                                                        }`}
+                                                >
+                                                    <MoreHorizontal size={22} />
+                                                </button>
 
-                                            {activeMenu === lead.id && (
-                                                <>
-                                                    {/* Backdrop for closing */}
-                                                    <div
-                                                        className="fixed inset-0 z-[1000]"
-                                                        onClick={() => setActiveMenu(null)}
-                                                    ></div>
-
-                                                    <div
-                                                        className="fixed w-56 bg-white/80 backdrop-blur-xl border border-white/40 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] z-[1001] p-2 animate-scaleIn overflow-hidden ring-1 ring-black/5"
-                                                        style={{ top: menuPosition.top, left: menuPosition.left }}
-                                                    >
+                                                {activeMenu === lead.id && (
+                                                    <div className="absolute right-full mr-2 top-0 w-56 bg-white border border-slate-100 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] z-[100] p-2 animate-scaleIn origin-right">
                                                         {/* Header */}
-                                                        <div className="flex items-center gap-3 p-3 mb-2 bg-gradient-to-r from-violet-50/50 to-transparent rounded-2xl">
-                                                            <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center text-white shadow-lg shadow-violet-100">
-                                                                <BarChart3 size={14} />
+                                                        <div className="flex items-center gap-3 p-3 mb-2 bg-slate-50 rounded-2xl">
+                                                            <div className="w-8 h-8 rounded-xl bg-violet-600 flex items-center justify-center text-white shadow-lg">
+                                                                <Users size={14} />
                                                             </div>
-                                                            <div className="flex flex-col">
-                                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">Lead</span>
-                                                                <span className="text-xs font-black text-slate-800 tracking-tight">Management</span>
+                                                            <div className="flex flex-col text-left">
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase leading-none">Manage</span>
+                                                                <span className="text-xs font-black text-slate-800"> Prospect</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* Quick Actions */}
+                                                        {/* Backdrop for closing */}
+                                                        <div
+                                                            className="fixed inset-0 z-[-1]"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveMenu(null);
+                                                            }}
+                                                        />
+
+                                                        {/* Main Actions */}
                                                         <div className="space-y-1">
                                                             <button
                                                                 onClick={() => openEditDrawer(lead)}
-                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-slate-600 hover:bg-white hover:text-violet-600 rounded-xl transition-all group hover:shadow-sm"
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-slate-600 hover:bg-violet-50 hover:text-violet-600 rounded-xl transition-all group"
                                                             >
-                                                                <div className="w-6 h-6 rounded-lg bg-slate-50 group-hover:bg-violet-50 flex items-center justify-center transition-colors">
-                                                                    <Edit3 size={12} />
-                                                                </div>
+                                                                <Edit3 size={14} className="text-slate-400 group-hover:text-violet-500" />
                                                                 Edit Profile
                                                             </button>
 
-                                                            <div className="h-px bg-slate-100/50 mx-2 my-1"></div>
+                                                            <div className="h-px bg-slate-100 mx-2 my-1"></div>
 
                                                             <div className="px-3 py-2">
-                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] block mb-2 px-1">Update Status</span>
+                                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2 px-1">Status</span>
                                                                 <div className="grid grid-cols-1 gap-1">
                                                                     {[
                                                                         { label: 'Contacted', color: 'orange', icon: Phone },
@@ -365,41 +370,34 @@ const LeadsPipeline = () => {
                                                                         <button
                                                                             key={s.label}
                                                                             onClick={() => handleStatusUpdate(lead.id, s.label)}
-                                                                            className="flex items-center gap-3 w-full px-3 py-2 text-[10px] font-black uppercase tracking-wider text-slate-500 hover:bg-white hover:shadow-sm rounded-xl transition-all group"
+                                                                            className="flex items-center gap-3 w-full px-3 py-2 text-[10px] font-black uppercase text-slate-500 hover:bg-slate-50 rounded-xl transition-all"
                                                                         >
-                                                                            <div className={`w-6 h-6 rounded-lg bg-slate-50 group-hover:bg-${s.color}-50 flex items-center justify-center transition-colors`}>
-                                                                                <s.icon size={12} className={`text-slate-300 group-hover:text-${s.color}-500`} />
-                                                                            </div>
-                                                                            <span className={`group-hover:text-${s.color}-600 transition-colors`}>{s.label}</span>
+                                                                            <s.icon size={12} />
+                                                                            {s.label}
                                                                         </button>
                                                                     ))}
                                                                 </div>
                                                             </div>
 
-                                                            <div className="h-px bg-slate-100/50 mx-2 my-1"></div>
+                                                            <div className="h-px bg-slate-100 mx-2 my-1"></div>
 
                                                             <button
-                                                                onClick={() => {
-                                                                    handleDeleteLead(lead.id);
-                                                                    setActiveMenu(null);
-                                                                }}
-                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-rose-500 hover:bg-rose-50/50 rounded-xl transition-all group"
+                                                                onClick={() => handleDeleteLead(lead.id)}
+                                                                className="flex items-center gap-3 w-full px-4 py-3 text-xs font-bold text-rose-500 hover:bg-rose-50 rounded-xl transition-all group"
                                                             >
-                                                                <div className="w-6 h-6 rounded-lg bg-rose-50 group-hover:bg-rose-100 flex items-center justify-center transition-colors text-rose-400 group-hover:text-rose-600">
-                                                                    <Trash2 size={12} />
-                                                                </div>
-                                                                Remove Lead
+                                                                <Trash2 size={14} className="group-hover:scale-110 transition-transform" />
+                                                                Delete Lead
                                                             </button>
                                                         </div>
                                                     </div>
-                                                </>
-                                            )}
+                                                )}
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="px-8 py-24 text-center">
+                                    <td colSpan="7" className="px-8 py-24 text-center">
                                         <div className="flex flex-col items-center gap-4">
                                             <div className="w-20 h-20 rounded-[2rem] bg-slate-50 flex items-center justify-center text-slate-200">
                                                 <Users size={40} />

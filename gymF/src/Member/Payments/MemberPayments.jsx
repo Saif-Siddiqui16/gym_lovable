@@ -51,8 +51,8 @@ const MemberPayments = () => {
 
             autoTable(doc, {
                 startY: 45,
-                head: [['Description', 'Amount', 'Due Date']],
-                body: [[`Gym Membership Services`, `INR ${inv.amount.toLocaleString()}`, inv.dueDate || inv.date]],
+                head: [['Description', 'Amount', 'Date']],
+                body: [[`Gym Membership Services`, `INR ${Number(inv.amount).toLocaleString()}`, new Date(inv.dueDate).toLocaleDateString()]],
                 theme: 'striped',
                 headStyles: { fillColor: [79, 70, 229] } // Indigo-600
             });
@@ -65,7 +65,33 @@ const MemberPayments = () => {
         }
     };
 
-    const pendingAmount = invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + i.amount, 0);
+    const handleViewInvoice = (inv) => {
+        try {
+            const doc = new jsPDF();
+            doc.setFontSize(20);
+            doc.text(`Invoice #${inv.id}`, 14, 22);
+            doc.setFontSize(10);
+            doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
+            doc.text(`Status: ${inv.status}`, 14, 35);
+
+            autoTable(doc, {
+                startY: 45,
+                head: [['Description', 'Amount', 'Date']],
+                body: [[`Gym Membership Services`, `INR ${Number(inv.amount).toLocaleString()}`, new Date(inv.dueDate).toLocaleDateString()]],
+                theme: 'striped',
+                headStyles: { fillColor: [79, 70, 229] } // Indigo-600
+            });
+
+            const pdfBlob = doc.output('blob');
+            const blobUrl = URL.createObjectURL(pdfBlob);
+            window.open(blobUrl, '_blank');
+        } catch (err) {
+            console.error("PDF generation failed", err);
+            toast.error("View failed");
+        }
+    };
+
+    const pendingAmount = invoices.filter(i => i.status !== 'Paid').reduce((sum, i) => sum + Number(i.amount), 0);
     const pendingCount = invoices.filter(i => i.status !== 'Paid').length;
     const paidCount = invoices.filter(i => i.status === 'Paid').length;
 
@@ -176,8 +202,8 @@ const MemberPayments = () => {
                                             </td>
                                             <td className="px-6 py-6 border-y-2 border-slate-100">
                                                 <div className="flex flex-col">
-                                                    <span className="text-sm font-bold text-slate-600">{inv.date}</span>
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Due {inv.dueDate || 'N/A'}</span>
+                                                    <span className="text-sm font-bold text-slate-600">{new Date(inv.dueDate).toLocaleDateString()}</span>
+                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Billing Period Entry</span>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-6 border-y-2 border-slate-100 text-center">
@@ -189,7 +215,7 @@ const MemberPayments = () => {
                                                 </span>
                                             </td>
                                             <td className="px-6 py-6 border-y-2 border-slate-100 text-right">
-                                                <div className="text-lg font-black text-slate-900 tracking-tight">₹{inv.amount.toLocaleString()}</div>
+                                                <div className="text-lg font-black text-slate-900 tracking-tight">₹{Number(inv.amount).toLocaleString()}</div>
                                             </td>
                                             <td className="px-6 py-6 border-y-2 border-r-2 border-slate-100 last:rounded-r-3xl last:border-r-2 text-right">
                                                 <div className="flex justify-end gap-3">
@@ -200,7 +226,10 @@ const MemberPayments = () => {
                                                     >
                                                         <Download size={18} />
                                                     </button>
-                                                    <button className="flex items-center gap-2 px-6 h-12 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 group/btn">
+                                                    <button
+                                                        onClick={() => handleViewInvoice(inv)}
+                                                        className="flex items-center gap-2 px-6 h-12 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 group/btn"
+                                                    >
                                                         View
                                                         <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
                                                     </button>

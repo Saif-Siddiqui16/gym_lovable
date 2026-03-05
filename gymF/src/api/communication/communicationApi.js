@@ -45,9 +45,18 @@ export const sendBroadcastMessage = async (data) => {
     }
 };
 
-export const fetchCommLogs = async (branchId) => {
+export const fetchCommLogs = async (params) => {
     try {
-        const response = await apiClient.get('/communication/logs', { params: { branchId } });
+        const response = await apiClient.get('/communication/logs', { params });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const fetchChatContacts = async (params) => {
+    try {
+        const response = await apiClient.get('/communication/contacts', { params });
         return response.data;
     } catch (error) {
         throw error;

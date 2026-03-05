@@ -64,25 +64,65 @@ const BookingReport = () => {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const itemsPerPage = 5;
 
+    const [allFilteredBookings, setAllFilteredBookings] = useState([]);
+
     useEffect(() => {
         loadData();
-    }, [dateRange, statusFilter, searchTerm, currentPage]);
+    }, [dateRange, statusFilter, searchTerm]);
 
     const loadData = async () => {
         try {
             setLoading(true);
             const params = {
                 search: searchTerm,
-                status: statusFilter,
-                dateRange: dateRange,
-                page: currentPage,
-                limit: itemsPerPage
+                status: statusFilter === 'All Status' || statusFilter === 'All' ? '' : statusFilter
             };
-            const response = await apiClient.get('/branch-admin/reports/bookings', { params });
-            setBookings(response.data.data || []);
-            setTotalItems(response.data.total || 0);
-            if (response.data.stats) {
-                setBookingStats(response.data.stats);
+            const [bookingsRes, statsRes] = await Promise.all([
+                apiClient.get('/admin/bookings', { params }),
+                apiClient.get('/admin/bookings/stats')
+            ]);
+
+            const rawData = bookingsRes.data.data || [];
+
+            // Format and frontend filter by DateRange
+            const formattedBookings = rawData.map(b => ({
+                id: b.id,
+                memberName: b.member?.name || 'Unknown',
+                classType: b.class?.name || 'Session',
+                trainerName: b.class?.trainer?.name || 'Unassigned',
+                date: new Date(b.date).toLocaleDateString(),
+                time: b.time || 'N/A',
+                status: b.status || 'Pending'
+            }));
+
+            const filtered = formattedBookings.filter(b => {
+                if (!dateRange || dateRange === 'All Time' || dateRange === 'All') return true;
+                const d = new Date(b.date);
+                const today = new Date();
+                if (dateRange === 'Today') {
+                    return d.toDateString() === today.toDateString();
+                }
+                if (dateRange === 'This Week') {
+                    const diff = today.getDate() - today.getDay() + (today.getDay() === 0 ? -6 : 1);
+                    const startOfWeek = new Date(today.setDate(diff));
+                    return d >= startOfWeek;
+                }
+                if (dateRange === 'This Month') {
+                    return d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+                }
+                return true;
+            });
+
+            setAllFilteredBookings(filtered);
+            setTotalItems(filtered.length);
+            setCurrentPage(1);
+
+            if (statsRes.data) {
+                setBookingStats({
+                    total: statsRes.data.total || 0,
+                    completed: statsRes.data.completed || 0,
+                    cancelled: statsRes.data.cancelled || 0
+                });
             }
         } catch (error) {
             console.error('Booking Load Error:', error);
@@ -91,12 +131,17 @@ const BookingReport = () => {
         }
     };
 
+    // Calculate current page bookings
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const currentBookings = allFilteredBookings.slice(startIndex, startIndex + itemsPerPage);
+
     const handleExportCSV = () => {
-        if (bookings.length === 0) { alert("No data to export"); return; }
+        const exportData = allFilteredBookings;
+        if (exportData.length === 0) { alert("No data to export"); return; }
         const headers = ["Booking ID", "Member", "Class/Type", "Trainer", "Date", "Time", "Status"];
         const csvContent = [
             headers.join(","),
-            ...bookings.map(row => [
+            ...exportData.map(row => [
                 `"${row.id}"`,
                 `"${row.memberName}"`,
                 `"${row.classType}"`,
@@ -118,11 +163,12 @@ const BookingReport = () => {
     };
 
     const handleExportPDF = () => {
-        if (bookings.length === 0) { alert("No data to export"); return; }
-        const rows = bookings.map(b =>
+        const exportData = allFilteredBookings;
+        if (exportData.length === 0) { alert("No data to export"); return; }
+        const rows = exportData.map(b =>
             `<tr><td>${b.id}</td><td>${b.memberName}</td><td>${b.classType}</td><td>${b.trainerName}</td><td>${b.date} ${b.time}</td><td>${b.status}</td></tr>`
         ).join('');
-        const html = `<html><head><title>Booking Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ddd;padding:8px;text-align:left}th{background:#6d28d9;color:white}tr:nth-child(even){background:#f9f5ff}</style></head><body><h2>Booking Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>ID</th><th>Member</th><th>Class</th><th>Trainer</th><th>Date/Time</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+        const html = `<html><head><title>Booking Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#8b5cf6;color:white}tr:nth-child(even){background:#f9fafb}</style></head><body><h2>Booking Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>ID</th><th>Member</th><th>Class</th><th>Trainer</th><th>Date/Time</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
         const w = window.open('', '_blank');
         w.document.write(html);
         w.document.close();

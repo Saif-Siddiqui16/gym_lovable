@@ -10,7 +10,7 @@ import {
     Sparkles,
     Info
 } from 'lucide-react';
-import { announcementApi } from '../../api/announcementApi';
+import { fetchAnnouncements } from '../../api/communication/communicationApi';
 import toast from 'react-hot-toast';
 
 const MemberAnnouncements = () => {
@@ -19,17 +19,12 @@ const MemberAnnouncements = () => {
 
     const loadData = async () => {
         try {
-            const data = await announcementApi.getAllAnnouncements();
-            // Filter only announcements intended for members if targetAudience field exists
-            const memberAnnouncements = data?.filter(a =>
-                !a.targetAudience ||
-                a.targetAudience.toLowerCase().includes('member') ||
-                a.targetAudience.toLowerCase() === 'all'
-            ) || [];
-            setAnnouncements(memberAnnouncements);
+            setLoading(true);
+            // Backend now handles filtering for status: 'Active' and targetRole
+            const data = await fetchAnnouncements({ portal: 'member' });
+            setAnnouncements(data || []);
         } catch (error) {
             console.error('Error fetching announcements:', error);
-            // toast.error("Failed to load announcements");
         } finally {
             setLoading(false);
         }
@@ -40,6 +35,7 @@ const MemberAnnouncements = () => {
     }, []);
 
     const getPriorityStyle = (priority) => {
+        const p = parseInt(priority) || 0;
         const config = {
             high: {
                 bg: 'bg-rose-50',
@@ -63,7 +59,10 @@ const MemberAnnouncements = () => {
                 badge: 'bg-indigo-100 text-indigo-700'
             },
         };
-        return config[priority?.toLowerCase()] || config.medium;
+
+        if (p >= 8) return config.high;
+        if (p >= 4) return config.medium;
+        return config.low;
     };
 
     return (
@@ -104,7 +103,7 @@ const MemberAnnouncements = () => {
                                             </div>
                                             <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                                                 <Calendar size={14} />
-                                                {item.date}
+                                                {new Date(item.createdAt).toLocaleDateString()}
                                             </div>
                                         </div>
 
@@ -113,7 +112,7 @@ const MemberAnnouncements = () => {
                                         </h3>
 
                                         <p className="text-slate-500 text-sm font-bold leading-relaxed mb-8 max-w-3xl">
-                                            {item.message}
+                                            {item.content}
                                         </p>
 
                                         <div className="flex items-center justify-between pt-6 border-t border-slate-50">

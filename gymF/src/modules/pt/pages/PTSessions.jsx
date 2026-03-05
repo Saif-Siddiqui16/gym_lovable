@@ -113,7 +113,9 @@ const PTSessions = () => {
             setMembers(membersData.data || []);
         } catch (error) {
             console.error('Error loading PT data:', error);
-            toast.error('Failed to load Personal Training data');
+            const errorMsg = error.response?.data?.message || error.message || 'Unknown error';
+            console.error('PT Error Details:', errorMsg);
+            toast.error(`Failed to load PT data: ${errorMsg}`);
         } finally {
             setLoading(false);
         }

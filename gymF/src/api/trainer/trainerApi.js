@@ -13,9 +13,11 @@ export const fetchTrainerProfile = async () => {
 };
 
 // SUMMARY REPORTS
-export const getTrainerDashboardStats = async () => {
+export const getTrainerDashboardStats = async (branchId = null) => {
     try {
-        const response = await apiClient.get('/trainer/dashboard-stats');
+        const response = await apiClient.get('/trainer/dashboard-stats', {
+            params: { branchId }
+        });
         return response.data;
     } catch (error) {
         throw error.response?.data?.message || 'Failed to fetch dashboard stats';
@@ -107,8 +109,8 @@ export const changeTrainerPassword = async (data) => {
 };
 
 // --- CLASSES API ---
-export const getTrainerClasses = async () => {
-    const response = await apiClient.get('/trainer/classes');
+export const getTrainerClasses = async ({ branchId } = {}) => {
+    const response = await apiClient.get('/trainer/classes', { params: { branchId } });
     return response.data;
 };
 
@@ -162,9 +164,11 @@ export const toggleWorkoutPlanStatus = async (id) => {
 };
 
 // MEMBERS
-export const getAssignedMembers = async ({ filters = {}, page = 1, limit = 5 } = {}) => {
+export const getAssignedMembers = async ({ filters = {}, page = 1, limit = 5, branchId = null } = {}) => {
     try {
-        const response = await apiClient.get('/trainer/members');
+        const response = await apiClient.get('/trainer/members', {
+            params: { branchId }
+        });
         let filtered = filterData(response.data, filters);
         return paginateData(filtered, page, limit);
     } catch (error) {

@@ -419,7 +419,7 @@ export const menuConfig = {
             label: 'Work',
             icon: ClipboardList,
             children: [
-                { label: 'My Attendance', path: '/trainer/attendance', icon: Clock },
+                { label: 'My Attendance', path: '/staff/attendance/me', icon: Clock },
             ]
         },
         { label: 'Logout', path: '/login', icon: LogOut },
@@ -455,7 +455,7 @@ export const menuConfig = {
             label: 'Work',
             icon: ClipboardList,
             children: [
-                { label: 'My Attendance', path: '/trainer/attendance', icon: Clock },
+                { label: 'My Attendance', path: '/staff/attendance/me', icon: Clock },
                 { label: 'Announcements', path: '/trainer/announcements', icon: Megaphone },
             ]
         }

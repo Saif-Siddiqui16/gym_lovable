@@ -1,39 +1,91 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Calendar, Check, Search, ClipboardList, Info, ArrowRight } from 'lucide-react';
 import RightDrawer from '../../../components/common/RightDrawer';
+import apiClient from '../../../api/apiClient';
+import toast from 'react-hot-toast';
 
 const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedPlanId, setSelectedPlanId] = useState(null);
+    const [selectedPlan, setSelectedPlan] = useState(null);
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [notes, setNotes] = useState('');
+    const [plans, setPlans] = useState([]);
+    const [loading, setLoading] = useState(false);
 
-    // Mock Plans - In real app, filter by loggedInTrainerId
-    const MOCK_PLANS = [
-        { id: 'DP-101', name: 'Lean Bulk High Protein', type: 'Diet', duration: '4 Weeks', trainer_id: 'T-101' },
-        { id: 'DP-102', name: 'Keto Shred Protocol', type: 'Diet', duration: '8 Weeks', trainer_id: 'T-101' },
-        { id: 'WP-201', name: 'Hypertrophy Mastery 2.0', type: 'Workout', duration: '12 Weeks', trainer_id: 'T-101' },
-        { id: 'WP-202', name: 'Strength 5x5 Foundation', type: 'Workout', duration: '6 Weeks', trainer_id: 'T-101' },
-    ];
+    useEffect(() => {
+        if (isOpen) {
+            fetchPlans();
+        }
+    }, [isOpen]);
 
-    const filteredPlans = MOCK_PLANS.filter(plan =>
+    const fetchPlans = async () => {
+        try {
+            setLoading(true);
+            const [dietRes, workoutRes] = await Promise.all([
+                apiClient.get('/trainer/diet-plans'),
+                apiClient.get('/trainer/workout-plans')
+            ]);
+
+            const combinedPlans = [
+                ...(dietRes.data || []).map(p => ({ ...p, type: 'Diet' })),
+                ...(workoutRes.data || []).map(p => ({ ...p, type: 'Workout' }))
+            ];
+            setPlans(combinedPlans);
+        } catch (error) {
+            console.error('Failed to fetch plans:', error);
+            toast.error('Failed to load protocols');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const filteredPlans = plans.filter(plan =>
         plan.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         plan.type.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleAssign = () => {
-        const assignmentData = {
-            memberId,
-            planId: selectedPlanId,
-            startDate,
-            endDate,
-            notes
-        };
-        console.log('Final Assignment Data:', assignmentData);
-        // Simulate API call
-        alert(`Plan assigned to ${memberName} successfully!`);
-        onClose();
+    const handleAssign = async () => {
+        if (!selectedPlan) return;
+
+        try {
+            setLoading(true);
+            const commonData = {
+                clientId: memberId,
+                name: selectedPlan.name,
+                duration: selectedPlan.duration,
+                notes: notes || selectedPlan.notes,
+                status: 'Active'
+            };
+
+            if (selectedPlan.type === 'Diet') {
+                await apiClient.post('/trainer/diet-plans', {
+                    ...commonData,
+                    target: selectedPlan.target,
+                    calories: selectedPlan.calories,
+                    macros: selectedPlan.macros,
+                    meals: selectedPlan.meals
+                });
+            } else {
+                await apiClient.post('/trainer/workout-plans', {
+                    ...commonData,
+                    level: selectedPlan.level,
+                    goal: selectedPlan.goal,
+                    volume: selectedPlan.volume,
+                    timePerSession: selectedPlan.timePerSession,
+                    intensity: selectedPlan.intensity,
+                    days: selectedPlan.days
+                });
+            }
+
+            toast.success(`Protocol assigned to ${memberName} successfully!`);
+            onClose();
+        } catch (error) {
+            console.error('Failed to assign protocol:', error);
+            toast.error('Assignment failed');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const footer = (
@@ -41,15 +93,16 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
             <button
                 onClick={onClose}
                 className="drawer-btn drawer-btn-secondary flex-1"
+                disabled={loading}
             >
                 Cancel
             </button>
             <button
                 onClick={handleAssign}
-                disabled={!selectedPlanId || !startDate || !endDate}
+                disabled={!selectedPlan || !startDate || !endDate || loading}
                 className="drawer-btn drawer-btn-primary flex-[2]"
             >
-                Confirm Assignment
+                {loading ? 'Assigning...' : 'Confirm Assignment'}
             </button>
         </React.Fragment>
     );
@@ -71,7 +124,7 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                             <ClipboardList size={14} /> Select Protocol
                         </label>
                         <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-widest">
-                            Trainer Plans only
+                            Trainer Protocols
                         </span>
                     </div>
 
@@ -87,37 +140,49 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                     </div>
 
                     <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-1 scrollbar-thin">
-                        {filteredPlans.map(plan => {
-                            const isSelected = selectedPlanId === plan.id;
-                            return (
-                                <button
-                                    key={plan.id}
-                                    onClick={() => setSelectedPlanId(plan.id)}
-                                    className={`p-4 rounded-xl border transition-all text-left flex items-center justify-between group ${isSelected
-                                        ? 'bg-indigo-600 border-indigo-600 shadow-md'
-                                        : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-slate-50'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-[10px] uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                                            }`}>
-                                            {plan.type.charAt(0)}
-                                        </div>
-                                        <div>
-                                            <p className={`font-bold text-sm uppercase tracking-tight ${isSelected ? 'text-white' : 'text-slate-800'}`}>
-                                                {plan.name}
-                                            </p>
-                                            <div className="flex items-center gap-2 mt-0.5">
-                                                <span className={`text-[10px] font-bold uppercase tracking-widest opacity-60 ${isSelected ? 'text-white' : 'text-slate-400'}`}>
-                                                    {plan.type} • {plan.duration}
-                                                </span>
+                        {loading && plans.length === 0 ? (
+                            <div className="text-center py-10">
+                                <p className="text-slate-400 text-sm italic">Loading protocols...</p>
+                            </div>
+                        ) : filteredPlans.length === 0 ? (
+                            <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                <ClipboardList className="mx-auto text-slate-300 mb-2" size={24} />
+                                <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">No protocols found</p>
+                                <p className="text-slate-400 text-[10px] mt-1 italic">Create plans in Plan Builder first</p>
+                            </div>
+                        ) : (
+                            filteredPlans.map(plan => {
+                                const isSelected = selectedPlan?.id === plan.id;
+                                return (
+                                    <button
+                                        key={plan.id}
+                                        onClick={() => setSelectedPlan(plan)}
+                                        className={`p-4 rounded-xl border transition-all text-left flex items-center justify-between group ${isSelected
+                                            ? 'bg-indigo-600 border-indigo-600 shadow-md'
+                                            : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-black text-[10px] uppercase ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                                                }`}>
+                                                {plan.type.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <p className={`font-bold text-sm uppercase tracking-tight ${isSelected ? 'text-white' : 'text-slate-800'}`}>
+                                                    {plan.name}
+                                                </p>
+                                                <div className="flex items-center gap-2 mt-0.5">
+                                                    <span className={`text-[10px] font-bold uppercase tracking-widest opacity-60 ${isSelected ? 'text-white' : 'text-slate-400'}`}>
+                                                        {plan.type} • {plan.duration}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    {isSelected && <Check size={18} className="text-white" strokeWidth={3} />}
-                                </button>
-                            );
-                        })}
+                                        {isSelected && <Check size={18} className="text-white" strokeWidth={3} />}
+                                    </button>
+                                );
+                            })
+                        )}
                     </div>
                 </div>
 

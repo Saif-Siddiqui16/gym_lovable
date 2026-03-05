@@ -48,7 +48,12 @@ const MemberRequests = () => {
     const handleRequestSubmit = async (requestData) => {
         try {
             toast.loading("Submitting request...", { id: 'service-request' });
-            await addServiceRequest(requestData);
+            await addServiceRequest({
+                type: requestData.type,
+                details: requestData.reason,
+                rawType: requestData.type,
+                status: 'Pending'
+            });
             toast.success("Request submitted successfully!", { id: 'service-request' });
             loadRequests();
         } catch (error) {
@@ -147,7 +152,9 @@ const MemberRequests = () => {
                                     </div>
                                     <div>
                                         <h4 className="font-black text-slate-900 text-sm tracking-tight">{request.type}</h4>
-                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">{request.date || 'Pending Date'}</p>
+                                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide mt-0.5">
+                                            {request.date ? new Date(request.date).toLocaleDateString() : (request.createdAt ? new Date(request.createdAt).toLocaleDateString() : 'Pending Date')}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">

@@ -9,12 +9,13 @@ export const getLockers = async () => {
     }
 };
 
-export const assignLocker = async (lockerId, memberId, memberName, isPaid = null) => {
+export const assignLocker = async (lockerId, memberId, memberName, isPaid = null, notes = null) => {
     try {
         const response = await apiClient.post(`/staff/lockers/${lockerId}/assign`, {
             memberId,
             memberName,
-            isPaid
+            isPaid,
+            notes
         });
         return { success: true, message: 'Locker assigned successfully', data: response.data };
     } catch (error) {
@@ -37,5 +38,14 @@ export const addLocker = async (lockerData) => {
         return { success: true, message: 'Locker created successfully', data: response.data };
     } catch (error) {
         return { success: false, message: error.response?.data?.message || 'Failed to create locker' };
+    }
+};
+
+export const bulkCreateLockers = async (data) => {
+    try {
+        const response = await apiClient.post('/staff/lockers/bulk', data);
+        return { success: true, message: 'Lockers created successfully', data: response.data };
+    } catch (error) {
+        return { success: false, message: error.response?.data?.message || 'Failed to bulk create lockers' };
     }
 };

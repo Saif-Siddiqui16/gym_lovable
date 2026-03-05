@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, MapPin, Box, CheckCircle, X, AlignLeft, Info } from 'lucide-react';
+import toast from 'react-hot-toast';
 import RightDrawer from '../../components/common/RightDrawer';
 
 const CreateLockerDrawer = ({ isOpen, onClose, onSuccess }) => {
@@ -15,13 +16,22 @@ const CreateLockerDrawer = ({ isOpen, onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
-            if (onSuccess) onSuccess();
-            onClose();
+        try {
+            const { addLocker } = await import('../../api/staff/lockerApi');
+            const result = await addLocker(formData);
+            if (result.success) {
+                toast.success('Locker created successfully');
+                if (onSuccess) onSuccess();
+                onClose();
+                setFormData({ number: '', size: 'Medium', area: '', notes: '' });
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            toast.error('An error occurred while creating locker');
+        } finally {
             setIsSubmitting(false);
-            setFormData({ number: '', size: 'Medium', area: '', notes: '' });
-        }, 800);
+        }
     };
 
     return (

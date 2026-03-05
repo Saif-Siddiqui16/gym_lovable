@@ -613,10 +613,32 @@ const createStaff = async (req, res) => {
 
 const getBookings = async (req, res) => {
     try {
-        const where = req.user.role === 'SUPER_ADMIN' ? {} : { member: { tenantId: req.user.tenantId } };
+        const { search, status } = req.query;
+        let where = req.user.role === 'SUPER_ADMIN' ? {} : { member: { tenantId: req.user.tenantId } };
+
+        if (status) {
+            where.status = status;
+        }
+
+        if (search) {
+            where.member = {
+                ...where.member,
+                OR: [
+                    { name: { contains: search } },
+                    { email: { contains: search } }
+                ]
+            };
+        }
+
         const bookings = await prisma.booking.findMany({
             where,
-            include: { member: true, class: true }
+            include: {
+                member: true,
+                class: {
+                    include: { trainer: true }
+                }
+            },
+            orderBy: { date: 'desc' }
         });
         res.json({ data: bookings, total: bookings.length });
     } catch (error) {
@@ -629,7 +651,9 @@ const getBookingStats = async (req, res) => {
         const where = req.user.role === 'SUPER_ADMIN' ? {} : { member: { tenantId: req.user.tenantId } };
         const total = await prisma.booking.count({ where });
         const upcoming = await prisma.booking.count({ where: { ...where, status: 'Upcoming' } });
-        res.json({ total, upcoming, completed: 0, cancelled: 0 });
+        const completed = await prisma.booking.count({ where: { ...where, status: 'Completed' } });
+        const cancelled = await prisma.booking.count({ where: { ...where, status: 'Cancelled' } });
+        res.json({ total, upcoming, completed, cancelled });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -773,14 +797,100 @@ const getBookingCalendar = async (req, res) => {
 
 const getCheckIns = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { user: { tenantId } };
-        const attendance = await prisma.attendance.findMany({
-            where,
-            include: { user: true }
+        const { tenantId: userTenantId, role } = req.user;
+        const { date, search, status, type, role: filterRole, page = 1, limit = 10 } = req.query;
+        const headerTenantId = req.headers['x-tenant-id'];
+
+        let tenantIdToUse = userTenantId;
+        if (role === 'SUPER_ADMIN') {
+            if (headerTenantId && headerTenantId !== 'all') {
+                tenantIdToUse = parseInt(headerTenantId);
+            }
+        }
+
+        const where = { tenantId: tenantIdToUse };
+
+        // Date filter
+        if (date) {
+            const startOfDay = new Date(date);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(date);
+            endOfDay.setHours(23, 59, 59, 999);
+            where.checkIn = { gte: startOfDay, lte: endOfDay };
+        }
+
+        // Type filter (Member vs Staff/Trainer)
+        if (type === 'Member') {
+            where.type = 'Member';
+        } else if (type === 'Staff') {
+            where.type = { not: 'Member' };
+        }
+
+        // Role filter
+        if (filterRole && filterRole !== 'All') {
+            where.type = filterRole;
+        }
+
+        // Status filter
+        if (status) {
+            if (status === 'checked-in') where.checkOut = null;
+            if (status === 'checked-out') where.checkOut = { not: null };
+        }
+
+        // Search filter
+        if (search) {
+            where.OR = [
+                { user: { name: { contains: search } } },
+                { member: { name: { contains: search } } }
+            ];
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const [total, attendance] = await Promise.all([
+            prisma.attendance.count({ where }),
+            prisma.attendance.findMany({
+                where,
+                include: {
+                    user: { select: { name: true, role: true, avatar: true } },
+                    member: {
+                        select: {
+                            name: true,
+                            memberId: true,
+                            avatar: true,
+                            plan: { select: { name: true } }
+                        }
+                    }
+                },
+                orderBy: { checkIn: 'desc' },
+                skip,
+                take: parseInt(limit)
+            })
+        ]);
+
+        const formatted = attendance.map(a => {
+            const name = a.member?.name || a.user?.name || 'N/A';
+            const roleName = a.type === 'Member' ? 'Member' : (a.user?.role || a.type);
+            const checkInTime = a.checkIn ? new Date(a.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-';
+            const checkOutTime = a.checkOut ? new Date(a.checkOut).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-';
+
+            return {
+                id: a.id,
+                name: name,
+                role: roleName,
+                type: a.type === 'Member' ? 'Member' : 'Staff',
+                time: checkInTime,
+                checkIn: checkInTime,
+                checkOut: checkOutTime,
+                status: a.checkOut ? 'checked-out' : 'checked-in',
+                membershipId: a.member?.memberId || '-',
+                plan: a.member?.plan?.name || '-',
+                avatar: a.member?.avatar || a.user?.avatar || null
+            };
         });
-        res.json({ data: attendance, total: attendance.length });
+
+        res.json({ data: formatted, total });
     } catch (error) {
+        console.error('[getCheckIns] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -797,27 +907,65 @@ const deleteCheckIn = async (req, res) => {
 
 const getAttendanceStats = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { user: { tenantId } };
-        const currentlyIn = await prisma.attendance.count({
-            where: { ...where, checkOut: null }
-        });
-        res.json({ currentlyIn, totalToday: 0, membersToday: 0, staffToday: 0 });
+        const { tenantId: userTenantId, role } = req.user;
+        const headerTenantId = req.headers['x-tenant-id'];
+
+        let tenantIdToUse = userTenantId;
+        if (role === 'SUPER_ADMIN' && headerTenantId && headerTenantId !== 'all') {
+            tenantIdToUse = parseInt(headerTenantId);
+        }
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        const [currentlyIn, totalToday, membersToday, staffToday] = await Promise.all([
+            prisma.attendance.count({ where: { tenantId: tenantIdToUse, checkOut: null } }),
+            prisma.attendance.count({ where: { tenantId: tenantIdToUse, checkIn: { gte: today, lt: tomorrow } } }),
+            prisma.attendance.count({ where: { tenantId: tenantIdToUse, type: 'Member', checkIn: { gte: today, lt: tomorrow } } }),
+            prisma.attendance.count({ where: { tenantId: tenantIdToUse, type: { not: 'Member' }, checkIn: { gte: today, lt: tomorrow } } })
+        ]);
+
+        res.json({ currentlyIn, totalToday, membersToday, staffToday });
     } catch (error) {
+        console.error('[getAttendanceStats] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
 
 const getLiveCheckIn = async (req, res) => {
     try {
-        const { tenantId, role } = req.user;
-        const where = role === 'SUPER_ADMIN' ? {} : { user: { tenantId } };
+        const { tenantId: userTenantId, role } = req.user;
+        const headerTenantId = req.headers['x-tenant-id'];
+
+        let tenantIdToUse = userTenantId;
+        if (role === 'SUPER_ADMIN' && headerTenantId && headerTenantId !== 'all') {
+            tenantIdToUse = parseInt(headerTenantId);
+        }
+
         const live = await prisma.attendance.findMany({
-            where: { ...where, checkOut: null },
-            include: { user: true }
+            where: { tenantId: tenantIdToUse, checkOut: null },
+            include: {
+                user: { select: { name: true, role: true, avatar: true } },
+                member: { select: { name: true, memberId: true, avatar: true } }
+            },
+            orderBy: { checkIn: 'desc' }
         });
-        res.json(live);
+
+        const formatted = live.map(a => ({
+            id: a.id,
+            name: a.member?.name || a.user?.name || 'N/A',
+            type: a.type === 'Member' ? 'Member' : 'Staff',
+            role: a.type === 'Member' ? 'Member' : (a.user?.role || a.type),
+            time: a.checkIn ? new Date(a.checkIn).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '-',
+            status: 'checked-in',
+            avatar: a.member?.avatar || a.user?.avatar || null
+        }));
+
+        res.json({ data: formatted });
     } catch (error) {
+        console.error('[getLiveCheckIn] Error:', error);
         res.status(500).json({ message: error.message });
     }
 };
@@ -938,7 +1086,13 @@ const getTaskStats = async (req, res) => {
         const pending = await prisma.task.count({ where: { ...where, status: 'Pending' } });
         const inProgress = await prisma.task.count({ where: { ...where, status: 'In Progress' } });
         const completed = await prisma.task.count({ where: { ...where, status: 'Completed' } });
-        const overdue = await prisma.task.count({ where: { ...where, status: 'Overdue' } });
+        const overdue = await prisma.task.count({
+            where: {
+                ...where,
+                status: { not: 'Completed' },
+                dueDate: { lt: new Date() }
+            }
+        });
 
         res.json({ total, pending, inProgress, completed, overdue });
     } catch (error) {
@@ -1428,6 +1582,10 @@ const getAllClasses = async (req, res) => {
                 schedule: parsedSchedule && parsedSchedule.date
                     ? `${parsedSchedule.date} at ${parsedSchedule.time}`
                     : (typeof parsedSchedule === 'string' ? parsedSchedule : 'TBA'),
+                // Include raw fields for editing
+                rawDate: parsedSchedule?.date || '',
+                rawTime: parsedSchedule?.time || '',
+                rawType: parsedSchedule?.type || cls.requiredBenefit || '',
                 duration: cls.duration || '60 mins',
                 capacity: cls.maxCapacity,
                 enrolled: cls.bookings.length,

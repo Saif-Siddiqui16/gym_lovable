@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, ListTodo, Clock, Loader2, AlertCircle, CheckCircle2, Filter, Building2, FileText, UserPlus, Calendar, Eye } from 'lucide-react';
+import { Plus, ListTodo, Clock, Loader2, AlertCircle, CheckCircle2, Filter, Building2, FileText, UserPlus, Calendar, Eye, Trash2 } from 'lucide-react';
 import RightDrawer from '../../components/common/RightDrawer';
 import CustomDropdown from '../../components/common/CustomDropdown';
 import { useBranchContext } from '../../context/BranchContext';
@@ -39,7 +39,7 @@ const TaskList = () => {
 
     useEffect(() => {
         fetchData();
-    }, []);
+    }, [selectedBranch]);
 
     const fetchData = async () => {
         setLoading(true);
@@ -292,7 +292,7 @@ const TaskList = () => {
                                             </td>
                                             <td className="px-8 py-5 text-right flex items-center justify-end gap-2">
                                                 <button
-                                                    onClick={() => navigate(`/branchadmin/tasks/${task.id}`)}
+                                                    onClick={() => handleEditTask(task)}
                                                     className="p-2 hover:bg-violet-50 text-slate-400 hover:text-violet-600 rounded-lg transition-colors"
                                                     title="View Details"
                                                 >

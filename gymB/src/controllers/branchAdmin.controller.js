@@ -483,66 +483,114 @@ const getExpenseReport = async (req, res) => {
     }
 };
 
-// Get Branch Performance Report
 const getPerformanceReport = async (req, res) => {
     try {
         const tenantId = req.user.tenantId;
 
-        if (!tenantId) {
+        if (!tenantId && req.user.role !== 'SUPER_ADMIN') {
             return res.status(400).json({ message: 'Tenant ID not found for user' });
         }
 
-        const { date: reqDate } = req.query;
-        // We'll calculate performance for the last 4 months
-        const performanceData = [];
-        for (let i = 0; i < 4; i++) {
-            const date = reqDate ? new Date(reqDate) : new Date();
-            date.setMonth(date.getMonth() - i);
-            date.setDate(1);
-            date.setHours(0, 0, 0, 0);
+        const whereClause = req.user.role === 'SUPER_ADMIN' ? {} : { tenantId };
 
-            const startOfMonth = new Date(date);
-            const endOfMonth = new Date(date);
-            endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        const today = new Date();
+        const startOfThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-            const revenue = await prisma.invoice.aggregate({
-                where: { tenantId, status: 'Paid', paidDate: { gte: startOfMonth, lt: endOfMonth } },
+        // 1. Basic Stats
+        const totalMembers = await prisma.member.count({ where: whereClause });
+
+        const revenueThisMonthStr = await prisma.invoice.aggregate({
+            where: { ...whereClause, status: 'Paid', paidDate: { gte: startOfThisMonth } },
+            _sum: { amount: true }
+        });
+        const revenueThisMonth = Number(revenueThisMonthStr._sum.amount || 0);
+
+        const pendingDuesStr = await prisma.invoice.aggregate({
+            where: { ...whereClause, status: { in: ['Unpaid', 'Partial'] } },
+            _sum: { amount: true }
+        });
+        const pendingDues = Number(pendingDuesStr._sum.amount || 0);
+
+        const totalInvoicedStr = await prisma.invoice.aggregate({
+            where: { ...whereClause, paidDate: { gte: startOfThisMonth } },
+            _sum: { amount: true }
+        });
+        const totalInvoiced = Number(totalInvoicedStr._sum.amount || 0);
+
+        const collectionRate = totalInvoiced > 0 ? ((revenueThisMonth / totalInvoiced) * 100).toFixed(1) : 0;
+
+        // 2. Earnings Report (Last 12 months)
+        const earningsValues = [];
+        const earningsMonths = [];
+        const profitValues = [];
+        const expenseValues = [];
+        let totalIncome = 0;
+        let totalExpenses = 0;
+
+        for (let i = 11; i >= 0; i--) {
+            const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
+            const startStr = new Date(date.getFullYear(), date.getMonth(), 1);
+            const endStr = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+
+            const monthRev = await prisma.invoice.aggregate({
+                where: { ...whereClause, status: 'Paid', paidDate: { gte: startStr, lt: endStr } },
                 _sum: { amount: true }
             });
-
-            const expense = await prisma.expense.aggregate({
-                where: { tenantId, date: { gte: startOfMonth, lt: endOfMonth } },
+            const monthExp = await prisma.expense.aggregate({
+                where: { ...whereClause, date: { gte: startStr, lt: endStr } },
                 _sum: { amount: true }
-            });
+            }).catch(() => ({ _sum: { amount: 0 } })); // if Expense doesn't exist
 
-            const revAmount = Number(revenue._sum.amount || 0);
-            const expAmount = Number(expense._sum.amount || 0);
-            const profitValue = revAmount - expAmount;
-            const marginValue = revAmount > 0 ? ((profitValue / revAmount) * 100).toFixed(1) : 0;
+            const r = Number(monthRev._sum.amount || 0);
+            const e = Number(monthExp._sum.amount || 0);
 
-            performanceData.push({
-                id: i + 1,
-                month: date.toLocaleString('default', { month: 'long', year: 'numeric' }),
-                revenue: revAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
-                expense: expAmount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
-                profit: profitValue.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }),
-                margin: `${marginValue}%`,
-                status: marginValue >= 70 ? 'Excellent' : (marginValue >= 50 ? 'Good' : 'Average')
-            });
+            earningsMonths.push(date.toLocaleString('default', { month: 'short' }).toUpperCase());
+            earningsValues.push((r / 1000).toFixed(1)); // in 'k'
+            profitValues.push(((r - e) / 1000).toFixed(1));
+            expenseValues.push((e / 1000).toFixed(1));
+
+            totalIncome += r;
+            totalExpenses += e;
         }
 
-        // Calculate Stats (Current Month vs Previous)
-        // For simplicity, we'll return fixed stats for now but based on real data if possible
-        const currentMonth = performanceData[0];
-        const prevMonth = performanceData[1];
+        // 3. Weekly Earnings (Last 7 days)
+        const weeklyValues = [];
+        const weeklyDays = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            d.setHours(0, 0, 0, 0);
+
+            const nextD = new Date(d);
+            nextD.setDate(d.getDate() + 1);
+
+            const dRev = await prisma.invoice.aggregate({
+                where: { ...whereClause, status: 'Paid', paidDate: { gte: d, lt: nextD } },
+                _sum: { amount: true }
+            });
+            weeklyDays.push(d.toLocaleString('default', { weekday: 'short' }).toUpperCase());
+            weeklyValues.push((Number(dRev._sum.amount || 0) / 1000).toFixed(1));
+        }
 
         res.json({
-            stats: [
-                { label: 'Revenue (vs Exp)', value: currentMonth.margin, icon: 'TrendingUp', bg: 'bg-indigo-50', color: 'text-indigo-600', trend: 'up' },
-                { label: 'Lead Conv. Rate', value: '24.8%', icon: 'Target', bg: 'bg-purple-50', color: 'text-purple-600', trend: 'up' },
-                { label: 'Member Retention', value: '92.1%', icon: 'Activity', bg: 'bg-emerald-50', color: 'text-emerald-600', trend: 'up' },
-            ],
-            performanceData
+            stats: {
+                totalMembers,
+                revenueThisMonth,
+                collectionRate,
+                pendingDues
+            },
+            earnings: {
+                months: earningsMonths,
+                revenue: earningsValues,
+                profit: profitValues,
+                expenses: expenseValues,
+                totalIncome,
+                totalExpenses
+            },
+            weekly: {
+                days: weeklyDays,
+                values: weeklyValues
+            }
         });
 
     } catch (error) {

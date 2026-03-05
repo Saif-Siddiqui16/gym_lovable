@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { ClipboardList, Building, Type, AlignLeft, Flag, Calendar, UserPlus, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ClipboardList, Building, Type, AlignLeft, Flag, Calendar, UserPlus, CheckCircle, Loader2 } from 'lucide-react';
 import RightDrawer from '../../components/common/RightDrawer';
+import { getBranchTeam, getMyBranch, createTask } from '../../api/staff/taskApi';
 
 const CreateTaskDrawer = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -9,28 +10,59 @@ const CreateTaskDrawer = ({ isOpen, onClose, onSuccess }) => {
         description: '',
         priority: 'Medium',
         due_date: '',
-        assigned_to: ''
+        assignedToId: ''
     });
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [branchInfo, setBranchInfo] = useState(null);
+    const [team, setTeam] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            loadInitialData();
+        }
+    }, [isOpen]);
+
+    const loadInitialData = async () => {
+        try {
+            setLoading(true);
+            const [branch, members] = await Promise.all([
+                getMyBranch(),
+                getBranchTeam()
+            ]);
+            setBranchInfo(branch);
+            setTeam(members);
+            if (branch) {
+                setFormData(prev => ({ ...prev, branch: branch.name }));
+            }
+        } catch (error) {
+            console.error('Error loading task data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
+        try {
+            await createTask(formData);
             if (onSuccess) onSuccess();
             onClose();
-            setIsSubmitting(false);
             setFormData({
-                branch: '',
+                branch: branchInfo ? branchInfo.name : '',
                 title: '',
                 description: '',
                 priority: 'Medium',
                 due_date: '',
-                assigned_to: ''
+                assignedToId: ''
             });
-        }, 800);
+        } catch (error) {
+            alert(error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -52,12 +84,10 @@ const CreateTaskDrawer = ({ isOpen, onClose, onSuccess }) => {
                             <select
                                 className="w-full h-14 pl-12 pr-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat shadow-sm"
                                 value={formData.branch}
-                                onChange={(e) => setFormData({ ...formData, branch: e.target.value })}
+                                disabled
                                 required
                             >
-                                <option value="">Select branch</option>
-                                <option value="Main Branch">Main Branch</option>
-                                <option value="Downtown Center">Downtown Center</option>
+                                <option value={formData.branch}>{formData.branch || 'Loading...'}</option>
                             </select>
                         </div>
                     </div>
@@ -133,12 +163,15 @@ const CreateTaskDrawer = ({ isOpen, onClose, onSuccess }) => {
                             <UserPlus className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-500 transition-colors" size={18} />
                             <select
                                 className="w-full h-14 pl-12 pr-5 bg-slate-50 border border-slate-100 rounded-2xl text-[13px] font-black text-slate-900 focus:outline-none focus:border-indigo-500 transition-all cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20fill%3D%22none%22%20viewBox%3D%220%200%2024%2024%22%20stroke%3D%22%2364748b%22%3E%3Cpath%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%20stroke-width%3D%222%22%20d%3D%22M19%209l-7%207-7-7%22%2F%3E%3C%2Fsvg%3E')] bg-[length:1.25rem] bg-[right_1.25rem_center] bg-no-repeat shadow-sm"
-                                value={formData.assigned_to}
-                                onChange={(e) => setFormData({ ...formData, assigned_to: e.target.value })}
+                                value={formData.assignedToId}
+                                onChange={(e) => setFormData({ ...formData, assignedToId: e.target.value })}
                             >
                                 <option value="">Select user (optional)</option>
-                                <option value="1">John Doe</option>
-                                <option value="2">Jane Smith</option>
+                                {team.map(member => (
+                                    <option key={member.id} value={member.id}>
+                                        {member.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>

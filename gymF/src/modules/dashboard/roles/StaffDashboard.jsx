@@ -18,11 +18,13 @@ import Card from '../../../components/ui/Card';
 import StatsCard from '../components/StatsCard';
 import DashboardGrid from '../components/DashboardGrid';
 import { useAuth } from '../../../context/AuthContext';
+import { useBranchContext } from '../../../context/BranchContext';
 import apiClient from '../../../api/apiClient';
 
 const StaffDashboard = () => {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { selectedBranch } = useBranchContext();
 
     const [dashData, setDashData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -31,56 +33,36 @@ const StaffDashboard = () => {
         weekday: 'long', day: '2-digit', month: 'short', year: 'numeric'
     });
 
-    // Fetch all dashboard data in one go
+    // Fetch all dashboard data from the unified staff dashboard endpoint
     useEffect(() => {
         const fetchAll = async () => {
             try {
                 setLoading(true);
-                const tenantId = user?.tenantId;
+                const queryParams = selectedBranch !== 'all' ? { tenantId: selectedBranch } : {};
 
-                const [
-                    checkInsRes,
-                    invoicesRes,
-                    leadsRes,
-                    expiringRes,
-                    tasksRes,
-                    branchRes
-                ] = await Promise.allSettled([
-                    apiClient.get('/admin/check-ins', { params: { tenantId, limit: 5 } }),
-                    apiClient.get('/admin/invoices', { params: { tenantId, status: 'Pending', limit: 5 } }),
-                    apiClient.get('/admin/members', { params: { tenantId, status: 'Active', limit: 5 } }),
-                    apiClient.get('/admin/renewal-alerts', { params: { tenantId } }),
-                    apiClient.get('/staff/tasks', { params: { myTasks: true, status: 'Pending', limit: 5 } }),
-                    tenantId ? apiClient.get(`/admin/members`, { params: { tenantId, limit: 1 } }) : Promise.resolve(null),
-                ]);
+                const response = await apiClient.get('/dashboard/staff', { params: queryParams });
+                const data = response.data;
 
-                // Try to get branch name from user's tenant
-                let branchName = 'Main Branch';
-                if (tenantId) {
+                // Try to get branch name
+                let branchName = 'All Branches';
+                if (selectedBranch !== 'all') {
                     try {
                         const branchesRes = await apiClient.get('/branches');
-                        const myBranch = branchesRes.data?.find(b => b.id === tenantId || b.id === parseInt(tenantId));
-                        if (myBranch) branchName = myBranch.name || myBranch.branchName || 'Main Branch';
+                        const myBranch = branchesRes.data?.find(b => b.id === parseInt(selectedBranch));
+                        if (myBranch) branchName = myBranch.name || myBranch.branchName;
                     } catch { /* Silent */ }
                 }
 
-                const checkIns = checkInsRes.status === 'fulfilled' ? checkInsRes.value.data : [];
-                const invoices = invoicesRes.status === 'fulfilled' ? invoicesRes.value.data : [];
-                const leads = leadsRes.status === 'fulfilled' ? leadsRes.value.data : [];
-                const expiring = expiringRes.status === 'fulfilled' ? expiringRes.value.data : [];
-                const tasks = tasksRes.status === 'fulfilled' ? tasksRes.value.data : [];
-
                 setDashData({
                     branchName,
-                    checkIns: Array.isArray(checkIns) ? checkIns : [],
-                    invoicesCount: Array.isArray(invoices) ? invoices.length : (invoices?.total || 0),
-                    leads: Array.isArray(leads) ? leads : (leads?.leads || []),
-                    expiring: Array.isArray(expiring) ? expiring : (expiring?.members || []),
-                    tasks: Array.isArray(tasks) ? tasks : (tasks?.tasks || []),
-                    todayCheckIns: Array.isArray(checkIns) ? checkIns.filter(c => {
-                        const d = new Date(c.checkIn || c.createdAt || c.date);
-                        return d.toDateString() === new Date().toDateString();
-                    }).length : 0,
+                    todayCheckIns: data.checkinsToday || 0,
+                    checkIns: data.checkins || [],
+                    invoicesCount: data.pendingPayments || 0,
+                    leads: data.newEnquiries || 0,
+                    activeLeads: data.newEnquiries || 0, // Using new enquiries as active leads
+                    pendingActions: data.pendingActions || [],
+                    expiring: data.renewalAlerts?.expiringSoon || [],
+                    tasks: data.equipmentAlerts || [], // Using equipment alerts or fallback
                 });
             } catch (err) {
                 console.error('StaffDashboard fetch error:', err);
@@ -89,7 +71,7 @@ const StaffDashboard = () => {
             }
         };
         fetchAll();
-    }, [user?.tenantId]);
+    }, [selectedBranch]);
 
     const quickActions = [
         { label: 'Check In Member', icon: UserCheck, path: '/staff/attendance/check-in', color: 'bg-emerald-50 text-emerald-600' },
@@ -188,18 +170,15 @@ const StaffDashboard = () => {
                 />
                 <StatsCard
                     title="Active Leads"
-                    value={loading ? '—' : (dashData?.leads?.length ?? 0)}
+                    value={loading ? '—' : (dashData?.activeLeads ?? 0)}
                     icon={GitBranch}
                     color="success"
                     isEarningsLayout={true}
                 />
                 <StatsCard
-                    title="Expiring This Week"
-                    value={loading ? '—' : (dashData?.expiring?.filter(m => {
-                        const days = daysUntilExpiry(m.expiryDate);
-                        return days !== null && days >= 0 && days <= 7;
-                    }).length ?? 0)}
-                    trend={loading ? '' : `${dashData?.expiring?.filter(m => daysUntilExpiry(m.expiryDate) === 0).length ?? 0} today`}
+                    title="Expiring Soon"
+                    value={loading ? '—' : (dashData?.expiring?.length ?? 0)}
+                    trend={loading ? '' : `next 30 days`}
                     icon={Clock}
                     color="warning"
                     isEarningsLayout={true}
@@ -254,7 +233,7 @@ const StaffDashboard = () => {
                     {/* Follow-Up Leads */}
                     <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Follow-Up Leads</h3>
+                            <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Pending Actions</h3>
                             <button
                                 onClick={() => navigate('/crm/pipeline')}
                                 className="px-5 py-2 bg-slate-50 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-600 hover:text-white hover:shadow-lg hover:shadow-violet-200 transition-all duration-300 border border-slate-100"
@@ -265,25 +244,25 @@ const StaffDashboard = () => {
                         <div className="space-y-4">
                             {loading ? (
                                 [1, 2].map(i => <div key={i} className="h-20 bg-slate-50 rounded-[2rem] animate-pulse" />)
-                            ) : dashData?.leads?.length > 0 ? (
-                                dashData.leads.slice(0, 4).map((lead, idx) => (
+                            ) : dashData?.pendingActions?.length > 0 ? (
+                                dashData.pendingActions.slice(0, 4).map((action, idx) => (
                                     <div key={idx} className="flex items-center justify-between p-5 bg-slate-50/50 border border-slate-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-violet-500/5 hover:border-violet-200 transition-all duration-500 cursor-pointer">
                                         <div className="flex items-center gap-5">
                                             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-50 to-violet-100 text-violet-600 flex items-center justify-center font-black text-sm shadow-inner">
-                                                {getInitials(lead.name)}
+                                                {getInitials(action.title)}
                                             </div>
                                             <div className="space-y-1">
-                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{lead.name}</h4>
-                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{lead.phone || 'No phone'} {lead.source ? `• ${lead.source}` : ''}</p>
+                                                <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{action.title}</h4>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{action.subtitle}</p>
                                             </div>
                                         </div>
-                                        <div className={`px-4 py-1.5 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg ${lead.status === 'New' || lead.status === 'new' ? 'bg-violet-600 shadow-violet-100' : 'bg-amber-500 shadow-amber-100'}`}>
-                                            {lead.status || 'New'}
+                                        <div className={`px-4 py-1.5 text-white text-[9px] font-black rounded-xl uppercase tracking-widest shadow-lg ${action.type === 'Payment' ? 'bg-rose-600 shadow-rose-100' : 'bg-amber-500 shadow-amber-100'}`}>
+                                            {action.type || 'Action'}
                                         </div>
                                     </div>
                                 ))
                             ) : (
-                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No leads found</div>
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No pending actions</div>
                             )}
                         </div>
                     </Card>
@@ -307,7 +286,7 @@ const StaffDashboard = () => {
                                 [1, 2].map(i => <div key={i} className="h-20 bg-rose-50 rounded-[2rem] animate-pulse" />)
                             ) : dashData?.expiring?.length > 0 ? (
                                 dashData.expiring.slice(0, 4).map((m, idx) => {
-                                    const days = daysUntilExpiry(m.expiryDate);
+                                    const days = daysUntilExpiry(m.endDate);
                                     return (
                                         <div key={idx} className="flex items-center justify-between p-5 bg-rose-50/50 border border-rose-100 rounded-[2rem] group hover:bg-white hover:shadow-xl hover:shadow-rose-500/5 hover:border-rose-300 transition-all duration-500 cursor-pointer">
                                             <div className="flex items-center gap-5">
@@ -315,8 +294,8 @@ const StaffDashboard = () => {
                                                     <Clock size={28} strokeWidth={2.5} />
                                                 </div>
                                                 <div className="space-y-1">
-                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{m.name}</h4>
-                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{m.phone || 'No phone'}</p>
+                                                    <h4 className="text-sm font-black text-slate-900 uppercase tracking-tight">{m.memberName}</h4>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{m.planName || 'No plan'}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -336,9 +315,9 @@ const StaffDashboard = () => {
                     {/* My Pending Tasks */}
                     <Card className="border-none overflow-hidden rounded-[2.5rem] shadow-2xl shadow-slate-200/50 bg-white p-4 sm:p-8">
                         <div className="flex items-center justify-between mb-8">
-                            <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">My Pending Tasks</h3>
+                            <h3 className="text-base font-black text-slate-800 uppercase tracking-widest">Equipment Alerts</h3>
                             <button
-                                onClick={() => navigate('/staff/tasks/my-tasks')}
+                                onClick={() => navigate('/operations/equipment')}
                                 className="px-5 py-2 bg-slate-50 text-slate-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-violet-600 hover:text-white hover:shadow-lg hover:shadow-violet-200 transition-all duration-300 border border-slate-100"
                             >
                                 View All
@@ -355,9 +334,9 @@ const StaffDashboard = () => {
                                                 <div className="w-4 h-4 border-2 border-current rounded-md" />
                                             </div>
                                             <div className="space-y-1">
-                                                <h4 className="text-sm font-black text-slate-900 tracking-tight">{task.title || task.task}</h4>
+                                                <h4 className="text-sm font-black text-slate-900 tracking-tight">{task.equipmentName || task.issue || 'Equipment Issue'}</h4>
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                                                    Due: {formatDue(task.dueDate || task.due)} – <span className="text-amber-600">{task.status || 'Pending'}</span>
+                                                    Status: <span className="text-amber-600">{task.status || 'Pending'}</span>
                                                 </p>
                                             </div>
                                         </div>
@@ -367,7 +346,7 @@ const StaffDashboard = () => {
                                     </div>
                                 ))
                             ) : (
-                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No pending tasks</div>
+                                <div className="py-12 text-center text-slate-300 text-xs font-black uppercase tracking-widest">No equipment alerts</div>
                             )}
                         </div>
                     </Card>

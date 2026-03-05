@@ -83,18 +83,38 @@ const DailyAttendanceReport = () => {
             setLoading(true);
             const params = {
                 search: searchTerm,
-                type: typeFilter,
+                type: typeFilter === 'All' ? undefined : typeFilter,
                 date: selectedDate,
                 page: currentPage,
                 limit: itemsPerPage
             };
 
-            const response = await apiClient.get('/branch-admin/reports/attendance', { params });
+            const [attendanceRes, statsRes] = await Promise.all([
+                apiClient.get('/admin/attendance', { params }),
+                apiClient.get('/admin/attendance/stats')
+            ]);
 
-            setAttendance(response.data.data || []);
-            setTotalItems(response.data.total || 0);
-            if (response.data.stats) {
-                setAttendanceStats(response.data.stats);
+            const rawData = attendanceRes.data.data || [];
+
+            const formatted = rawData.map(a => ({
+                id: a.id,
+                memberId: a.membershipId,
+                name: a.name,
+                type: a.type,
+                checkIn: a.checkIn,
+                checkOut: a.checkOut,
+                status: a.status
+            }));
+
+            setAttendance(formatted);
+            setTotalItems(attendanceRes.data.total || formatted.length);
+
+            if (statsRes.data) {
+                setAttendanceStats({
+                    totalToday: statsRes.data.totalToday || 0,
+                    membersToday: statsRes.data.memberCheckIns || 0,
+                    staffToday: statsRes.data.staffCheckIns || 0
+                });
             }
         } catch (error) {
             console.error('Attendance Load Error:', error);

@@ -15,13 +15,21 @@ const BulkCreateLockersDrawer = ({ onClose, onSuccess }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call as per user instructions to not touch backend
-        setTimeout(() => {
-            toast.success(`${previewCount} lockers created successfully`);
+        try {
+            const { bulkCreateLockers } = await import('../../../api/staff/lockerApi');
+            const result = await bulkCreateLockers(formData);
+            if (result.success) {
+                toast.success(`${previewCount} lockers created successfully`);
+                if (onSuccess) onSuccess();
+                onClose();
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            toast.error('Failed to create lockers');
+        } finally {
             setLoading(false);
-            if (onSuccess) onSuccess();
-            onClose();
-        }, 800);
+        }
     };
 
     const previewCount = Math.max(0, parseInt(formData.endNumber) - parseInt(formData.startNumber) + 1);

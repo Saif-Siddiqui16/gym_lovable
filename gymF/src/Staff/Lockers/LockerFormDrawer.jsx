@@ -48,7 +48,7 @@ const LockerFormDrawer = ({ isOpen, onClose, selectedLocker, onSuccess }) => {
 
         setIsSubmitting(true);
         try {
-            const result = await assignLocker(formData.lockerId, selectedMember.id, selectedMember.name, formData.isPaid);
+            const result = await assignLocker(formData.lockerId, selectedMember.id, selectedMember.name, formData.isPaid, formData.notes);
             if (result.success) {
                 alert(result.message);
                 onSuccess();

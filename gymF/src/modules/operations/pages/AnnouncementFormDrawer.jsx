@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Loader2 } from 'lucide-react';
+import { addAnnouncement } from '../../../api/communication/communicationApi';
 import RightDrawer from '../../../components/common/RightDrawer';
+import toast from 'react-hot-toast';
 
 const AnnouncementFormDrawer = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
@@ -15,14 +17,48 @@ const AnnouncementFormDrawer = ({ isOpen, onClose, onSuccess }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsSubmitting(true);
+        if (!formData.title || !formData.content) {
+            return toast.error("Title and Content are required");
+        }
 
-        // Simulating API call for demo behavior
-        setTimeout(() => {
-            setIsSubmitting(false);
+        try {
+            setIsSubmitting(true);
+
+            // Map labels to backend role keys
+            const roleMap = {
+                'All Members': 'all',
+                'Active Members': 'member',
+                'Expired Members': 'expired',
+                'Staff Only': 'STAFF',
+                'Trainers Only': 'TRAINER'
+            };
+
+            const payload = {
+                title: formData.title,
+                content: formData.content,
+                targetRole: roleMap[formData.targetAudience] || 'all',
+                priority: parseInt(formData.priority) || 0,
+                status: formData.isActive ? 'Active' : 'Inactive'
+            };
+
+            await addAnnouncement(payload);
+            toast.success("Announcement broadcasted successfully!");
             onSuccess?.();
             onClose();
-        }, 1200);
+            // Reset form
+            setFormData({
+                title: '',
+                content: '',
+                targetAudience: 'All Members',
+                priority: 0,
+                isActive: true
+            });
+        } catch (error) {
+            console.error('Failed to create announcement:', error);
+            toast.error(error.response?.data?.message || "Failed to create announcement");
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
@@ -37,7 +73,7 @@ const AnnouncementFormDrawer = ({ isOpen, onClose, onSuccess }) => {
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-6 h-11 border-2 border-slate-100 bg-white text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-95"
+                        className="px-6 h-11 border-2 border-slate-100 bg-white text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95"
                     >
                         Cancel
                     </button>
@@ -45,10 +81,10 @@ const AnnouncementFormDrawer = ({ isOpen, onClose, onSuccess }) => {
                         type="submit"
                         form="announcement-form"
                         disabled={isSubmitting}
-                        className="px-8 h-11 bg-indigo-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
+                        className="px-8 h-11 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2"
                     >
                         {isSubmitting ? (
-                            <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                            <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                             'Create Announcement'
                         )}
@@ -120,13 +156,13 @@ const AnnouncementFormDrawer = ({ isOpen, onClose, onSuccess }) => {
                     {/* Active Toggle */}
                     <div className="flex items-center justify-between p-4 bg-slate-50/30 border-2 border-slate-50 rounded-2xl group transition-all hover:bg-white hover:border-slate-100 shadow-sm">
                         <div className="space-y-0.5">
-                            <p className="text-[13px] font-black text-slate-900 tracking-tight">Active</p>
+                            <p className="text-[13px] font-black text-slate-900 tracking-tight">Active Status</p>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Show announcement to members</p>
                         </div>
                         <button
                             type="button"
                             onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.isActive ? 'bg-[#0f172a]' : 'bg-slate-200'
+                            className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.isActive ? 'bg-[#4f46e5]' : 'bg-slate-200'
                                 }`}
                         >
                             <span

@@ -36,9 +36,13 @@ model Tenant {
   storeCategories StoreCategory[]
   storeProducts   StoreProduct[]
   storeOrders     StoreOrder[]
-  amenities       Amenity[]
+  Amenity         Amenity[]
   tasks           Task[]
   expenseCategories ExpenseCategory[]
+  serviceRequests ServiceRequest[]
+  ptPackages      PTPackage[]
+  ptAccounts      PTMemberAccount[]
+  ptSessions      PTSession[]
 
   @@map("tenant")
 }
@@ -81,6 +85,7 @@ model User {
   assignedMember Member[]     @relation("TrainerToMember")
   assignedTasks  Task[]       @relation("AssignedTasks")
   createdTasks   Task[]       @relation("CreatedTasks")
+  ptSessions     PTSession[]  @relation("TrainerSessions")
   tenant         Tenant?      @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId], map: "user_tenantId_fkey")
@@ -225,6 +230,10 @@ model Member {
   storeOrders    StoreOrder[]
   lockers        Locker[]
   invoices       Invoice[]
+  attendances    Attendance[]
+  serviceRequests ServiceRequest[]
+  ptAccounts      PTMemberAccount[]
+  ptSessions      PTSession[]
   plan           MembershipPlan? @relation(fields: [planId], references: [id])
   tenant         Tenant          @relation(fields: [tenantId], references: [id])
   trainer        User?           @relation("TrainerToMember", fields: [trainerId], references: [id])
@@ -233,6 +242,26 @@ model Member {
   @@index([tenantId], map: "member_tenantId_fkey")
   @@index([trainerId], map: "member_trainerId_fkey")
   @@map("member")
+}
+
+model ServiceRequest {
+  id        Int      @id @default(autoincrement())
+  tenantId  Int      @default(1)
+  memberId  Int
+  type      String
+  rawType   String?
+  details   String?  @db.Text
+  status    String   @default("Pending")
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  member    Member   @relation(fields: [memberId], references: [id])
+
+  @@index([tenantId], map: "service_request_tenantId_fkey")
+  @@index([memberId], map: "service_request_memberId_fkey")
+  @@map("service_request")
 }
 
 model MembershipPlan {
@@ -474,7 +503,8 @@ model Payroll {
 
 model Attendance {
   id       Int       @id @default(autoincrement())
-  userId   Int
+  userId   Int?
+  memberId Int?
   checkIn  DateTime?
   checkOut DateTime?
   type     String
@@ -482,10 +512,12 @@ model Attendance {
   status   String    @default("Present")
   tenantId Int       @default(1)
   tenant   Tenant    @relation(fields: [tenantId], references: [id])
-  user     User      @relation(fields: [userId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+  member   Member?   @relation(fields: [memberId], references: [id])
 
   @@index([tenantId], map: "attendance_tenantId_fkey")
   @@index([userId], map: "attendance_userId_fkey")
+  @@index([memberId], map: "attendance_memberId_fkey")
   @@map("attendance")
 }
 
@@ -802,6 +834,72 @@ model Amenity {
 
   @@index([tenantId], map: "amenity_tenantId_fkey")
   @@map("amenity")
+}
+
+model PTPackage {
+  id            Int               @id @default(autoincrement())
+  tenantId      Int
+  name          String
+  sessionType   String            @default("Fixed Sessions")
+  totalSessions Int
+  price         Decimal           @db.Decimal(10, 2)
+  gstPercent    Decimal           @db.Decimal(5, 2) @default(18.00)
+  gstInclusive  Boolean           @default(false)
+  validityDays  Int               @default(90)
+  description   String?           @db.Text
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  tenant        Tenant            @relation(fields: [tenantId], references: [id])
+  accounts      PTMemberAccount[]
+
+  @@map("pt_package")
+}
+
+model PTMemberAccount {
+  id                Int          @id @default(autoincrement())
+  tenantId          Int
+  memberId          Int
+  packageId         Int
+  totalSessions     Int
+  remainingSessions Int
+  expiryDate        DateTime
+  status            String       @default("Active")
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  member            Member       @relation(fields: [memberId], references: [id])
+  package           PTPackage    @relation(fields: [packageId], references: [id])
+  sessions          PTSession[]
+  tenant            Tenant       @relation(fields: [tenantId], references: [id])
+
+  @@index([memberId], map: "pt_member_account_memberId_fkey")
+  @@index([packageId], map: "pt_member_account_packageId_fkey")
+  @@index([tenantId], map: "pt_member_account_tenantId_fkey")
+  @@map("pt_member_account")
+}
+
+model PTSession {
+  id          Int              @id @default(autoincrement())
+  tenantId    Int
+  memberId    Int
+  trainerId   Int
+  ptAccountId Int?
+  date        DateTime
+  time        String?
+  duration    Int              @default(60)
+  notes       String?          @db.Text
+  status      String           @default("Completed")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  member      Member           @relation(fields: [memberId], references: [id])
+  trainer     User             @relation("TrainerSessions", fields: [trainerId], references: [id])
+  ptAccount   PTMemberAccount? @relation(fields: [ptAccountId], references: [id])
+  tenant      Tenant           @relation(fields: [tenantId], references: [id])
+
+  @@index([memberId], map: "pt_session_memberId_fkey")
+  @@index([trainerId], map: "pt_session_trainerId_fkey")
+  @@index([ptAccountId], map: "pt_session_ptAccountId_fkey")
+  @@index([tenantId], map: "pt_session_tenantId_fkey")
+  @@map("pt_session")
 }
 
 enum Role {

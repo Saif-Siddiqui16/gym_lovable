@@ -23,6 +23,7 @@ const RevenueReport = () => {
     ]);
 
     const [revenueData, setRevenueData] = useState([]);
+    const [allFilteredRevenue, setAllFilteredRevenue] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const fetchReport = async () => {
@@ -31,11 +32,25 @@ const RevenueReport = () => {
             const response = await apiClient.get('/branch-admin/reports/revenue', {
                 params: { date: selectedDate }
             });
-            setStats(response.data.stats.map(s => ({
-                ...s,
-                icon: s.icon === 'DollarSign' ? DollarSign : (s.icon === 'TrendingUp' ? TrendingUp : Banknote)
-            })));
-            setRevenueData(response.data.revenueData);
+
+            if (response.data.stats) {
+                setStats(response.data.stats.map(s => ({
+                    ...s,
+                    icon: s.icon === 'DollarSign' ? DollarSign : (s.icon === 'TrendingUp' ? TrendingUp : Banknote)
+                })));
+            }
+
+            const rawData = response.data.revenueData || [];
+
+            setRevenueData(rawData);
+
+            // Apply frontend search
+            const filtered = rawData.filter(row =>
+                row.member.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                row.service.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setAllFilteredRevenue(filtered);
+
         } catch (error) {
             console.error('Failed to fetch revenue report:', error);
         } finally {
@@ -45,10 +60,10 @@ const RevenueReport = () => {
 
     useEffect(() => {
         fetchReport();
-    }, [selectedDate]);
+    }, [selectedDate, searchTerm]);
 
-    const handleExport = () => {
-        if (revenueData.length === 0) {
+    const handleExportCSV = () => {
+        if (allFilteredRevenue.length === 0) {
             alert("No data available to export.");
             return;
         }
@@ -56,7 +71,7 @@ const RevenueReport = () => {
         const headers = ["Date", "Member", "Service", "Amount", "Mode", "Status"];
         const csvContent = [
             headers.join(","),
-            ...revenueData.map(row => [
+            ...allFilteredRevenue.map(row => [
                 `"${row.date}"`,
                 `"${row.member}"`,
                 `"${row.service}"`,
@@ -77,6 +92,24 @@ const RevenueReport = () => {
         document.body.removeChild(link);
     };
 
+    const handleExportPDF = () => {
+        if (allFilteredRevenue.length === 0) {
+            alert("No data available to export.");
+            return;
+        }
+
+        const rows = allFilteredRevenue.map(row =>
+            `<tr><td>${row.date}</td><td>${row.member}</td><td>${row.service}</td><td>${row.amount}</td><td>${row.mode}</td><td>${row.status}</td></tr>`
+        ).join('');
+
+        const html = `<html><head><title>Revenue Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#4f46e5;color:white}tr:nth-child(even){background:#f8fafc}</style></head><body><h2>Revenue Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>Date</th><th>Member</th><th>Service</th><th>Amount</th><th>Mode</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
+
+        const w = window.open('', '_blank');
+        w.document.write(html);
+        w.document.close();
+        w.print();
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-violet-50/30 p-6 md:p-8">
             <div className="mb-8 relative">
@@ -94,13 +127,20 @@ const RevenueReport = () => {
                                 <p className="text-slate-600 text-sm mt-1">Track payments, collection trends and financial health</p>
                             </div>
                         </div>
-                        <button
-                            onClick={handleExport}
-                            className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:shadow-xl hover:shadow-indigo-500/50 text-white rounded-xl text-sm font-bold transition-all hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            <Download size={18} />
-                            Export Report
-                        </button>
+                        <div className="flex flex-wrap gap-2 md:gap-3">
+                            <button
+                                onClick={handleExportCSV}
+                                className="flex-1 md:flex-none bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 flex items-center justify-center gap-2 shadow-sm hover:shadow-md transition-all rounded-xl px-4 py-2 text-sm font-semibold"
+                            >
+                                <Download size={16} className="text-gray-500" /> Export CSV
+                            </button>
+                            <button
+                                onClick={handleExportPDF}
+                                className="flex-1 md:flex-none bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/30 text-white flex items-center justify-center gap-2 shadow-sm transition-all rounded-xl px-4 py-2 text-sm font-semibold"
+                            >
+                                Export PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -122,24 +162,14 @@ const RevenueReport = () => {
             <div className="bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden mb-8">
                 <div className="p-6 border-b border-slate-100 bg-gray-50/30">
                     <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
-                        <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto">
-                            <div className="relative group">
-                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                <input
-                                    type="date"
-                                    className="pl-11 h-11 px-4 rounded-xl border-2 border-slate-200 text-sm focus:border-indigo-500 transition-all bg-white"
-                                    value={selectedDate}
-                                    onChange={(e) => setSelectedDate(e.target.value)}
-                                />
-                            </div>
-                            <select
-                                className="h-11 px-4 rounded-xl border-2 border-slate-200 text-sm focus:border-indigo-500 transition-all bg-white font-medium text-gray-700"
-                                value={selectedBranch}
-                                onChange={(e) => setSelectedBranch(e.target.value)}
-                            >
-                                <option>Main Branch</option>
-                                <option>Downtown Studio</option>
-                            </select>
+                        <div className="relative group w-full md:w-64">
+                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="date"
+                                className="pl-11 h-11 w-full rounded-xl border-2 border-slate-200 text-sm focus:border-indigo-500 transition-all bg-white"
+                                value={selectedDate}
+                                onChange={(e) => setSelectedDate(e.target.value)}
+                            />
                         </div>
                         <div className="relative w-full md:w-72">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
