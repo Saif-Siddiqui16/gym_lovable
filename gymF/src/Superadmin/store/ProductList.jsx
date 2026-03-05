@@ -22,7 +22,7 @@ const ProductList = () => {
             setLoading(true);
             const branchParam = selectedBranch === 'all' ? 'all' : selectedBranch;
             const [prodData, catData] = await Promise.all([
-                getStoreProducts({ search: searchTerm, category: filterCategory, branchId: branchParam }),
+                getStoreProducts({ search: searchTerm, category: filterCategory, branchId: branchParam, allStatus: 'true' }),
                 getCategories({ branchId: branchParam })
             ]);
             setProducts(prodData);
