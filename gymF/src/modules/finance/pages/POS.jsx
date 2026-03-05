@@ -10,6 +10,7 @@ const POS = () => {
     const { selectedBranch } = useBranchContext();
     const { user } = useAuth();
     const [todaySalesTotal, setTodaySalesTotal] = useState(0);
+    const [recentTransactions, setRecentTransactions] = useState([]);
     const [cart, setCart] = useState([]);
     const [products, setProducts] = useState([]);
     const [members, setMembers] = useState([]);
@@ -43,6 +44,7 @@ const POS = () => {
                 ]);
                 setProducts(productsData.products || productsData);
                 setTodaySalesTotal(statsData.stats?.todayPos || 0);
+                setRecentTransactions(statsData.recentTransactions || []);
                 setMembers(membersData);
             } catch (error) {
                 console.error("Failed to load POS data", error);
@@ -119,6 +121,7 @@ const POS = () => {
             ]);
             setProducts(productsData.products || productsData);
             setTodaySalesTotal(statsData.stats?.todayPos || 0);
+            setRecentTransactions(statsData.recentTransactions || []);
         } catch (error) {
             toast.error(error);
         } finally {
@@ -439,12 +442,38 @@ const POS = () => {
                             </div>
                         </div>
 
-                        <div className="flex flex-col items-center justify-center py-10 opacity-30">
-                            <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-100 mb-4 animate-spin-slow">
-                                <ReceiptText size={28} />
+                        {recentTransactions.length > 0 ? (
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
+                                {recentTransactions.map((txn, idx) => (
+                                    <div key={txn.id || idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 hover:border-violet-200 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center">
+                                                <ReceiptText size={16} />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-800">Order #{txn.id}</p>
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                                    {txn.itemsCount || 0} items • {txn.status}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <p className="text-sm font-black text-slate-900">₹{parseFloat(txn.amount || 0).toLocaleString()}</p>
+                                            <p className="text-[9px] font-bold text-slate-400">
+                                                {new Date(txn.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest italic">No sales activity yet</p>
-                        </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-10 opacity-30">
+                                <div className="w-16 h-16 rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-100 mb-4 animate-spin-slow">
+                                    <ReceiptText size={28} />
+                                </div>
+                                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest italic">No sales activity yet</p>
+                            </div>
+                        )}
                     </div>
 
                 </div>

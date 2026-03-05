@@ -5,7 +5,7 @@ import { toast } from 'react-hot-toast';
 import { useBranchContext } from '../../context/BranchContext';
 
 const CouponDrawer = ({ isOpen, onClose, coupon, mode = 'add', onSuccess }) => {
-    const { selectedBranch } = useBranchContext();
+    const { selectedBranch, branches } = useBranchContext();
     const [formData, setFormData] = useState({
         code: '',
         description: '',

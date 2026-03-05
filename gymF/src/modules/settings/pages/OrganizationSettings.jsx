@@ -13,6 +13,8 @@ const OrganizationSettings = ({ role }) => {
         currency: 'INR',
         fiscalYearStart: 'April'
     });
+    const [logoFile, setLogoFile] = useState(null);
+    const [logoPreview, setLogoPreview] = useState(null);
 
     useEffect(() => {
         loadSettings();
@@ -28,6 +30,9 @@ const OrganizationSettings = ({ role }) => {
                 currency: data.currency || 'INR',
                 fiscalYearStart: data.fiscalYearStart || 'April'
             });
+            if (data.logo) {
+                setLogoPreview(data.logo);
+            }
         } catch (error) {
             console.error('Failed to stringify settings:', error);
             toast.error('Failed to load settings');
@@ -39,7 +44,16 @@ const OrganizationSettings = ({ role }) => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            await updateTenantSettings(formData);
+            const payload = new FormData();
+            payload.append('name', formData.name);
+            payload.append('timezone', formData.timezone);
+            payload.append('currency', formData.currency);
+            payload.append('fiscalYearStart', formData.fiscalYearStart);
+            if (logoFile) {
+                payload.append('logo', logoFile);
+            }
+
+            await updateTenantSettings(payload);
             toast.success('Organization settings updated successfully');
         } catch (error) {
             console.error('Failed to save settings:', error);
@@ -51,6 +65,14 @@ const OrganizationSettings = ({ role }) => {
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setLogoFile(file);
+            setLogoPreview(URL.createObjectURL(file));
+        }
     };
 
     if (loading) {
@@ -71,19 +93,14 @@ const OrganizationSettings = ({ role }) => {
                         <h1 className="text-2xl sm:text-3xl lg:text-4xl bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent font-black tracking-tighter">Organization Settings</h1>
                         <p className="text-slate-400 text-[10px] sm:text-xs mt-1 uppercase tracking-widest font-bold">Manage your brand identity and global localization</p>
                     </div>
-                    <button className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white rounded-2xl text-sm font-black shadow-2xl shadow-violet-500/25 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto uppercase tracking-widest">
-                        <Save size={20} strokeWidth={3} />
-                        Save Brand
+                    <button 
+                        onClick={handleSave}
+                        disabled={saving}
+                        className="flex items-center justify-center gap-3 px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 text-white rounded-2xl text-sm font-black shadow-2xl shadow-violet-500/25 hover:scale-[1.02] active:scale-95 transition-all w-full sm:w-auto uppercase tracking-widest disabled:opacity-70">
+                        {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} strokeWidth={3} />}
+                        {saving ? 'Saving...' : 'Save Brand'}
                     </button>
                 </div>
-                <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="btn btn-primary px-10 h-12 shadow-xl shadow-primary/20 flex items-center gap-2"
-                >
-                    {saving ? <Loader className="animate-spin" size={20} /> : <Save size={20} />}
-                    {saving ? 'Saving...' : 'Save Brand Identity'}
-                </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -94,14 +111,26 @@ const OrganizationSettings = ({ role }) => {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Appears on public website and receipts</p>
                     </div>
 
-                    <div className="w-full aspect-square border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50/50 hover:bg-violet-50/50 hover:border-violet-300 transition-all cursor-pointer group">
-                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-violet-200 transition-all duration-300">
-                            <UploadCloud className="text-slate-400 group-hover:text-violet-600 transition-colors" size={32} />
-                        </div>
-                        <div className="text-center">
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-violet-600 transition-colors">Upload Logo</p>
-                            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">JPG, PNG up to 2MB</p>
-                        </div>
+                    <div className="w-full aspect-square border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50/50 hover:bg-violet-50/50 hover:border-violet-300 transition-all cursor-pointer group relative overflow-hidden">
+                        <input 
+                            type="file" 
+                            accept="image/png, image/jpeg, image/jpg"
+                            onChange={handleLogoChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                        />
+                        {logoPreview ? (
+                            <img src={logoPreview} alt="Brand Logo" className="w-full h-full object-contain p-4 mix-blend-multiply" />
+                        ) : (
+                            <>
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-violet-200 transition-all duration-300">
+                                    <UploadCloud className="text-slate-400 group-hover:text-violet-600 transition-colors" size={32} />
+                                </div>
+                                <div className="text-center">
+                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-violet-600 transition-colors">Upload Logo</p>
+                                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">JPG, PNG up to 2MB</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
 

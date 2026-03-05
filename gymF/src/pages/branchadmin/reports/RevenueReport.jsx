@@ -105,9 +105,16 @@ const RevenueReport = () => {
         const html = `<html><head><title>Revenue Report</title><style>body{font-family:inherit;padding:20px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #ddd;padding:10px;text-align:left}th{background:#4f46e5;color:white}tr:nth-child(even){background:#f8fafc}</style></head><body><h2>Revenue Report</h2><p>Generated: ${new Date().toLocaleString()}</p><table><thead><tr><th>Date</th><th>Member</th><th>Service</th><th>Amount</th><th>Mode</th><th>Status</th></tr></thead><tbody>${rows}</tbody></table></body></html>`;
 
         const w = window.open('', '_blank');
-        w.document.write(html);
-        w.document.close();
-        w.print();
+        if (w) {
+            w.document.write(html);
+            w.document.close();
+            // Allow time for styles to load before print
+            setTimeout(() => {
+                w.print();
+            }, 250);
+        } else {
+            alert('Please allow popups to export the PDF.');
+        }
     };
 
     return (

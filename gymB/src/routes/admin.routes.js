@@ -1,5 +1,6 @@
 // gym_backend/src/routes/admin.routes.js
 const express = require('express');
+const upload = require('../middleware/upload.middleware');
 const { getAuditLogs: getSuperAdminAuditLogs } = require('../controllers/superadmin.controller');
 const {
     getAllMembers,
@@ -65,6 +66,11 @@ const {
     updateLeaveStatus,
     getTenantSettings,
     updateTenantSettings,
+    getNotificationSettings,
+    updateNotificationSettings,
+    getSecuritySettings,
+    updateSecuritySettings,
+    runReminders,
     getTrainerStats
 } = require('../controllers/admin.controller');
 const { getTrainerRequests, updateTrainerRequest, updateStaffMember, deleteStaffMember } = require('../controllers/superadmin.controller');
@@ -80,8 +86,16 @@ router.use(protect);
 router.use(authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER', 'STAFF', 'TRAINER'));
 
 // Settings
+// Settings
 router.get('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getTenantSettings);
-router.patch('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateTenantSettings);
+router.patch('/settings/tenant', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), upload.single('logo'), updateTenantSettings);
+
+router.get('/settings/notifications', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getNotificationSettings);
+router.patch('/settings/notifications', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateNotificationSettings);
+router.post('/settings/reminders/run', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), runReminders);
+
+router.get('/settings/security', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), getSecuritySettings);
+router.patch('/settings/security', authorize('SUPER_ADMIN', 'BRANCH_ADMIN', 'MANAGER'), updateSecuritySettings);
 
 // Members — STAFF can view only, cannot create/edit/delete
 router.get('/members', getAllMembers);

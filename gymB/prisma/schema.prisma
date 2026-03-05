@@ -655,6 +655,24 @@ model TenantSettings {
   currency        String  @default("USD")
   whatsappEnabled Boolean @default(false)
   fiscalYearStart String  @default("April")
+  
+  // Email Notifications
+  membershipReminders Boolean @default(true)
+  paymentReceipts     Boolean @default(true)
+  classNotifications  Boolean @default(true)
+  announcements       Boolean @default(true)
+  
+  // System Alerts
+  lowStockAlerts      Boolean @default(true)
+  newLeadAlerts       Boolean @default(true)
+  paymentAlerts       Boolean @default(true)
+  taskReminders       Boolean @default(true)
+
+  // Security Settings
+  twoFactorAuth       Boolean @default(false)
+  sessionTimeout      Boolean @default(true)
+  sessionDuration     String  @default("8")
+  loginAlerts         Boolean @default(true)
 
   @@map("tenantsettings")
 }

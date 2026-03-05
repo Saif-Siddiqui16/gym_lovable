@@ -446,16 +446,18 @@ exports.getOrders = async (req, res) => {
 // Coupons
 exports.getCoupons = async (req, res) => {
     try {
-        const { status, search, branchId } = req.query;
+        const { status, search } = req.query;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const rawBranchId = req.query.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
         let where = {};
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             }
         } else {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             } else {
                 let orConditions = [{ id: userTenantId }];
@@ -500,16 +502,17 @@ exports.getCoupons = async (req, res) => {
 
 exports.getCouponStats = async (req, res) => {
     try {
-        const { branchId } = req.query;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const rawBranchId = req.query.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
         let where = {};
 
         if (role === 'SUPER_ADMIN') {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             }
         } else {
-            if (branchId && branchId !== 'all') {
+            if (branchId) {
                 where.tenantId = parseInt(branchId);
             } else {
                 let orConditions = [{ id: userTenantId }];
@@ -557,8 +560,10 @@ exports.getCouponStats = async (req, res) => {
 
 exports.createCoupon = async (req, res) => {
     try {
-        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status, branchId } = req.body;
+        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status } = req.body;
         const { tenantId: userTenantId, role, email, name: userName } = req.user;
+        const rawBranchId = req.body.branchId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'undefined' ? rawBranchId : null;
 
         let targetTenantIds = [];
 
@@ -608,7 +613,9 @@ exports.createCoupon = async (req, res) => {
 exports.updateCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status, tenantId } = req.body;
+        const { code, description, type, value, minPurchase, maxUses, startDate, endDate, status } = req.body;
+        const rawBranchId = req.body.tenantId || req.headers['x-tenant-id'];
+        const branchId = rawBranchId && rawBranchId !== 'all' && rawBranchId !== 'undefined' ? rawBranchId : null;
 
         const coupon = await prisma.coupon.update({
             where: { id: parseInt(id) },
@@ -622,7 +629,7 @@ exports.updateCoupon = async (req, res) => {
                 startDate: startDate ? new Date(startDate) : undefined,
                 endDate: endDate ? new Date(endDate) : null,
                 status,
-                tenantId: tenantId ? parseInt(tenantId) : undefined,
+                tenantId: branchId ? parseInt(branchId) : undefined,
             }
         });
 
