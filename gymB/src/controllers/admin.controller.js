@@ -2297,15 +2297,14 @@ const updateTenantSettings = async (req, res) => {
 
         let logoUrl = undefined;
 
-        // Handle logo upload if a file is provided
-        if (req.file) {
-            const b64 = Buffer.from(req.file.buffer).toString('base64');
-            const dataURI = "data:" + req.file.mimetype + ";base64," + b64;
-            const uploadResult = await cloudinary.uploader.upload(dataURI, {
+        // Handle logo upload if a base64 string is provided
+        if (settingsData.logo && typeof settingsData.logo === 'string' && settingsData.logo.startsWith('data:image/')) {
+            const uploadResult = await cloudinary.uploader.upload(settingsData.logo, {
                 folder: `tenant_logos/${tenantId}`,
                 resource_type: 'image'
             });
             logoUrl = uploadResult.secure_url;
+            delete settingsData.logo; // Remove base64 from settings data before database update
         }
 
         if (name) {
@@ -2671,10 +2670,10 @@ const runReminders = async (req, res) => {
         // Exact logic: Simulation of background job
         // In a real app, this would trigger specific worker processes
         console.log(`[REMINDERS] Manual trigger for tenant ${tenantId}, type: ${type}`);
-        
-        res.json({ 
-            success: true, 
-            message: `Engine started: Triggering ${type} notifications for all eligible members/leads.` 
+
+        res.json({
+            success: true,
+            message: `Engine started: Triggering ${type} notifications for all eligible members/leads.`
         });
     } catch (error) {
         res.status(500).json({ message: error.message });

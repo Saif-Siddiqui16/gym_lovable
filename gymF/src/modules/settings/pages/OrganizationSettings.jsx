@@ -44,13 +44,14 @@ const OrganizationSettings = ({ role }) => {
     const handleSave = async () => {
         try {
             setSaving(true);
-            const payload = new FormData();
-            payload.append('name', formData.name);
-            payload.append('timezone', formData.timezone);
-            payload.append('currency', formData.currency);
-            payload.append('fiscalYearStart', formData.fiscalYearStart);
+            const payload = {
+                name: formData.name,
+                timezone: formData.timezone,
+                currency: formData.currency,
+                fiscalYearStart: formData.fiscalYearStart
+            };
             if (logoFile) {
-                payload.append('logo', logoFile);
+                payload.logo = logoFile;
             }
 
             await updateTenantSettings(payload);
@@ -70,7 +71,11 @@ const OrganizationSettings = ({ role }) => {
     const handleLogoChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setLogoFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setLogoFile(reader.result);
+            };
+            reader.readAsDataURL(file);
             setLogoPreview(URL.createObjectURL(file));
         }
     };
@@ -124,14 +129,26 @@ const OrganizationSettings = ({ role }) => {
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Appears on public website and receipts</p>
                     </div>
 
-                    <div className="w-full aspect-square border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50/50 hover:bg-violet-50/50 hover:border-violet-300 transition-all cursor-pointer group">
-                        <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-violet-200 transition-all duration-300">
-                            <UploadCloud className="text-slate-400 group-hover:text-violet-600 transition-colors" size={32} />
-                        </div>
-                        <div className="text-center px-2">
-                            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-violet-600 transition-colors">Upload Logo</p>
-                            <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">JPG, PNG up to 2MB</p>
-                        </div>
+                    <div className="w-full aspect-square border-2 border-dashed border-slate-200 rounded-3xl flex flex-col items-center justify-center bg-slate-50/50 hover:bg-violet-50/50 hover:border-violet-300 transition-all cursor-pointer group relative overflow-hidden">
+                        {logoPreview ? (
+                            <img src={logoPreview} alt="Logo Preview" className="absolute inset-0 w-full h-full object-contain p-4 bg-white" />
+                        ) : (
+                            <>
+                                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:shadow-violet-200 transition-all duration-300">
+                                    <UploadCloud className="text-slate-400 group-hover:text-violet-600 transition-colors" size={32} />
+                                </div>
+                                <div className="text-center px-2">
+                                    <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest group-hover:text-violet-600 transition-colors">Upload Logo</p>
+                                    <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-widest">JPG, PNG up to 2MB</p>
+                                </div>
+                            </>
+                        )}
+                        <input
+                            type="file"
+                            accept="image/png, image/jpeg, image/jpg"
+                            onChange={handleLogoChange}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                        />
                     </div>
                 </div>
 
