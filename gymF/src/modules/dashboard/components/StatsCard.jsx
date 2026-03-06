@@ -2,7 +2,7 @@ import React from 'react';
 import Card from '../../../components/ui/Card';
 
 // Icon Map wrapper if needed, or just pass icon component directly
-const StatsCard = ({ title, value, icon: Icon, trend, subtitle, color = 'primary' }) => {
+const StatsCard = ({ title, value, icon: Icon, trend, trendDirection, subtitle, color = 'primary' }) => {
 
     const colorClasses = {
         primary: { bg: 'bg-blue-50', text: 'text-blue-600', iconBg: 'group-hover:bg-blue-600 group-hover:text-white' },
@@ -12,7 +12,14 @@ const StatsCard = ({ title, value, icon: Icon, trend, subtitle, color = 'primary
         info: { bg: 'bg-indigo-50', text: 'text-indigo-600', iconBg: 'group-hover:bg-indigo-600 group-hover:text-white' },
     };
 
+    const trendColors = {
+        up: { bg: 'bg-emerald-50', text: 'text-emerald-700' },
+        down: { bg: 'bg-red-50', text: 'text-red-700' },
+        stable: { bg: 'bg-slate-100', text: 'text-slate-600' },
+    };
+
     const currentStyle = colorClasses[color] || colorClasses.primary;
+    const trendStyle = trendColors[trendDirection] || trendColors.stable;
 
     return (
         <Card className="group relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-md border border-transparent hover:border-slate-200 cursor-pointer p-3 sm:p-6 h-full min-h-[120px] flex flex-col justify-center !rounded-2xl">
@@ -36,10 +43,9 @@ const StatsCard = ({ title, value, icon: Icon, trend, subtitle, color = 'primary
             </div>
             {trend && (
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-50">
-                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${currentStyle.bg} ${currentStyle.text}`}>
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg uppercase tracking-wider ${trendStyle.bg} ${trendStyle.text}`}>
                         {trend}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">vs last period</span>
                 </div>
             )}
 
