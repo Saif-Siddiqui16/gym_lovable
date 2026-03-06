@@ -430,7 +430,8 @@ export const menuConfig = {
                 { label: 'PT Sessions', path: '/pt-sessions', icon: Clock },
                 { label: 'Schedule Session', path: '/trainer/sessions/calendar', icon: Calendar },
                 { label: 'My Classes', path: '/classes', icon: Calendar },
-                { label: 'Plan Builder', path: '/workout-plans', icon: Dumbbell },
+                { label: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
+                { label: 'Diet Plans', path: '/diet-plans', icon: Utensils },
             ]
         },
         {

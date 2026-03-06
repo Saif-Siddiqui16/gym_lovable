@@ -16,11 +16,14 @@ import {
     CreditCard,
     MessageSquare,
     X,
-    Send
+    Send,
+    Plus,
+    Info
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getMemberById, getMemberPayments } from '../../api/trainer/trainerApi';
 import { getProgress } from '../../api/progressApi';
+import QuickAssignPlanDrawer from './components/QuickAssignPlanDrawer';
 
 const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
     const navigate = useNavigate();
@@ -31,9 +34,9 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
     const [progressData, setProgressData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Functional Action States
     const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
+    const [isAssignOpen, setIsAssignOpen] = useState(false);
 
     const memberId = propMemberId || location.state?.memberId || 1;
 
@@ -48,10 +51,18 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
         try {
             const data = await getMemberById(memberId);
             const paymentData = await getMemberPayments(memberId);
-            const progress = await getProgress(memberId);
             setMember(data);
             setPayments(paymentData || []);
-            setProgressData(progress);
+            // Use progress from member data if available
+            if (data.progress) {
+                setProgressData({
+                    logs: data.progress,
+                    targets: {
+                        weight: data.targetWeight || 75,
+                        bodyFat: data.targetBodyFat || 15
+                    }
+                });
+            }
         } catch (error) {
             console.error("Failed to load member profile data:", error);
         } finally {
@@ -140,7 +151,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                 {member.status}
                             </span>
                         </div>
-                        <p className="text-gray-500 font-medium mb-4">{member.id} • {member.plan}</p>
+                        <p className="text-gray-500 font-medium mb-4">{member.memberId || member.id} • {typeof member.plan === 'object' ? member.plan?.name : member.plan || 'No Active Plan'}</p>
 
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-semibold">
@@ -169,10 +180,10 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: 'Attendance', value: `${member.attendance}%`, icon: Activity, color: 'blue' },
-                    { label: 'Sessions', value: `${member.sessionsDone}/${member.totalSessions}`, icon: Target, color: 'purple' },
-                    { label: 'Next Renewal', value: '15 Oct', icon: Calendar, color: 'orange' },
-                    { label: 'Avg Effort', value: 'High', icon: TrendingUp, color: 'green' }
+                    { label: 'Attendance', value: `${member.attendance || 0}%`, icon: Activity, color: 'blue' },
+                    { label: 'Sessions', value: `${member.sessionsDone || 0}/${member.totalSessions || 0}`, icon: Target, color: 'purple' },
+                    { label: 'Next Renewal', value: member.expiry || 'N/A', icon: Calendar, color: 'orange' },
+                    { label: 'Avg Effort', value: member.effort || 'High', icon: TrendingUp, color: 'green' }
                 ].map((stat, i) => (
                     <div key={i} className="bg-white p-5 rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-2 transition-all duration-300 cursor-pointer group">
                         <div className={`w-10 h-10 rounded-2xl bg-${stat.color}-50 flex items-center justify-center text-${stat.color}-600 mb-3 group-hover:rotate-12 group-hover:scale-110 transition-all duration-300`}>
@@ -208,31 +219,62 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                     {activeTab === 'overview' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
                             <div className="lg:col-span-2 space-y-8">
-                                <div>
-                                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Training Goal</h3>
-                                    <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100/50">
-                                        <p className="text-lg font-bold text-blue-900">{member.goal}</p>
-                                        <p className="text-blue-700/70 text-sm mt-1 leading-relaxed">Focusing on compound movements with progressive overload. Current cycle aims for muscle density and neural adaptation.</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Training Goal</h3>
+                                        <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100/50 h-full">
+                                            <p className="text-lg font-bold text-blue-900">{member.goal || 'General Fitness'}</p>
+                                            <p className="text-blue-700/70 text-sm mt-1 leading-relaxed">
+                                                {member.goal === 'Weight Loss' ? 'Focusing on caloric deficit and high-intensity interval training.' :
+                                                    member.goal === 'Muscle Gain' ? 'Focusing on compound movements with progressive overload.' :
+                                                        'Maintaining consistency and building a foundational level of fitness.'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Active Diet Plan</h3>
+                                        <div className="bg-emerald-50/50 p-6 rounded-3xl border border-emerald-100/50 h-full">
+                                            {member.dietPlan ? (
+                                                <>
+                                                    <p className="text-lg font-bold text-emerald-900">{member.dietPlan.name}</p>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase">
+                                                            {member.dietPlan.calories} kcal
+                                                        </span>
+                                                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-lg text-[10px] font-black uppercase">
+                                                            {member.dietPlan.target}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <div className="flex flex-col items-center justify-center h-full text-center">
+                                                    <p className="text-sm font-bold text-emerald-700 opacity-60 italic">No Active Diet Plan</p>
+                                                    <button onClick={() => navigate('/diet-plans')} className="text-[10px] font-black text-emerald-600 underline mt-1 uppercase tracking-widest">Assign One</button>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Recent Sessions</h3>
                                     <div className="space-y-3">
-                                        {member.recentWorkouts?.map((workout) => (
-                                            <div key={workout.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                                        {member.recentWorkouts && member.recentWorkouts.length > 0 ? member.recentWorkouts.map((workout) => (
+                                            <div key={workout.id || Math.random()} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                                                 <div className="flex items-center gap-4 overflow-hidden">
                                                     <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
                                                         <Dumbbell size={18} />
                                                     </div>
                                                     <div className="overflow-hidden">
                                                         <p className="font-bold text-gray-800 truncate">{workout.name}</p>
-                                                        <p className="text-xs text-gray-500 font-medium truncate">{workout.date} • {workout.duration}</p>
+                                                        <p className="text-xs text-gray-500 font-medium truncate">{workout.date} • {workout.duration || '60m'}</p>
                                                     </div>
                                                 </div>
                                                 <CheckCircle2 size={18} className="text-green-500 flex-shrink-0 ml-2" />
                                             </div>
-                                        ))}
+                                        )) : (
+                                            <p className="text-sm text-gray-400 mt-2 py-4">No recent sessions found.</p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -251,7 +293,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                             <span className="text-sm font-bold text-gray-500 inline-flex items-center gap-2">
                                                 <MapPin size={14} /> Primary Hub
                                             </span>
-                                            <span className="text-sm font-bold text-gray-900">{member.location}</span>
+                                            <span className="text-sm font-bold text-gray-900">{member.location || 'Main Hub'}</span>
                                         </div>
                                         <div className="flex justify-between items-center pt-4 border-t border-gray-50">
                                             <span className="text-sm font-bold text-gray-500">Auto-Renew</span>
@@ -280,42 +322,56 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-50">
-                                            {payments.map((p) => (
-                                                <tr key={p.id}>
-                                                    <td className="px-6 py-4 text-sm font-medium text-gray-700">{p.date}</td>
-                                                    <td className="px-6 py-4 text-sm font-bold text-gray-900">₹{p.amount}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500">{p.method}</td>
-                                                    <td className="px-6 py-4">
-                                                        <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase border border-green-100">
-                                                            {p.status}
-                                                        </span>
-                                                    </td>
+                                            {payments.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="4" className="px-6 py-8 text-center text-sm font-medium text-gray-500">No payment history found.</td>
                                                 </tr>
-                                            ))}
+                                            ) : payments.map((p) => {
+                                                const statusColor = p.status?.toLowerCase() === 'paid' || p.status?.toLowerCase() === 'completed' || p.status?.toLowerCase() === 'success' ? 'bg-green-50 text-green-600 border-green-100' : p.status?.toLowerCase() === 'pending' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-red-50 text-red-600 border-red-100';
+
+                                                return (
+                                                    <tr key={p.id}>
+                                                        <td className="px-6 py-4 text-sm font-medium text-gray-700">{p.date ? new Date(p.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</td>
+                                                        <td className="px-6 py-4 text-sm font-bold text-gray-900">₹{p.amount}</td>
+                                                        <td className="px-6 py-4 text-sm text-gray-500">{p.method || 'Cash'}</td>
+                                                        <td className="px-6 py-4">
+                                                            <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border ${statusColor}`}>
+                                                                {p.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                )
+                                            })}
                                         </tbody>
                                     </table>
 
                                     {/* Mobile Cards */}
                                     <div className="md:hidden divide-y divide-gray-50">
-                                        {payments.map((p) => (
-                                            <div key={p.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                                        <CreditCard size={18} />
+                                        {payments.length === 0 ? (
+                                            <div className="p-8 text-center text-sm font-medium text-gray-500">No payment history found.</div>
+                                        ) : payments.map((p) => {
+                                            const statusColor = p.status?.toLowerCase() === 'paid' || p.status?.toLowerCase() === 'completed' || p.status?.toLowerCase() === 'success' ? 'bg-green-50 text-green-600 border-green-100' : p.status?.toLowerCase() === 'pending' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-red-50 text-red-600 border-red-100';
+
+                                            return (
+                                                <div key={p.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                                            <CreditCard size={18} />
+                                                        </div>
+                                                        <div>
+                                                            <p className="font-bold text-gray-900">₹{p.amount}</p>
+                                                            <p className="text-xs text-gray-500 font-medium">{p.date ? new Date(p.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'N/A'}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold text-gray-900">₹{p.amount}</p>
-                                                        <p className="text-xs text-gray-500 font-medium">{p.date}</p>
+                                                    <div className="text-right">
+                                                        <span className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase border block w-fit ml-auto mb-1 ${statusColor}`}>
+                                                            {p.status}
+                                                        </span>
+                                                        <p className="text-[10px] font-bold text-gray-400 capitalize">{p.method || 'Cash'}</p>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="px-2 py-0.5 bg-green-50 text-green-600 rounded-lg text-[10px] font-black uppercase border border-green-100 block w-fit ml-auto mb-1">
-                                                        {p.status}
-                                                    </span>
-                                                    <p className="text-xs text-gray-400 font-medium">{p.method}</p>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             </div>
@@ -326,17 +382,41 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                     {activeTab === 'workouts' && (
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
                             <div className="lg:col-span-2 space-y-6">
+                                {/* Active Plan Section */}
+                                <div className="bg-indigo-600 rounded-[32px] p-6 text-white shadow-xl shadow-indigo-100 mb-8 overflow-hidden relative group">
+                                    <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
+                                        <Dumbbell size={120} />
+                                    </div>
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-indigo-200">Current Program</h3>
+                                    {member.workoutPlan ? (
+                                        <>
+                                            <h2 className="text-2xl font-black mb-2">{member.workoutPlan.name}</h2>
+                                            <div className="flex flex-wrap gap-2 mt-4">
+                                                <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10">
+                                                    Goal: {member.workoutPlan.goal}
+                                                </span>
+                                                <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-xl text-[10px] font-black uppercase tracking-widest border border-white/10">
+                                                    Duration: {member.workoutPlan.duration}
+                                                </span>
+                                                <span className="px-3 py-1 bg-green-400/30 backdrop-blur-md text-green-100 rounded-xl text-[10px] font-black uppercase tracking-widest border border-green-400/20">
+                                                    {member.workoutPlan.status}
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-6 text-center">
+                                            <p className="font-bold text-indigo-100/60 italic">No Active Training Program</p>
+                                            <button onClick={() => setIsAssignOpen(true)} className="mt-4 px-6 py-2 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">Assign Program</button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Workout History</h3>
                                     <button className="text-sm font-bold text-blue-600 hover:text-blue-700">View All</button>
                                 </div>
                                 <div className="space-y-4">
-                                    {[
-                                        { name: 'Upper Body Power', date: 'Today, 09:30 AM', duration: '1h 15m', calories: 450, load: '12,450 kg' },
-                                        { name: 'Leg Day Hypertrophy', date: 'Yesterday, 06:00 PM', duration: '1h 30m', calories: 520, load: '15,200 kg' },
-                                        { name: 'Active Recovery', date: '2 Days Ago', duration: '45m', calories: 210, load: '-' },
-                                        { name: 'Push Pull Strength', date: '3 Days Ago', duration: '1h 10m', calories: 480, load: '11,800 kg' },
-                                    ].map((workout, idx) => (
+                                    {member.recentWorkouts && member.recentWorkouts.length > 0 ? member.recentWorkouts.map((workout, idx) => (
                                         <div key={idx} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:border-blue-100 hover:shadow-lg transition-all duration-300">
                                             <div className="flex items-center gap-5">
                                                 <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
@@ -347,16 +427,20 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                                     <div className="flex items-center gap-3 mt-1 text-xs font-semibold text-gray-500">
                                                         <span className="flex items-center gap-1"><Calendar size={12} /> {workout.date}</span>
                                                         <span className="w-1 h-1 rounded-full bg-gray-300" />
-                                                        <span className="flex items-center gap-1"><Clock size={12} /> {workout.duration}</span>
+                                                        <span className="flex items-center gap-1"><Clock size={12} /> {workout.duration || '60m'}</span>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div className="text-right hidden sm:block">
-                                                <p className="text-xl font-black text-gray-900">{workout.calories}</p>
+                                                <p className="text-xl font-black text-gray-900">{workout.calories || '-'}</p>
                                                 <p className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Calories</p>
                                             </div>
                                         </div>
-                                    ))}
+                                    )) : (
+                                        <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-gray-200">
+                                            <p className="text-gray-400 font-medium">No workout history available yet.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -364,29 +448,39 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                 <div>
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Weekly Stats</h3>
                                     <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-6 text-white shadow-xl">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
-                                                <Activity size={24} className="text-blue-400" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-400 font-medium">Total Volume</p>
-                                                <p className="text-2xl font-bold">45,250 kg</p>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-3">
-                                                <span className="text-gray-400">Workouts</span>
-                                                <span className="font-bold text-xl">5</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-sm border-b border-white/10 pb-3">
-                                                <span className="text-gray-400">Duration</span>
-                                                <span className="font-bold text-xl">6h 15m</span>
-                                            </div>
-                                            <div className="flex justify-between items-center text-sm">
-                                                <span className="text-gray-400">Intensity</span>
-                                                <span className="px-2 py-0.5 rounded-lg bg-green-500/20 text-green-400 font-bold uppercase text-xs">High</span>
-                                            </div>
-                                        </div>
+                                        {(() => {
+                                            const totalCalories = member.recentWorkouts ? member.recentWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0) : 0;
+                                            const intensity = totalCalories > 1500 ? 'High' : (totalCalories > 800 ? 'Medium' : 'Light');
+                                            const intensityColor = intensity === 'High' ? 'bg-green-500/20 text-green-400' : (intensity === 'Medium' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400');
+
+                                            return (
+                                                <>
+                                                    <div className="flex items-center gap-3 mb-6">
+                                                        <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
+                                                            <Activity size={24} className="text-blue-400" />
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm text-gray-400 font-medium">Total Calories</p>
+                                                            <p className="text-2xl font-bold">{totalCalories.toLocaleString()} kcal</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-4">
+                                                        <div className="flex justify-between items-center text-sm border-b border-white/10 pb-3">
+                                                            <span className="text-gray-400">Workouts</span>
+                                                            <span className="font-bold text-xl">{member.sessionsDone || 0}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm border-b border-white/10 pb-3">
+                                                            <span className="text-gray-400">Success Rate</span>
+                                                            <span className="font-bold text-xl">{member.totalSessions ? Math.round((member.sessionsDone / member.totalSessions) * 100) : 0}%</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-400">Intensity</span>
+                                                            <span className={`px-2 py-0.5 rounded-lg font-bold uppercase text-xs ${intensityColor}`}>{intensity}</span>
+                                                        </div>
+                                                    </div>
+                                                </>
+                                            );
+                                        })()}
                                     </div>
                                 </div>
                             </div>
@@ -488,30 +582,74 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                             </div>
 
                             <div className="space-y-6">
-                                <div className="bg-blue-600 rounded-[32px] p-6 text-white shadow-xl shadow-blue-200">
-                                    <h3 className="font-bold text-xl mb-2">BMI Calculator</h3>
-                                    <p className="text-blue-100 text-sm mb-6">Based on latest measurements</p>
+                                {(() => {
+                                    const logs = progressData?.logs || [];
+                                    const hasLogs = logs.length > 0;
+                                    const latest = hasLogs ? logs[logs.length - 1] : {};
+                                    const latestWeight = parseFloat(latest.weight || 0);
 
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-sm font-bold text-blue-200">Current Score</span>
-                                        <span className="text-3xl font-black">22.4</span>
-                                    </div>
-                                    <div className="w-full h-4 bg-black/20 rounded-full overflow-hidden mb-2 relative">
-                                        <div className="absolute left-[40%] top-0 bottom-0 w-1 bg-white/50" />
-                                        <div className="h-full w-[45%] bg-white/90 rounded-full" />
-                                    </div>
-                                    <div className="flex justify-between text-[10px] font-bold text-blue-200 uppercase tracking-widest">
-                                        <span>Underweight</span>
-                                        <span>Normal</span>
-                                        <span>Overweight</span>
-                                    </div>
+                                    // Default height to 1.75m if not provided in measurements
+                                    const heightCm = parseFloat(latest.measurements?.height || 175);
+                                    const heightM = heightCm / 100;
 
-                                    <div className="mt-6 pt-6 border-t border-white/20">
-                                        <p className="text-sm font-medium leading-relaxed">
-                                            Great job! Your BMI suggests you are in a <span className="font-black text-white">Healthy Weight</span> range. Keep up the consistency.
-                                        </p>
-                                    </div>
-                                </div>
+                                    const bmi = latestWeight > 0 ? (latestWeight / (heightM * heightM)).toFixed(1) : 0;
+
+                                    let bmiCategory = 'No Data';
+                                    let bmiPercent = 0;
+                                    let message = 'Start logging your weight to see your BMI.';
+                                    let status = 'Normal';
+
+                                    if (bmi > 0) {
+                                        if (bmi < 18.5) {
+                                            bmiCategory = 'Underweight';
+                                            bmiPercent = (bmi / 18.5) * 33;
+                                            message = 'Your BMI suggests you are in the Underweight range. Consider adjusting your nutrition.';
+                                            status = 'Underweight';
+                                        } else if (bmi >= 18.5 && bmi <= 24.9) {
+                                            bmiCategory = 'Healthy Weight';
+                                            bmiPercent = 33 + (((bmi - 18.5) / 6.4) * 33);
+                                            message = 'Great job! Your BMI suggests you are in a Healthy Weight range. Keep up the consistency.';
+                                            status = 'Normal';
+                                        } else {
+                                            bmiCategory = 'Overweight';
+                                            bmiPercent = Math.min(66 + (((bmi - 25) / 10) * 34), 100);
+                                            message = 'Your BMI suggests you are in the Overweight range. Let us focus on a caloric deficit.';
+                                            status = 'Overweight';
+                                        }
+                                    }
+
+                                    return (
+                                        <div className="bg-blue-600 rounded-[32px] p-6 text-white shadow-xl shadow-blue-200">
+                                            <h3 className="font-bold text-xl mb-2">BMI Calculator</h3>
+                                            <p className="text-blue-100 text-sm mb-6">Based on latest measurements</p>
+
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-bold text-blue-200">Current Score</span>
+                                                <span className="text-3xl font-black">{bmi > 0 ? bmi : '-'}</span>
+                                            </div>
+                                            <div className="w-full h-4 bg-black/20 rounded-full overflow-hidden mb-2 relative">
+                                                <div className="absolute left-[33%] top-0 bottom-0 w-1 bg-white/50" />
+                                                <div className="absolute left-[66%] top-0 bottom-0 w-1 bg-white/50" />
+                                                <div className="h-full bg-white/90 rounded-full transition-all duration-1000" style={{ width: `${bmiPercent}%` }} />
+                                            </div>
+                                            <div className="flex justify-between text-[10px] font-bold text-blue-200 uppercase tracking-widest">
+                                                <span className={status === 'Underweight' ? 'text-white' : ''}>Underweight</span>
+                                                <span className={status === 'Normal' ? 'text-white' : ''}>Normal</span>
+                                                <span className={status === 'Overweight' ? 'text-white' : ''}>Overweight</span>
+                                            </div>
+
+                                            <div className="mt-6 pt-6 border-t border-white/20">
+                                                <p className="text-sm font-medium leading-relaxed">
+                                                    {bmi > 0 ? (
+                                                        <>Your BMI suggests you are in a <span className="font-black text-white">{bmiCategory}</span> range. {message}</>
+                                                    ) : (
+                                                        message
+                                                    )}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         </div>
                     )}
@@ -591,6 +729,26 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                     </div>
                 </div>
             )}
+
+            {/* Quick Assign Drawer */}
+            <QuickAssignPlanDrawer
+                isOpen={isAssignOpen}
+                onClose={() => {
+                    setIsAssignOpen(false);
+                    loadMemberData(); // Refresh after assignment
+                }}
+                memberName={member?.name}
+                memberId={member?.id}
+            />
+
+            {/* Read-Only Mode Badge */}
+            <div className="mt-8 flex justify-center">
+                <div className="px-6 py-2 bg-gray-900/5 backdrop-blur-sm border border-gray-900/10 rounded-full flex items-center gap-2 animate-bounce">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Read-Only Trainer Mode</span>
+                    <Info size={12} className="text-gray-400" />
+                </div>
+            </div>
         </div>
     );
 };

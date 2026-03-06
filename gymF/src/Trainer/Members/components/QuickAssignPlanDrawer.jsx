@@ -55,7 +55,9 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                 name: selectedPlan.name,
                 duration: selectedPlan.duration,
                 notes: notes || selectedPlan.notes,
-                status: 'Active'
+                status: 'Active',
+                startDate: startDate ? new Date(startDate).toISOString() : null,
+                endDate: endDate ? new Date(endDate).toISOString() : null,
             };
 
             if (selectedPlan.type === 'Diet') {
@@ -99,7 +101,7 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
             </button>
             <button
                 onClick={handleAssign}
-                disabled={!selectedPlan || !startDate || !endDate || loading}
+                disabled={!selectedPlan || loading}
                 className="drawer-btn drawer-btn-primary flex-[2]"
             >
                 {loading ? 'Assigning...' : 'Confirm Assignment'}

@@ -89,10 +89,11 @@ const AssignedMembers = () => {
                     <p className="text-gray-500 text-sm mt-1">Manage and track progress of your {members.length} active trainees</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="bg-violet-50 px-4 py-2 rounded-xl flex items-center gap-2 border border-violet-100">
+                    {/** <div className="bg-violet-50 px-4 py-2 rounded-xl flex items-center gap-2 border border-violet-100">
                         <Trophy size={18} className="text-violet-500" />
                         <span className="text-sm font-bold text-violet-700">Top Performer: Emma</span>
                     </div>
+                    */}
                 </div>
             </div>
 
@@ -166,9 +167,14 @@ const AssignedMembers = () => {
                                                 <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
                                                     <ClipboardList size={14} />
                                                 </div>
-                                                <span className="text-sm font-black text-slate-700 uppercase tracking-tight truncate max-w-[150px]">
-                                                    {member.plan || 'No Active Plan'}
-                                                </span>
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-black text-slate-700 uppercase tracking-tight truncate max-w-[150px]">
+                                                        {member.assignedProtocol !== 'None' ? member.assignedProtocol : (member.plan || 'No Active Plan')}
+                                                    </span>
+                                                    {member.assignedProtocol !== 'None' && (
+                                                        <span className="text-[10px] text-indigo-500 font-bold uppercase">{member.plan} Plan</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

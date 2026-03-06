@@ -104,12 +104,75 @@ const WorkoutPlans = ({ role }) => {
         }));
     };
 
-    const handleSaveAsTemplate = () => {
+    // Trainer Templates
+    const [templates, setTemplates] = useState([]);
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+    React.useEffect(() => {
+        if (!isMember) {
+            fetchTemplates();
+        }
+    }, [isMember]);
+
+    const fetchTemplates = async () => {
+        try {
+            setLoadingTemplates(true);
+            const res = await apiClient.get('/trainer/workout-plans');
+            setTemplates(res.data || []);
+        } catch (err) {
+            console.error('Failed to fetch templates:', err);
+        } finally {
+            setLoadingTemplates(false);
+        }
+    };
+
+    const handleToggleStatus = async (id) => {
+        try {
+            await apiClient.patch(`/trainer/workout-plans/${id}/status`);
+            toast.success('Status updated');
+            fetchTemplates();
+        } catch (err) {
+            toast.error('Failed to update status');
+        }
+    };
+
+    const handleSaveAsTemplate = async () => {
         if (!planName.trim()) {
             toast.error('Please enter a plan name first');
             return;
         }
-        toast.success('Template saved successfully');
+
+        try {
+            toast.loading('Saving template...', { id: 'saveTemplate' });
+
+            const payload = {
+                clientId: 0,
+                name: planName,
+                level: 'Intermediate',
+                duration: '4 Weeks',
+                goal: description || 'General Fitness',
+                volume: 'Medium',
+                timePerSession: '60 min',
+                intensity: 'Medium',
+                status: 'Active',
+                days: workoutExercises
+            };
+
+            await apiClient.post('/trainer/workout-plans', payload);
+            toast.success('Template saved successfully', { id: 'saveTemplate' });
+            fetchTemplates();
+            // Reset form
+            setPlanName('');
+            setDescription('');
+            setWorkoutExercises({
+                day1: [{ id: Date.now(), name: 'Bench Press', sets: '3', reps: '12', rest: '60', equipment: 'Barbell', notes: 'Focus on form' }],
+                day2: [], day3: [], day4: [], day5: [], day6: [], day7: []
+            });
+        } catch (error) {
+            console.error('Save failed:', error);
+            const msg = error.response?.data?.message || 'Failed to save template';
+            toast.error(msg, { id: 'saveTemplate' });
+        }
     };
 
     if (isMember) {
@@ -357,25 +420,59 @@ const WorkoutPlans = ({ role }) => {
         <div className="p-4 md:p-8 bg-[#FBFBFE] min-h-screen font-sans">
             <div className="max-w-7xl mx-auto">
 
-                {/* Header with Switcher and Actions */}
-                <div className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
-                    <div className="flex items-center gap-2 p-1 md:p-1.5 bg-white border border-gray-100 rounded-2xl w-full md:w-fit shadow-sm overflow-x-auto no-scrollbar scrollbar-hide">
-                        <button
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-xs font-bold bg-[#F3F4F6] text-[#1A1A1A] transition-all shadow-sm whitespace-nowrap"
-                        >
-                            <Dumbbell size={16} />
-                            Workout Plan
-                        </button>
-                        <button
-                            onClick={() => navigate('/diet-plans')}
-                            className="flex-1 md:flex-none flex items-center justify-center gap-2 px-4 md:px-6 py-2.5 rounded-xl text-[10px] md:text-xs font-bold text-gray-400 hover:bg-gray-50 transition-all whitespace-nowrap"
-                        >
-                            <UtensilsCrossed size={16} />
-                            Diet Plan
+                {/* Templates List */}
+                <div className="saas-card p-6 md:p-8 rounded-2xl md:rounded-[32px] bg-white border border-gray-100 shadow-sm mb-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-lg md:text-xl font-black text-gray-900 uppercase tracking-tight">Saved Templates</h2>
+                            <p className="text-[10px] md:text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Reusable training blocks for your branch</p>
+                        </div>
+                        <button onClick={fetchTemplates} className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-400">
+                            <RefreshCcw size={16} className={loadingTemplates ? 'animate-spin' : ''} />
                         </button>
                     </div>
 
-
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {loadingTemplates ? (
+                            Array(3).fill(0).map((_, i) => (
+                                <div key={i} className="h-40 bg-gray-50 animate-pulse rounded-2xl border border-gray-100" />
+                            ))
+                        ) : templates.length === 0 ? (
+                            <div className="col-span-full py-12 text-center bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-100">
+                                <Dumbbell size={48} className="mx-auto text-gray-200 mb-4" />
+                                <p className="text-sm font-bold text-gray-400 uppercase tracking-widest">No templates saved yet</p>
+                            </div>
+                        ) : templates.map((tpl) => (
+                            <div key={tpl.id} className="p-5 bg-white border border-gray-100 rounded-2xl hover:border-indigo-100 hover:shadow-md transition-all group">
+                                <div className="flex justify-between items-start mb-3">
+                                    <h4 className="font-black text-gray-900 uppercase tracking-tight truncate flex-1">{tpl.name}</h4>
+                                    <span className={`px-2 py-0.5 rounded-lg text-[8px] font-black uppercase border shrink-0 ${tpl.status === 'Active' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'
+                                        }`}>
+                                        {tpl.status}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">
+                                    <span className="flex items-center gap-1"><TrendingUp size={12} /> {tpl.level}</span>
+                                    <span>•</span>
+                                    <span className="flex items-center gap-1"><Target size={12} /> {tpl.goal}</span>
+                                </div>
+                                <div className="flex items-center justify-between pt-4 border-t border-gray-50">
+                                    <button
+                                        onClick={() => handleToggleStatus(tpl.id)}
+                                        className="text-[9px] font-black text-gray-400 uppercase hover:text-gray-900 transition-colors"
+                                    >
+                                        Toggle Status
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/trainer/members/assigned')}
+                                        className="px-4 py-1.5 bg-indigo-50 text-indigo-600 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all"
+                                    >
+                                        Assign
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Plan Info Card */}

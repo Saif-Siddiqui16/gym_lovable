@@ -21,6 +21,7 @@ import {
     Minus,
     ClipboardList
 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import Card from '../../../components/ui/Card';
 import StatsCard from '../../dashboard/components/StatsCard';
 import DashboardGrid from '../../dashboard/components/DashboardGrid';
@@ -42,7 +43,9 @@ const MemberProgress = () => {
     const [workoutPlans, setWorkoutPlans] = useState([]);
     const [dietPlans, setDietPlans] = useState([]);
     const [members, setMembers] = useState([]);
-    const [selectedMemberId, setSelectedMemberId] = useState('');
+    const [searchParams] = useSearchParams();
+    const urlMemberId = searchParams.get('memberId') || searchParams.get('memberid');
+    const [selectedMemberId, setSelectedMemberId] = useState(urlMemberId || '');
     const [showLogModal, setShowLogModal] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [logForm, setLogForm] = useState({
@@ -53,7 +56,7 @@ const MemberProgress = () => {
         measurements: { chest: '', waist: '', hips: '', arms: '', thighs: '' }
     });
 
-    const isManagement = role === ROLES.BRANCH_ADMIN || role === ROLES.MANAGER || role === ROLES.SUPER_ADMIN;
+    const isManagement = role === ROLES.BRANCH_ADMIN || role === ROLES.MANAGER || role === ROLES.SUPER_ADMIN || role === ROLES.TRAINER;
 
     const fetchMembers = async () => {
         if (!isManagement) return;
@@ -69,7 +72,12 @@ const MemberProgress = () => {
             setMembers(data);
 
             if (data.length > 0) {
-                if (!selectedMemberId || !data.find(m => m.id.toString() === selectedMemberId)) {
+                const memberInList = urlMemberId ? data.find(m => m.id.toString() === urlMemberId) : null;
+                const currentInList = selectedMemberId ? data.find(m => m.id.toString() === selectedMemberId) : null;
+
+                if (memberInList) {
+                    setSelectedMemberId(urlMemberId);
+                } else if (!currentInList) {
                     setSelectedMemberId(data[0].id.toString());
                 } else {
                     fetchAll();
@@ -98,29 +106,49 @@ const MemberProgress = () => {
     const fetchAll = async () => {
         setLoading(true);
         try {
-            const params = isManagement ? (selectedMemberId ? { memberId: selectedMemberId } : null) : {};
+            const queryParams = isManagement ? (selectedMemberId ? { memberId: selectedMemberId } : {}) : {};
 
-            if (isManagement && !selectedMemberId && !membersLoading) {
-                setLoading(false);
-                return;
-            }
+            console.log('MemberProgress Fetching All Data:', {
+                role,
+                isManagement,
+                selectedMemberId,
+                queryParams
+            });
 
             const [progressRes, workoutRes, dietRes] = await Promise.allSettled([
-                apiClient.get('/member/progress', { params }),
-                apiClient.get('/member/workout-plans', { params }),
-                apiClient.get('/member/diet-plans', { params })
+                apiClient.get('/member/progress', { params: queryParams }),
+                apiClient.get('/member/workout-plans', { params: queryParams }),
+                apiClient.get('/member/diet-plans', { params: queryParams })
             ]);
+
+            if (progressRes.status === 'rejected') {
+                console.error('Progress API Failed:', progressRes.reason);
+                toast.error('Failed to load progress logs');
+            }
+            if (workoutRes.status === 'rejected') {
+                console.error('Workout API Failed:', workoutRes.reason);
+                toast.error('Failed to load workout plans');
+            }
+            if (dietRes.status === 'rejected') {
+                console.error('Diet API Failed:', dietRes.reason);
+                toast.error('Failed to load diet plans');
+            }
 
             if (progressRes.status === 'fulfilled') setProgressData(progressRes.value.data);
             else setProgressData({ logs: [], targets: {} });
 
-            if (workoutRes.status === 'fulfilled') setWorkoutPlans(workoutRes.value.data || []);
-            else setWorkoutPlans([]);
+            if (workoutRes.status === 'fulfilled') {
+                console.log('Workout plans received:', workoutRes.value.data);
+                setWorkoutPlans(workoutRes.value.data || []);
+            } else setWorkoutPlans([]);
 
-            if (dietRes.status === 'fulfilled') setDietPlans(dietRes.value.data || []);
-            else setDietPlans([]);
+            if (dietRes.status === 'fulfilled') {
+                console.log('Diet plans received:', dietRes.value.data);
+                setDietPlans(dietRes.value.data || []);
+            } else setDietPlans([]);
         } catch (err) {
-            console.error('Failed to load progress data', err);
+            console.error('Critical failure in fetchAll:', err);
+            toast.error('Failed to load progress dashboard');
             setProgressData({ logs: [], targets: {} });
         } finally {
             setLoading(false);
@@ -128,6 +156,7 @@ const MemberProgress = () => {
     };
 
     useEffect(() => {
+        console.log('MemberProgress selectedMemberId changed:', selectedMemberId);
         if (!isManagement) {
             fetchAll();
         } else if (selectedMemberId) {
@@ -416,19 +445,26 @@ const MemberProgress = () => {
                                                 <span className="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-widest rounded-full border border-emerald-100">{plan.status || 'Active'}</span>
                                             </div>
 
-                                            {plan.exercises && (() => {
+                                            {plan.days && (() => {
                                                 try {
-                                                    const exercises = typeof plan.exercises === 'string' ? JSON.parse(plan.exercises) : plan.exercises;
-                                                    return Array.isArray(exercises) && exercises.length > 0 ? (
-                                                        <div className="space-y-2">
-                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Exercises</p>
-                                                            {exercises.map((ex, i) => (
-                                                                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-                                                                    <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-black">{i + 1}</div>
-                                                                    <div className="flex-1">
-                                                                        <p className="text-sm font-black text-slate-900">{ex.name || ex.exercise || 'Exercise'}</p>
-                                                                        {(ex.sets || ex.reps) && <p className="text-[10px] font-bold text-slate-400 uppercase">{ex.sets && `${ex.sets} sets`}{ex.reps && ` × ${ex.reps} reps`}</p>}
-                                                                    </div>
+                                                    const daysObj = typeof plan.days === 'string' ? JSON.parse(plan.days) : plan.days;
+                                                    const daysWithExercises = Object.entries(daysObj).filter(([_, exercises]) => Array.isArray(exercises) && exercises.length > 0);
+
+                                                    return daysWithExercises.length > 0 ? (
+                                                        <div className="space-y-4">
+                                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Training Schedule</p>
+                                                            {daysWithExercises.map(([dayKey, exercises], dayIdx) => (
+                                                                <div key={dayIdx} className="space-y-2">
+                                                                    <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">{dayKey.replace(/([a-z])(\d+)/i, '$1 $2')}</p>
+                                                                    {exercises.map((ex, i) => (
+                                                                        <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+                                                                            <div className="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-black">{i + 1}</div>
+                                                                            <div className="flex-1">
+                                                                                <p className="text-sm font-black text-slate-900">{ex.name || ex.exercise || 'Exercise'}</p>
+                                                                                {(ex.sets || ex.reps) && <p className="text-[10px] font-bold text-slate-400 uppercase">{ex.sets && `${ex.sets} sets`}{ex.reps && ` × ${ex.reps} reps`}</p>}
+                                                                            </div>
+                                                                        </div>
+                                                                    ))}
                                                                 </div>
                                                             ))}
                                                         </div>
