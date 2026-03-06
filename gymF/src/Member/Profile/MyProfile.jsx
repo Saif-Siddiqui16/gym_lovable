@@ -15,11 +15,13 @@ import {
     Loader2,
     Save,
     X,
-    Lock
+    Lock,
+    Camera
 } from 'lucide-react';
 import Card from '../../components/ui/Card';
 import apiClient from '../../api/apiClient';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 
 const MyProfile = () => {
     const [profile, setProfile] = useState(null);
@@ -27,12 +29,14 @@ const MyProfile = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [saving, setSaving] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const { login: updateAuthUser } = useAuth();
 
     // Form States
     const [formData, setFormData] = useState({
         phone: '',
         emergencyName: '',
-        emergencyPhone: ''
+        emergencyPhone: '',
+        avatar: ''
     });
 
     const [passwordData, setPasswordData] = useState({
@@ -48,7 +52,8 @@ const MyProfile = () => {
             setFormData({
                 phone: res.data.phone || '',
                 emergencyName: res.data.emergencyName || '',
-                emergencyPhone: res.data.emergencyPhone || ''
+                emergencyPhone: res.data.emergencyPhone || '',
+                avatar: res.data.avatar || ''
             });
         } catch (err) {
             console.error("Failed to fetch profile", err);
@@ -62,11 +67,32 @@ const MyProfile = () => {
         fetchProfile();
     }, []);
 
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, avatar: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSaveProfile = async () => {
         setSaving(true);
         try {
-            await apiClient.put('/member/profile', formData);
+            const res = await apiClient.put('/member/profile', formData);
             toast.success("Profile updated successfully");
+
+            // Update Auth Context if name or phone or avatar changed
+            const updatedProfile = res.data.member || res.data;
+            updateAuthUser({
+                ...JSON.parse(localStorage.getItem('userData')),
+                name: updatedProfile.name,
+                phone: updatedProfile.phone,
+                avatar: updatedProfile.avatar
+            });
+
             await fetchProfile();
             setIsEditing(false);
         } catch (err) {
@@ -172,10 +198,22 @@ const MyProfile = () => {
                         <User size={180} />
                     </div>
                     <div className="relative z-10 flex items-center gap-5 sm:gap-10">
-                        <div className="relative shrink-0">
-                            <div className="w-16 h-16 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white text-xl sm:text-3xl font-black border-4 sm:border-[6px] border-white shadow-2xl shadow-indigo-200 ring-4 sm:ring-8 ring-indigo-100/30">
-                                {initials}
+                        <div className="relative shrink-0 group/avatar">
+                            <div className="w-20 h-20 sm:w-32 sm:h-32 rounded-full bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white text-2xl sm:text-4xl font-black border-4 sm:border-[6px] border-white shadow-2xl shadow-indigo-200 ring-4 sm:ring-8 ring-indigo-100/30 overflow-hidden">
+                                {formData.avatar ? (
+                                    <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (profile.avatar ? (
+                                    <img src={profile.avatar} alt="Profile" className="w-full h-full object-cover" />
+                                ) : (
+                                    initials
+                                ))}
                             </div>
+                            {isEditing && (
+                                <label className="absolute bottom-0 right-0 p-2 sm:p-3 bg-white rounded-xl sm:rounded-2xl shadow-xl border border-indigo-100 text-indigo-600 hover:scale-110 hover:bg-indigo-50 active:scale-95 transition-all duration-300 cursor-pointer group-hover/avatar:shadow-indigo-200 flex items-center justify-center">
+                                    <Camera size={18} className="sm:w-5 sm:h-5" />
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                                </label>
+                            )}
                         </div>
                         <div className="space-y-2 sm:space-y-3 min-w-0">
                             <div>

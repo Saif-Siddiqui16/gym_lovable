@@ -5,6 +5,7 @@ import ManagerDashboard from './roles/ManagerDashboard';
 import StaffDashboard from './roles/StaffDashboard';
 import TrainerDashboard from './roles/TrainerDashboard';
 import MemberDashboard from './roles/MemberDashboard';
+import { useAuth } from '../../context/AuthContext';
 
 // Mock Roles Map matching config/roles.js
 const ROLES = {
@@ -19,6 +20,7 @@ const ROLES = {
 const DashboardDispatcher = ({ role }) => {
     // Default fallback to Member or generic "Welcome" if role not found
     // Using simple switch logic
+    const { user } = useAuth();
 
     switch (role) {
         case ROLES.SUPER_ADMIN:
@@ -36,7 +38,7 @@ const DashboardDispatcher = ({ role }) => {
         default:
             return (
                 <div className="text-center p-8">
-                    <h2 className="text-title">Welcome to Gym CRM</h2>
+                    <h2 className="text-title">Welcome to {user?.branchName || 'Gym CRM'}</h2>
                     <p className="text-muted">Please select a role from the sidebar debugger to view specific dashboards.</p>
                 </div>
             );

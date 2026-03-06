@@ -1,34 +1,60 @@
-import React, { useState } from 'react';
-import { ChevronDown, Info, Send, MessageSquareText, Users, LayoutTemplate, Smartphone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Info, Send } from 'lucide-react';
 import RightDrawer from '../../components/common/RightDrawer';
+import { sendBroadcast, getTemplates } from '../../api/communication/communicationApi';
+import { toast } from 'react-hot-toast';
 
 const BroadcastMessageDrawer = ({ isOpen, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         channel: 'WhatsApp',
-        template: '',
+        templateId: '',
         audience: 'All Members',
         message: ''
     });
 
+    const [templates, setTemplates] = useState([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            try {
+                const data = await getTemplates(null, formData.channel);
+                setTemplates(data);
+            } catch (error) {
+                console.error('Error fetching templates:', error);
+            }
+        };
+        if (isOpen) fetchTemplates();
+    }, [isOpen, formData.channel]);
+
+    const handleTemplateChange = (id) => {
+        const template = templates.find(t => t.id === parseInt(id));
+        setFormData({
+            ...formData,
+            templateId: id,
+            message: template ? template.content : formData.message
+        });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-
-        // Simulating API call for demo behavior
-        setTimeout(() => {
-            setIsSubmitting(false);
-            console.log('Broadcast Sent:', formData);
+        try {
+            await sendBroadcast(formData);
             onSuccess?.(formData);
             onClose();
             setFormData({
                 channel: 'WhatsApp',
-                template: '',
+                templateId: '',
                 audience: 'All Members',
                 message: ''
             });
-        }, 1500);
+        } catch (error) {
+            console.error('Broadcast Error:', error);
+            toast.error(error || 'Failed to send broadcast');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const footer = (
@@ -68,7 +94,7 @@ const BroadcastMessageDrawer = ({ isOpen, onClose, onSuccess }) => {
                     <select
                         className="drawer-select"
                         value={formData.channel}
-                        onChange={(e) => setFormData({ ...formData, channel: e.target.value })}
+                        onChange={(e) => setFormData({ ...formData, channel: e.target.value, templateId: '' })}
                     >
                         <option value="WhatsApp">WhatsApp</option>
                         <option value="SMS">SMS</option>
@@ -83,13 +109,13 @@ const BroadcastMessageDrawer = ({ isOpen, onClose, onSuccess }) => {
                     </label>
                     <select
                         className="drawer-select"
-                        value={formData.template}
-                        onChange={(e) => setFormData({ ...formData, template: e.target.value })}
+                        value={formData.templateId}
+                        onChange={(e) => handleTemplateChange(e.target.value)}
                     >
                         <option value="">Select a saved template...</option>
-                        <option value="welcome">Welcome Package</option>
-                        <option value="renewal">Renewal Reminder</option>
-                        <option value="offer">Special Offer</option>
+                        {templates.map(t => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                        ))}
                     </select>
                 </div>
 
@@ -120,7 +146,7 @@ const BroadcastMessageDrawer = ({ isOpen, onClose, onSuccess }) => {
                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     />
                     <p className="mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-                        Use variables like <span className="text-indigo-600">{"{{member_name}}"}</span>, <span className="text-indigo-600">{"{{member_code}}"}</span>
+                        Use variables like <span className="text-violet-600">{"{{member_name}}"}</span>, <span className="text-violet-600">{"{{member_code}}"}</span>
                     </p>
                 </div>
 

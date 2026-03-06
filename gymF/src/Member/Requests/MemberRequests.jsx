@@ -11,7 +11,9 @@ import {
     History,
     ArrowUpRight,
     Sparkles,
-    UserCircle
+    UserCircle,
+    Utensils,
+    Dumbbell
 } from 'lucide-react';
 import { getServiceRequests, addServiceRequest } from '../../api/member/memberApi';
 import RightDrawer from '../../components/common/RightDrawer';
@@ -146,9 +148,15 @@ const MemberRequests = () => {
                         {requests.map((request) => (
                             <div key={request.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 rounded-3xl bg-slate-50 border-2 border-slate-100 group hover:bg-white hover:border-indigo-100 transition-all">
                                 <div className="flex items-center gap-5">
-                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${request.type === 'Freeze Membership' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${request.type === 'Freeze Membership' ? 'bg-blue-100 text-blue-600' :
+                                        request.type === 'Diet Plan' ? 'bg-emerald-100 text-emerald-600' :
+                                            request.type === 'Workout Plan' ? 'bg-indigo-100 text-indigo-600' :
+                                                'bg-purple-100 text-purple-600'
                                         }`}>
-                                        {request.type === 'Freeze Membership' ? <Snowflake size={20} /> : <UserPlus size={20} />}
+                                        {request.type === 'Freeze Membership' ? <Snowflake size={20} /> :
+                                            request.type === 'Diet Plan' ? <Utensils size={20} /> :
+                                                request.type === 'Workout Plan' ? <Dumbbell size={20} /> :
+                                                    <UserPlus size={20} />}
                                     </div>
                                     <div>
                                         <h4 className="font-black text-slate-900 text-sm tracking-tight">{request.type}</h4>
@@ -158,7 +166,7 @@ const MemberRequests = () => {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${request.status === 'Approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                    <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border-2 ${(request.status === 'Approved' || request.status === 'Accepted') ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
                                         request.status === 'Rejected' ? 'bg-rose-50 text-rose-600 border-rose-100' :
                                             'bg-amber-50 text-amber-600 border-amber-100'
                                         }`}>

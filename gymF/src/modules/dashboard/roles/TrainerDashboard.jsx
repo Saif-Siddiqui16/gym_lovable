@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import Card from '../../../components/ui/Card';
 import {
     Calendar,
@@ -15,7 +17,9 @@ import * as trainerApi from '../../../api/trainer/trainerApi';
 import { toast } from 'react-hot-toast';
 
 const TrainerDashboard = () => {
+    const navigate = useNavigate();
     const { user } = useAuth();
+
     const { selectedBranch } = useBranchContext();
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState({
@@ -121,16 +125,26 @@ const TrainerDashboard = () => {
 
             {/* Quick Action Buttons */}
             <div className="flex flex-wrap gap-4 px-1">
-                <button className="h-12 px-8 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center">
+                <button
+                    onClick={() => navigate('/trainer/members/assigned')}
+                    className="h-12 px-8 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-indigo-100 hover:bg-indigo-700 hover:-translate-y-0.5 transition-all flex items-center justify-center"
+                >
                     View My Clients
                 </button>
-                <button className="h-12 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center">
+                <button
+                    onClick={() => navigate('/trainer/sessions/calendar')}
+                    className="h-12 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center"
+                >
                     Manage Sessions
                 </button>
-                <button className="h-12 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center">
+                <button
+                    onClick={() => navigate('/workout-plans')}
+                    className="h-12 px-8 bg-white border-2 border-slate-100 text-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-slate-50 hover:border-slate-200 transition-all flex items-center justify-center"
+                >
                     Create Fitness Plan
                 </button>
             </div>
+
 
             {/* Content Body Grid */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
@@ -195,7 +209,12 @@ const TrainerDashboard = () => {
                                 </div>
                                 <h2 className="text-sm font-black text-slate-900 uppercase tracking-widest">My Clients</h2>
                             </div>
-                            <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline px-4 py-1.5 bg-indigo-50/50 rounded-full">View All</button>
+                            <button
+                                onClick={() => navigate('/trainer/members/assigned')}
+                                className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline px-4 py-1.5 bg-indigo-50/50 rounded-full transition-all active:scale-95"
+                            >
+                                View All
+                            </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {data.myClients.length > 0 ? (
@@ -258,7 +277,10 @@ const TrainerDashboard = () => {
                                             <span className="text-sm font-black text-slate-700">Capacity: {data.upcomingClass.maxCapacity}</span>
                                         </div>
                                     </div>
-                                    <button className="w-full mt-8 h-12 bg-emerald-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-emerald-700 hover:-translate-y-1 transition-all shadow-xl shadow-emerald-100">
+                                    <button
+                                        onClick={() => navigate('/trainer/sessions/calendar')}
+                                        className="w-full py-3 sm:py-3.5 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all active:scale-95 shadow-xl shadow-emerald-100"
+                                    >
                                         View Class Roster
                                     </button>
                                 </div>
@@ -269,11 +291,12 @@ const TrainerDashboard = () => {
                             </div>
                         )}
                     </div>
-
-                    {/* Promo Section */}
+                    {/*
+                    
                     <div className="p-8 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2rem] text-white relative overflow-hidden shadow-2xl">
                         <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl opacity-50" />
                         <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl" />
+
                         <div className="relative z-10">
                             <h4 className="text-xl font-black tracking-tight mb-2">Trainer Pro Tips</h4>
                             <p className="text-xs text-white/70 font-bold mb-8 leading-relaxed">Personalized tracking leads to 40% higher member retention. Update your plans today!</p>
@@ -281,8 +304,9 @@ const TrainerDashboard = () => {
                                 Explore Insights
                             </button>
                         </div>
-                    </div>
 
+                    </div>
+*/}
                 </div>
             </div>
         </div>

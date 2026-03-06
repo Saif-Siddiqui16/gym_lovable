@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Shield, Lock, Bell, CheckCircle2, Camera, MapPin, Calendar, Activity, Save } from 'lucide-react';
-import { fetchTrainerProfile, updateTrainerProfile, changeTrainerPassword } from '../../api/trainer/trainerApi';
-import { X } from 'lucide-react';
+import { User, Mail, Phone, Shield, Lock, Bell, CheckCircle2, Camera, MapPin, Calendar, Activity, Save, X } from 'lucide-react';
+import { fetchTrainerProfile, updateTrainerProfile, changeTrainerPassword, updateNotificationSettings } from '../../api/trainer/trainerApi';
+import toast from 'react-hot-toast';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/GlobalDesign.css';
 
 const MyProfile = () => {
@@ -12,6 +13,7 @@ const MyProfile = () => {
     const [message, setMessage] = useState({ type: '', text: '' });
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    const { login: updateAuthUser } = useAuth();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -19,6 +21,15 @@ const MyProfile = () => {
         phone: '',
         address: '',
         avatar: ''
+    });
+
+    const [notificationSettings, setNotificationSettings] = useState({
+        sessionReminders: true,
+        messageAlerts: true,
+        clientAssignment: true,
+        classUpdates: true,
+        loginAlerts: false,
+        biometricBridge: false
     });
 
     useEffect(() => {
@@ -37,6 +48,10 @@ const MyProfile = () => {
                 address: data.address || '',
                 avatar: data.avatar || ''
             });
+
+            if (data.notificationSettings) {
+                setNotificationSettings(prev => ({ ...prev, ...data.notificationSettings }));
+            }
         } catch (error) {
             console.error("Load Profile Error:", error);
         } finally {
@@ -68,6 +83,15 @@ const MyProfile = () => {
         try {
             const updated = await updateTrainerProfile(formData);
             setProfile(updated);
+
+            // Sync with Auth Context
+            updateAuthUser({
+                ...JSON.parse(localStorage.getItem('userData')),
+                name: updated.name,
+                phone: updated.phone,
+                avatar: updated.avatar
+            });
+
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
         } catch (error) {
             setMessage({ type: 'error', text: typeof error === 'string' ? error : 'Failed to update profile.' });
@@ -79,7 +103,7 @@ const MyProfile = () => {
     const handlePasswordChange = async (e) => {
         e.preventDefault();
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            alert("Passwords don't match!");
+            toast.error("Passwords don't match!");
             return;
         }
         setIsSaving(true);
@@ -90,9 +114,29 @@ const MyProfile = () => {
             });
             setShowPasswordModal(false);
             setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-            alert("Password updated successfully!");
+            toast.success("Password updated successfully!");
         } catch (error) {
-            alert(error || "Failed to update password");
+            toast.error(error || "Failed to update password");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleToggleNotification = (field) => {
+        setNotificationSettings(prev => ({
+            ...prev,
+            [field]: !prev[field]
+        }));
+    };
+
+    const handleSaveNotifications = async () => {
+        setIsSaving(true);
+        setMessage({ type: '', text: '' });
+        try {
+            await updateNotificationSettings(notificationSettings);
+            setMessage({ type: 'success', text: 'Notification protocols established!' });
+        } catch (error) {
+            setMessage({ type: 'error', text: 'Failed to update signal matrix.' });
         } finally {
             setIsSaving(false);
         }
@@ -109,7 +153,7 @@ const MyProfile = () => {
                     {!profile && !loading && (
                         <button
                             onClick={() => loadProfile()}
-                            className="mt-4 px-6 py-2 bg-violet-600 text-white rounded-xl font-bold hover:bg-violet-700 transition-colors"
+                            className="mt-4 px-6 py-2 bg-violet-600 !text-white rounded-xl font-bold hover:bg-violet-700 transition-colors"
                         >
                             Retry Connection
                         </button>
@@ -140,7 +184,7 @@ const MyProfile = () => {
                         <div className="relative flex flex-col md:flex-row md:items-end gap-6 -mt-16">
                             <div className="relative group">
                                 <div className="w-40 h-40 rounded-[2.5rem] bg-white p-2 shadow-2xl ring-8 ring-white/50">
-                                    <div className="w-full h-full rounded-[2rem] bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-white text-5xl font-black shadow-inner overflow-hidden">
+                                    <div className="w-full h-full rounded-[2rem] bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-white text-5xl font-black shadow-inner overflow-hidden">
                                         {formData.avatar ? (
                                             <img src={formData.avatar} alt="Profile" className="w-full h-full object-cover" />
                                         ) : (
@@ -192,7 +236,7 @@ const MyProfile = () => {
                                 key={tab.id}
                                 onClick={() => { setActiveTab(tab.id); setMessage({ type: '', text: '' }); }}
                                 className={`w-full flex items-center gap-4 px-6 py-5 rounded-2xl text-sm font-black tracking-wide transition-all duration-300 ${activeTab === tab.id
-                                    ? 'bg-violet-600 text-white shadow-xl shadow-violet-200 -translate-x-2'
+                                    ? 'bg-violet-600 !text-white shadow-xl shadow-violet-200 -translate-x-2'
                                     : 'bg-white text-slate-500 hover:bg-violet-50 hover:text-violet-600 border border-slate-100'
                                     }`}
                             >
@@ -259,8 +303,8 @@ const MyProfile = () => {
                                             disabled={isSaving}
                                             className="group relative flex items-center justify-center px-12 py-5 rounded-[1.5rem] font-black text-white shadow-2xl transition-all duration-300 transform hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 overflow-hidden"
                                         >
-                                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-indigo-700"></div>
-                                            <div className="absolute inset-0 bg-gradient-to-r from-indigo-700 to-fuchsia-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-violet-600 to-violet-700"></div>
+                                            <div className="absolute inset-0 bg-gradient-to-r from-violet-700 to-fuchsia-700 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
                                             {isSaving ? (
                                                 <div className="w-6 h-6 border-3 border-white border-t-transparent rounded-full animate-spin relative mr-4"></div>
@@ -291,40 +335,97 @@ const MyProfile = () => {
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                        <div className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all duration-300 group/secure">
+                                        <div
+                                            onClick={() => handleToggleNotification('biometricBridge')}
+                                            className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all duration-300 group/secure cursor-pointer"
+                                        >
                                             <div className="flex items-center justify-between mb-6">
                                                 <div className="p-3 bg-emerald-100 text-emerald-600 rounded-2xl group-hover/secure:scale-110 transition-transform"><Shield size={24} /></div>
-                                                <div className="relative w-14 h-8 bg-emerald-500 rounded-full shadow-inner p-1 cursor-pointer">
-                                                    <div className="absolute right-1 w-6 h-6 bg-white rounded-full shadow-sm"></div>
+                                                <div className={`relative w-14 h-8 rounded-full shadow-inner p-1 transition-colors duration-300 ${notificationSettings.biometricBridge ? 'bg-emerald-500' : 'bg-slate-200'}`}>
+                                                    <div className={`absolute w-6 h-6 bg-white rounded-full shadow-sm transition-all duration-300 ${notificationSettings.biometricBridge ? 'right-1' : 'left-1'}`}></div>
                                                 </div>
                                             </div>
                                             <h5 className="text-lg font-black text-slate-900 mb-2">Biometric Bridge</h5>
                                             <p className="text-slate-400 text-sm font-bold">Enabled via local security subsystem (FaceID/Fingerprint)</p>
                                         </div>
 
-                                        <div className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-300 group/secure">
+                                        <div
+                                            onClick={() => handleToggleNotification('loginAlerts')}
+                                            className="p-8 rounded-[2rem] border-2 border-dashed border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/30 transition-all duration-300 group/secure cursor-pointer"
+                                        >
                                             <div className="flex items-center justify-between mb-6">
-                                                <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl group-hover/secure:scale-110 transition-transform"><Bell size={24} /></div>
-                                                <div className="relative w-14 h-8 bg-slate-200 rounded-full shadow-inner p-1 cursor-pointer">
-                                                    <div className="absolute left-1 w-6 h-6 bg-white rounded-full shadow-sm"></div>
+                                                <div className="p-3 bg-violet-100 text-violet-600 rounded-2xl group-hover/secure:scale-110 transition-transform"><Bell size={24} /></div>
+                                                <div className={`relative w-14 h-8 rounded-full shadow-inner p-1 transition-colors duration-300 ${notificationSettings.loginAlerts ? 'bg-violet-500' : 'bg-slate-200'}`}>
+                                                    <div className={`absolute w-6 h-6 bg-white rounded-full shadow-sm transition-all duration-300 ${notificationSettings.loginAlerts ? 'right-1' : 'left-1'}`}></div>
                                                 </div>
                                             </div>
                                             <h5 className="text-lg font-black text-slate-900 mb-2">Login Alerts</h5>
                                             <p className="text-slate-400 text-sm font-bold">Receive instant signals for new session initiations</p>
                                         </div>
                                     </div>
+
+                                    <div className="pt-6 flex justify-end">
+                                        <button
+                                            onClick={handleSaveNotifications}
+                                            disabled={isSaving}
+                                            className="px-10 py-4 bg-violet-600 text-white rounded-2xl font-black hover:bg-violet-700 transition-all shadow-xl shadow-violet-100 disabled:opacity-50"
+                                        >
+                                            {isSaving ? 'Synchronizing...' : 'Save Security Prefs'}
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 
                             {activeTab === 'notifications' && (
-                                <div className="flex flex-col items-center justify-center py-20 text-center animate-in zoom-in-95 duration-500">
-                                    <div className="w-32 h-32 bg-violet-50 rounded-[2.5rem] flex items-center justify-center text-violet-600 mb-8 shadow-inner ring-4 ring-white relative overflow-hidden group">
-                                        <div className="absolute inset-0 bg-violet-600 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-                                        <Bell size={64} className="group-hover:rotate-12 transition-transform duration-500" />
+                                <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex justify-between items-center">
+                                        <div>
+                                            <h3 className="text-3xl font-black text-slate-900 tracking-tight">Signal Matrix</h3>
+                                            <p className="text-slate-500 font-bold mt-2">Filter system-wide signals and alerts</p>
+                                        </div>
+                                        <div className="p-4 bg-violet-50 rounded-2xl">
+                                            <Bell size={32} className="text-violet-600" />
+                                        </div>
                                     </div>
-                                    <h3 className="text-3xl font-black text-slate-900 mb-4 tracking-tight">Signal Matrix</h3>
-                                    <p className="text-slate-400 max-w-sm font-bold text-lg leading-relaxed">Customize your cognitive load by filtering system-wide notifications and alerts.</p>
-                                    <button className="mt-10 px-10 py-4 bg-slate-900 text-white rounded-2xl font-black hover:bg-slate-800 transition-all">Establish Protocols</button>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {[
+                                            { id: 'sessionReminders', label: 'Session Reminders', desc: 'Get notified 30m before PT sessions' },
+                                            { id: 'messageAlerts', label: 'Direct Messages', desc: 'Instant alerts from members/staff' },
+                                            { id: 'clientAssignment', label: 'Client Allocation', desc: 'Signal when new members are assigned' },
+                                            { id: 'classUpdates', label: 'Class Dynamics', desc: 'Changes in class schedules or enrollments' }
+                                        ].map((item) => (
+                                            <div
+                                                key={item.id}
+                                                onClick={() => handleToggleNotification(item.id)}
+                                                className={`p-6 rounded-3xl border-2 transition-all duration-300 cursor-pointer flex items-center justify-between group ${notificationSettings[item.id]
+                                                    ? 'border-violet-100 bg-violet-50/50 shadow-lg shadow-violet-50/50'
+                                                    : 'border-slate-100 bg-white hover:border-slate-200'
+                                                    }`}
+                                            >
+                                                <div className="flex-1 pr-4">
+                                                    <h5 className="font-black text-slate-900 mb-1">{item.label}</h5>
+                                                    <p className="text-xs text-slate-400 font-bold">{item.desc}</p>
+                                                </div>
+                                                <div className={`relative w-12 h-7 rounded-full shadow-inner p-1 transition-colors duration-300 ${notificationSettings[item.id] ? 'bg-violet-600' : 'bg-slate-200'}`}>
+                                                    <div className={`absolute w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-300 ${notificationSettings[item.id] ? 'right-1' : 'left-1'}`}></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="pt-8 flex justify-center border-t border-slate-50">
+                                        <button
+                                            onClick={handleSaveNotifications}
+                                            disabled={isSaving}
+                                            className="group relative flex items-center justify-center px-16 py-5 rounded-[1.5rem] font-black text-white shadow-2xl transition-all duration-300 transform hover:-translate-y-2 disabled:opacity-50 overflow-hidden"
+                                        >
+                                            <div className="absolute inset-0 bg-slate-900"></div>
+                                            <span className="relative text-lg tracking-tight">
+                                                {isSaving ? 'Encrypting Matrix...' : 'Establish Protocols'}
+                                            </span>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -337,7 +438,7 @@ const MyProfile = () => {
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
                     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-md" onClick={() => !isSaving && setShowPasswordModal(false)}></div>
                     <div className="relative w-full max-w-lg bg-white rounded-[3rem] shadow-2xl p-8 md:p-12 animate-in zoom-in-95 duration-300 overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-600 to-indigo-600"></div>
+                        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-violet-600 to-violet-600"></div>
 
                         <div className="flex justify-between items-center mb-10">
                             <div>

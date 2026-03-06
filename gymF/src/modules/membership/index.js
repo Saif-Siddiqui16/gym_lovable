@@ -6,3 +6,4 @@ export { default as BenefitsConfig } from './pages/BenefitsConfig';
 export { default as FreezeRequests } from './pages/FreezeRequests';
 export { default as MembershipPlans } from './pages/MembershipPlans';
 export { default as RenewalAlertsPage } from './pages/RenewalAlertsPage';
+export { default as ServiceRequests } from './pages/ServiceRequests';

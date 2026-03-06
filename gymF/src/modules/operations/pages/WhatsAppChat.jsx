@@ -190,7 +190,9 @@ const WhatsAppChat = () => {
                 <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-100 text-white">
                     <MessageSquare size={24} />
                 </div>
-                <h1 className="text-3xl font-black text-slate-900 tracking-tight">WhatsApp Chat</h1>
+                <h1 className="text-3xl font-black text-slate-900 tracking-tight">
+                    {user?.role === 'MEMBER' ? 'My Messages' : 'Member Messages'}
+                </h1>
             </div>
 
             {/* Main Chat Container */}

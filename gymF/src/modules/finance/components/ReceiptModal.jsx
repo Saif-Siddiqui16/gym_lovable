@@ -180,7 +180,7 @@ const ReceiptModal = ({ isOpen, onClose, payment }) => {
                     
                     <div style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 11px;">
                         <p>Thank you for your payment!</p>
-                        <p>Generated professionally by Gym CRM</p>
+                        <p>Generated professionally by ${gymName}</p>
                     </div>
                 </div>
                 <script>
@@ -317,7 +317,7 @@ const ReceiptModal = ({ isOpen, onClose, payment }) => {
                 doc.setFontSize(8);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(148, 163, 184); // slate-400
-                doc.text('Generated professionally by Gym CRM', 105, 285, null, null, 'center');
+                doc.text(`Generated professionally by ${gymName}`, 105, 285, null, null, 'center');
             }
 
             // Save PDF

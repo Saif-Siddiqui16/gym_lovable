@@ -108,6 +108,15 @@ export const changeTrainerPassword = async (data) => {
     }
 };
 
+export const updateNotificationSettings = async (notifications) => {
+    try {
+        const response = await apiClient.patch('/trainer/profile/notifications', { notifications });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data?.message || 'Failed to update notification settings';
+    }
+};
+
 // --- CLASSES API ---
 export const getTrainerClasses = async ({ branchId } = {}) => {
     const response = await apiClient.get('/trainer/classes', { params: { branchId } });

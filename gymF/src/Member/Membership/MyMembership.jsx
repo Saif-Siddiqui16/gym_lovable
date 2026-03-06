@@ -175,14 +175,35 @@ const MyMembership = ({ role }) => {
 
                     {membershipInfo?.benefits ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {membershipInfo.benefits.split(/[,\n]/).filter(b => b.trim()).map((benefit, idx) => (
-                                <div key={idx} className="p-6 bg-white border-2 border-slate-100 rounded-3xl flex items-center gap-4 group hover:border-indigo-100 transition-all">
-                                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                        <CheckCircle2 size={20} />
+                            {(() => {
+                                let benefitList = [];
+                                try {
+                                    // Handle JSON list [{NAME, LIMIT}, ...] or JSON string
+                                    const parsed = JSON.parse(membershipInfo.benefits);
+                                    if (Array.isArray(parsed)) {
+                                        benefitList = parsed.map(b => typeof b === 'object' ? `${b.NAME || b.name}${b.LIMIT ? ` (${b.LIMIT})` : ''}` : b);
+                                    } else {
+                                        benefitList = [parsed.NAME || parsed.name || membershipInfo.benefits];
+                                    }
+                                } catch (e) {
+                                    // Fallback to split by comma/newline
+                                    benefitList = membershipInfo.benefits.split(/[,\n]/).filter(b => b.trim() && !b.includes('{') && !b.includes('}'));
+
+                                    // If split failed due to JSON brackets being part of a single string
+                                    if (benefitList.length === 0 && membershipInfo.benefits) {
+                                        benefitList = [membershipInfo.benefits];
+                                    }
+                                }
+
+                                return benefitList.map((benefit, idx) => (
+                                    <div key={idx} className="p-6 bg-white border-2 border-slate-100 rounded-3xl flex items-center gap-4 group hover:border-indigo-100 transition-all">
+                                        <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                            <CheckCircle2 size={20} />
+                                        </div>
+                                        <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">{benefit.trim()}</span>
                                     </div>
-                                    <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">{benefit.trim()}</span>
-                                </div>
-                            ))}
+                                ));
+                            })()}
                         </div>
                     ) : (
                         <Card className="p-10 border-2 border-slate-100 shadow-sm rounded-3xl bg-white">

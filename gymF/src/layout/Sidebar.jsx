@@ -11,7 +11,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ role, collapsed, setCollapsed }) => {
     const location = useLocation();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const [expandedMenus, setExpandedMenus] = useState({});
 
     // Toggle submenu expansion
@@ -90,7 +90,7 @@ const Sidebar = ({ role, collapsed, setCollapsed }) => {
 
                 {!collapsed && (
                     <span className="text-title" style={{ fontSize: '1.125rem', whiteSpace: 'nowrap' }}>
-                        Gym CRM
+                        {user?.branchName || 'Gym CRM'}
                     </span>
                 )}
             </div>

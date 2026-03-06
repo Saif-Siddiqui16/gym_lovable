@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Shield, Lock, Bell, CheckCircle2, Camera, MapPin, Calendar, Activity } from 'lucide-react';
 import { fetchManagerProfile, updateManagerProfile } from '../../api/manager/managerApi';
+import { useAuth } from '../../context/AuthContext';
 import '../../styles/GlobalDesign.css';
 
 const MyProfile = () => {
@@ -14,8 +15,10 @@ const MyProfile = () => {
         name: '',
         email: '',
         phone: '',
-        address: ''
+        address: '',
+        avatar: ''
     });
+    const { login: updateAuthUser } = useAuth();
 
     useEffect(() => {
         loadProfile();
@@ -30,7 +33,8 @@ const MyProfile = () => {
                 name: data.name,
                 email: data.email,
                 phone: data.phone,
-                address: data.address || ''
+                address: data.address || '',
+                avatar: data.avatar || ''
             });
         } catch (error) {
             console.error("Error loading profile:", error);
@@ -45,6 +49,17 @@ const MyProfile = () => {
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleAvatarChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setFormData(prev => ({ ...prev, avatar: reader.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         setIsSaving(true);
@@ -53,6 +68,15 @@ const MyProfile = () => {
         try {
             const updated = await updateManagerProfile(formData);
             setProfile(updated);
+
+            // Sync with Auth Context
+            updateAuthUser({
+                ...JSON.parse(localStorage.getItem('userData')),
+                name: updated.name,
+                phone: updated.phone,
+                avatar: updated.avatar
+            });
+
             setMessage({ type: 'success', text: 'Profile updated successfully!' });
         } catch (error) {
             setMessage({ type: 'error', text: 'Failed to update profile.' });
@@ -107,15 +131,22 @@ const MyProfile = () => {
                     </div>
                     <div className="px-8 pb-8">
                         <div className="relative flex flex-col md:flex-row md:items-end gap-6 -mt-12">
-                            <div className="relative group">
-                                <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-xl ring-4 ring-violet-100">
-                                    <div className="w-full h-full rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-white text-5xl font-black">
-                                        {profile.avatar}
+                            <div className="relative group/avatar">
+                                <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-xl ring-4 ring-violet-100 overflow-hidden">
+                                    <div className="w-full h-full rounded-2xl bg-gradient-to-br from-violet-600 to-purple-600 flex items-center justify-center text-white text-5xl font-black overflow-hidden">
+                                        {formData.avatar ? (
+                                            <img src={formData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (profile.avatar && profile.avatar.length > 1 ? (
+                                            <img src={profile.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                        ) : (
+                                            profile.avatar || profile.name.charAt(0)
+                                        ))}
                                     </div>
                                 </div>
-                                <button className="absolute bottom-2 right-2 p-2.5 bg-white rounded-xl shadow-lg border border-violet-100 text-violet-600 hover:scale-110 hover:rotate-6 active:scale-95 transition-all duration-300">
+                                <label className="absolute bottom-2 right-2 p-2.5 bg-white rounded-xl shadow-lg border border-violet-100 text-violet-600 hover:scale-110 hover:rotate-6 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center">
                                     <Camera size={18} />
-                                </button>
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleAvatarChange} />
+                                </label>
                             </div>
 
                             <div className="flex-1 pb-2">

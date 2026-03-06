@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, User, LogOut, UserCircle, Building } from 'lucide-react';
+import { Menu, User, LogOut, UserCircle, Building, Bell } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ROLES } from '../config/roles';
 import { useBranchContext } from '../context/BranchContext';
@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
     const { branches, selectedBranch, setSelectedBranch } = useBranchContext();
-    const { logout } = useAuth();
+    const { user, logout } = useAuth();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
     const navigate = useNavigate();
@@ -116,6 +116,16 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
                 )}
 
                 {/* Icons removed */}
+                {/* Notification Bell */}
+                <button
+                    onClick={() => role === ROLES.MEMBER ? navigate('/member/notifications') : null}
+                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition-all relative"
+                >
+                    <Bell size={20} />
+                    {/* Badge placeholder - logic can be added later */}
+                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white"></span>
+                </button>
+
                 {/* Profile Dropdown */}
                 <div style={{ position: 'relative' }} ref={dropdownRef}>
                     <button
@@ -138,9 +148,14 @@ const Topbar = ({ collapsed, setCollapsed, title = "Dashboard", role }) => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            border: '2px solid var(--indigo-600, #4f46e5)'
                         }}>
-                            <User size={20} color="var(--muted)" />
+                            {user?.avatar && user.avatar.length > 1 ? (
+                                <img src={user.avatar} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <User size={20} color="var(--muted)" />
+                            )}
                         </div>
                     </button>
 

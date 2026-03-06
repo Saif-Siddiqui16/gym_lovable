@@ -18,7 +18,8 @@ import {
   BenefitsConfig,
   FreezeRequests,
   MembershipPlans,
-  RenewalAlertsPage
+  RenewalAlertsPage,
+  ServiceRequests
 } from './modules/membership';
 
 // Module 3: Classes
@@ -134,6 +135,7 @@ import MemberRequests from './Member/Requests/MemberRequests';
 import MemberAnnouncements from './Member/Dashboard/MemberAnnouncements';
 import MemberProfile from './Member/Profile/MyProfile';
 import MemberWallet from './Member/Wallet/MemberWallet';
+import MemberNotifications from './Member/Notifications/MemberNotifications';
 
 // Module: Settings
 import {
@@ -236,6 +238,7 @@ export default function App() {
           <Route path="/trainer/availability" element={<AvailabilitySettingsPage />} />
           <Route path="/trainer/sessions/calendar" element={<SessionCalendar />} />
           <Route path="/trainer/sessions/upcoming" element={<UpcomingSessions />} />
+          <Route path="/trainer/service-requests" element={<ServiceRequests />} />
 
           {/* MODULE 1: MEMBERSHIPS (restricted) */}
           {(currentRole === ROLES.SUPER_ADMIN || currentRole === ROLES.MANAGER || currentRole === ROLES.BRANCH_ADMIN || currentRole === ROLES.STAFF) && (
@@ -246,6 +249,7 @@ export default function App() {
               <Route path="/memberships/benefits-config" element={<BenefitsConfig />} />
               <Route path="/memberships/plans" element={<MembershipPlans />} />
               <Route path="/memberships/requests" element={<FreezeRequests />} />
+              <Route path="/memberships/service-requests" element={<ServiceRequests />} />
               <Route path="/memberships/:id" element={<MembershipDetails />} />
               <Route path="/memberships/:id/edit" element={<MembershipForm />} />
               <Route path="/members/renewal-alerts" element={<RenewalAlertsPage />} />
@@ -313,10 +317,13 @@ export default function App() {
             <Route path="inventory" element={(currentRole !== ROLES.MEMBER) ? <Inventory /> : <Navigate to="/dashboard" replace />} />
             <Route path="announcements" element={(currentRole !== ROLES.MEMBER) ? <Announcements /> : <Navigate to="/dashboard" replace />} />
             <Route path="rewards" element={(currentRole !== ROLES.MEMBER) ? <RewardsProgram /> : <Navigate to="/dashboard" replace />} />
-            <Route path="whatsapp" element={(currentRole !== ROLES.MEMBER) ? <WhatsAppChat /> : <Navigate to="/dashboard" replace />} />
+            <Route path="messages" element={<WhatsAppChat />} />
             <Route path="devices" element={(currentRole !== ROLES.MEMBER) ? <Devices /> : <Navigate to="/dashboard" replace />} />
             <Route path="live-monitor" element={(currentRole !== ROLES.MEMBER) ? <LiveCheckInMonitor /> : <Navigate to="/dashboard" replace />} />
           </Route>
+
+          {/* Chat/Messages Route for all roles */}
+          <Route path="messages" element={<WhatsAppChat />} />
 
           <Route path="/operations/feedback" element={<FeedbackSystem role={currentRole} />} />
 
@@ -475,6 +482,7 @@ export default function App() {
               <Route path="/member/attendance" element={<MyAttendance />} />
               <Route path="/member/store" element={<StorePage />} />
               <Route path="/member/benefits" element={<MyMembership role={currentRole} />} />
+              <Route path="/member/notifications" element={<MemberNotifications />} />
               <Route path="/member/payments" element={<MemberPayments />} />
               <Route path="/member/requests" element={<MemberRequests />} />
               <Route path="/member/announcements" element={<MemberAnnouncements />} />

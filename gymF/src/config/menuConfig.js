@@ -77,9 +77,10 @@ export const menuConfig = {
         { label: 'Gym Management', path: '/superadmin/gyms/all', icon: Building },
         { label: 'SaaS Plans', path: '/superadmin/plans/list', icon: FileText },
         { label: 'Subscriptions', path: '/superadmin/subscriptions/active', icon: CreditCard },
+        { label: 'Service Requests', path: '/memberships/service-requests', icon: Bell },
         // { label: 'Audit Logs', path: '/superadmin/audit-logs/activity', icon: Shield },
         // { label: 'Webhook Logs', path: '/superadmin/audit-logs/webhooks', icon: Terminal },
-        { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+        { label: 'Member Messages', path: '/messages', icon: MessageSquare },
         // { label: 'Device Dashboard', path: '/operations/devices', icon: Smartphone },
         // //     ]
         // },
@@ -248,6 +249,7 @@ export const menuConfig = {
                 { label: 'Attendance', path: '/branchadmin/reports/daily-attendance', icon: ClipboardList },
                 { label: 'Plans', path: '/memberships/plans', icon: CreditCard },
                 { label: 'Referrals', path: '/referrals', icon: UserPlus },
+                { label: 'Member Messages', path: '/messages', icon: MessageSquare },
                 { label: 'Feedback', path: '/operations/feedback', icon: MessageSquare },
             ]
         },
@@ -260,6 +262,7 @@ export const menuConfig = {
                 { label: 'Trainers', path: '/hr/trainers', icon: Users },
                 { label: 'All Bookings', path: '/branchadmin/reports/booking', icon: ClipboardList },
                 { label: 'AI Fitness', path: '/progress', icon: Activity },
+                { label: 'Service Requests', path: '/memberships/service-requests', icon: Bell },
             ]
         },
         {
@@ -286,7 +289,7 @@ export const menuConfig = {
             label: 'Operations & Comm',
             icon: Activity,
             children: [
-                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+                { label: 'Member Messages', path: '/messages', icon: MessageSquare },
                 { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },
                 { label: 'Lockers', path: '/operations/lockers', icon: Lock },
                 { label: 'Devices', path: '/operations/devices', icon: Smartphone },
@@ -350,7 +353,7 @@ export const menuConfig = {
             children: [
                 { label: 'Members', path: '/branchadmin/members/list', icon: Users },
                 { label: 'Feedback', path: '/operations/feedback', icon: MessageSquare },
-                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+                { label: 'Member Messages', path: '/messages', icon: MessageSquare },
                 { label: 'Lockers', path: '/operations/lockers', icon: Lock },
             ]
         },
@@ -400,7 +403,7 @@ export const menuConfig = {
             label: 'Communication',
             icon: MessageSquare,
             children: [
-                { label: 'WhatsApp Chat', path: '/operations/whatsapp', icon: MessageSquare },
+                { label: 'Member Messages', path: '/messages', icon: MessageSquare },
                 { label: 'Announcements', path: '/operations/announcements', icon: Megaphone },
             ]
         },
@@ -432,6 +435,7 @@ export const menuConfig = {
                 { label: 'My Classes', path: '/classes', icon: Calendar },
                 { label: 'Workout Plans', path: '/workout-plans', icon: Dumbbell },
                 { label: 'Diet Plans', path: '/diet-plans', icon: Utensils },
+                { label: 'Service Requests', path: '/trainer/service-requests', icon: Bell },
             ]
         },
         {
@@ -486,6 +490,8 @@ export const menuConfig = {
             label: 'Communication',
             icon: MessageSquare,
             children: [
+                { label: 'My Messages', path: '/messages', icon: MessageSquare },
+                { label: 'Notifications', path: '/member/notifications', icon: Bell },
                 { label: 'Announcements', path: '/member/announcements', icon: Megaphone },
                 { label: 'Feedback', path: '/member/feedback', icon: MessageSquare },
             ]

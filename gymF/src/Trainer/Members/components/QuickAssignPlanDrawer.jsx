@@ -125,7 +125,7 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                         <label className="drawer-label mb-0 flex items-center gap-2">
                             <ClipboardList size={14} /> Select Protocol
                         </label>
-                        <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md uppercase tracking-widest">
+                        <span className="text-[10px] font-black text-violet-500 bg-violet-50 px-2 py-0.5 rounded-md uppercase tracking-widest">
                             Trainer Protocols
                         </span>
                     </div>
@@ -160,8 +160,8 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                                         key={plan.id}
                                         onClick={() => setSelectedPlan(plan)}
                                         className={`p-4 rounded-xl border transition-all text-left flex items-center justify-between group ${isSelected
-                                            ? 'bg-indigo-600 border-indigo-600 shadow-md'
-                                            : 'bg-white border-slate-100 hover:border-indigo-200 hover:bg-slate-50'
+                                            ? 'bg-violet-600 border-violet-600 shadow-md'
+                                            : 'bg-white border-slate-100 hover:border-violet-200 hover:bg-slate-50'
                                             }`}
                                     >
                                         <div className="flex items-center gap-4">
@@ -191,7 +191,7 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                 {/* Timeline Section */}
                 <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-6">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-white text-indigo-600 rounded-lg flex items-center justify-center shadow-sm">
+                        <div className="w-8 h-8 bg-white text-violet-600 rounded-lg flex items-center justify-center shadow-sm">
                             <Calendar size={16} />
                         </div>
                         <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest">Protocol Timeline</h3>
@@ -222,7 +222,7 @@ const QuickAssignPlanDrawer = ({ isOpen, onClose, memberName, memberId }) => {
                         <label className="drawer-label">Coach's Directive (Optional)</label>
                         <textarea
                             placeholder="Add specific instructions for the athlete..."
-                            className="drawer-textarea"
+                            className="drawer-textarea focus:border-violet-600 focus:ring-violet-600/10"
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                         />

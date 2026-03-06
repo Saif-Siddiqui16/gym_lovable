@@ -3,6 +3,7 @@ import apiClient from '../../api/apiClient';
 import RightDrawer from '../../components/common/RightDrawer';
 import { useBranchContext } from '../../context/BranchContext';
 import '../../styles/GlobalDesign.css';
+import { useAuth } from '../../context/AuthContext';
 import { useEffect, useRef, useState } from 'react';
 
 // Reusable Custom Dropdown Component
@@ -52,6 +53,7 @@ const CustomDropdown = ({ options, value, onChange, icon: Icon, placeholder }) =
 };
 
 const BookingReport = () => {
+    const { user } = useAuth();
     const { selectedBranch } = useBranchContext();
     const [dateRange, setDateRange] = useState('All');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -162,8 +164,6 @@ const BookingReport = () => {
     }, [currentPage, allFilteredBookings]);
 
     // Calculate current page bookings
-    // (Removed) const startIndex = (currentPage - 1) * itemsPerPage;
-    // (Removed) const currentBookings = allFilteredBookings.slice(startIndex, startIndex + itemsPerPage);
 
     const handleExportCSV = () => {
         const exportData = allFilteredBookings;
@@ -237,8 +237,8 @@ const BookingReport = () => {
                 <body>
                     <div class="header">
                         <div class="title-section">
-                            <h1>Booking Report</h1>
-                            <p>Gym Management System - Performance Analysis</p>
+                            <h1>${user?.branchName || 'Booking Report'}</h1>
+                            <p>${user?.branchName ? 'Gym Management System' : 'Gym Management System - Performance Analysis'}</p>
                         </div>
                         <div class="meta-info">
                             <div>Generated: ${new Date().toLocaleString()}</div>
@@ -421,8 +421,8 @@ const BookingReport = () => {
                                         </div>
                                     </td>
                                 </tr>
-                            ) : currentBookings.length > 0 ? (
-                                currentBookings.map((row) => (
+                            ) : bookings.length > 0 ? (
+                                bookings.map((row) => (
                                     <tr key={row.id} className="flex flex-col sm:table-row hover:bg-gradient-to-r hover:from-violet-50/50 hover:to-purple-50/30 transition-colors duration-200 group p-4 sm:p-0 border-b sm:border-0 border-slate-100">
                                         <td className="px-2 py-2 sm:px-6 sm:py-4 flex justify-between items-center sm:table-cell" data-label="Booking ID">
                                             <span className="sm:hidden text-[10px] font-black text-slate-400 uppercase tracking-widest">Booking ID</span>

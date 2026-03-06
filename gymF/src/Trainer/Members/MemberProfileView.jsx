@@ -22,12 +22,15 @@ import {
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { getMemberById, getMemberPayments } from '../../api/trainer/trainerApi';
+import { getChatMessages, sendChatMessage } from '../../api/communication/communicationApi';
+import { useAuth } from '../../context/AuthContext';
 import { getProgress } from '../../api/progressApi';
 import QuickAssignPlanDrawer from './components/QuickAssignPlanDrawer';
 
 const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('overview');
     const [member, setMember] = useState(null);
     const [payments, setPayments] = useState([]);
@@ -36,6 +39,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
 
     const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [chatMessage, setChatMessage] = useState('');
+    const [chatHistory, setChatHistory] = useState([]);
     const [isAssignOpen, setIsAssignOpen] = useState(false);
 
     const memberId = propMemberId || location.state?.memberId || 1;
@@ -45,6 +49,50 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
             loadMemberData();
         }
     }, [memberId]);
+
+    // Chat History Polling
+    useEffect(() => {
+        let pollInterval;
+        if (isChatModalOpen && member) {
+            loadChatHistory();
+            pollInterval = setInterval(loadChatHistory, 3000);
+        }
+        return () => clearInterval(pollInterval);
+    }, [isChatModalOpen, member]);
+
+    const loadChatHistory = async () => {
+        if (!member) return;
+        try {
+            const messages = await getChatMessages(member.id, true);
+            setChatHistory(messages);
+        } catch (error) {
+            console.error('Failed to load chat history:', error);
+        }
+    };
+
+    const handleSendMessage = async (e) => {
+        if (e) e.preventDefault();
+        if (!chatMessage.trim() || !member) return;
+
+        const messageText = chatMessage;
+        setChatMessage('');
+
+        try {
+            await sendChatMessage({
+                receiverId: member.id,
+                message: messageText,
+                receiverType: 'MEMBER'
+            });
+            loadChatHistory();
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            alert('Failed to send message');
+        }
+    };
+
+    const formatTime = (date) => {
+        return new Date(date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
 
     const loadMemberData = async () => {
         setLoading(true);
@@ -80,7 +128,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px]">
-                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                <div className="w-12 h-12 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="mt-4 text-gray-500 font-medium">Loading profile...</p>
             </div>
         );
@@ -122,9 +170,9 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                 {!onClose && (
                     <button
                         onClick={() => navigate('/trainer/members/assigned')}
-                        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors w-fit group"
+                        className="flex items-center gap-2 text-gray-500 hover:text-violet-600 transition-colors w-fit group"
                     >
-                        <div className="p-1.5 bg-white border border-gray-200 rounded-lg group-hover:bg-blue-50 group-hover:border-blue-200 transition-all">
+                        <div className="p-1.5 bg-white border border-gray-200 rounded-lg group-hover:bg-violet-50 group-hover:border-violet-200 transition-all">
                             <ChevronLeft size={18} />
                         </div>
                         <span className="text-sm font-bold">Back to Members</span>
@@ -133,10 +181,10 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
 
                 <div className="bg-white p-4 md:p-8 rounded-3xl border border-gray-100 shadow-sm flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 relative overflow-hidden">
                     {/* Background Accent */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-[100px] -mr-8 -mt-8 opacity-50"></div>
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-violet-50 rounded-bl-[100px] -mr-8 -mt-8 opacity-50"></div>
 
                     <div className="relative group">
-                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-4xl font-bold shadow-xl shadow-blue-200 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
+                        <div className="w-24 h-24 md:w-32 md:h-32 rounded-3xl bg-gradient-to-br from-violet-600 to-violet-700 flex items-center justify-center text-white text-4xl font-bold shadow-xl shadow-violet-200 group-hover:scale-105 group-hover:rotate-2 transition-all duration-300">
                             {(member.name || '?').charAt(0)}
                         </div>
                         <div className="absolute -bottom-2 -right-2 bg-green-500 border-4 border-white w-8 h-8 rounded-full flex items-center justify-center shadow-sm">
@@ -156,18 +204,18 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-semibold">
                                 <div className="flex items-center gap-2 text-gray-600">
-                                    <Mail size={16} className="text-blue-500" />
+                                    <Mail size={16} className="text-violet-500" />
                                     {member.email}
                                 </div>
                                 <div className="flex items-center gap-2 text-gray-600">
-                                    <Phone size={16} className="text-blue-500" />
+                                    <Phone size={16} className="text-violet-500" />
                                     {member.phone}
                                 </div>
                             </div>
 
                             <button
                                 onClick={() => setIsChatModalOpen(true)}
-                                className="px-8 py-3 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-700 active:scale-95 shadow-xl shadow-blue-200 transition-all"
+                                className="px-8 py-3 bg-violet-600 !text-white rounded-2xl font-semibold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-violet-700 active:scale-95 shadow-xl shadow-violet-200 transition-all"
                             >
                                 <MessageSquare size={16} />
                                 Start Chat
@@ -203,12 +251,12 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
-                            className={`px-8 py-5 text-sm font-bold whitespace-nowrap transition-all duration-300 relative hover:scale-105 ${activeTab === tab.id ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'
+                            className={`px-8 py-5 text-sm font-bold whitespace-nowrap transition-all duration-300 relative hover:scale-105 ${activeTab === tab.id ? 'text-violet-600' : 'text-gray-400 hover:text-gray-600'
                                 }`}
                         >
                             {tab.label}
                             {activeTab === tab.id && (
-                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full animate-in slide-in-from-left duration-300"></div>
+                                <div className="absolute bottom-0 left-0 right-0 h-1 bg-violet-600 rounded-t-full animate-in slide-in-from-left duration-300"></div>
                             )}
                         </button>
                     ))}
@@ -222,9 +270,9 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
                                         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Training Goal</h3>
-                                        <div className="bg-blue-50/50 p-6 rounded-3xl border border-blue-100/50 h-full">
-                                            <p className="text-lg font-bold text-blue-900">{member.goal || 'General Fitness'}</p>
-                                            <p className="text-blue-700/70 text-sm mt-1 leading-relaxed">
+                                        <div className="bg-violet-50/50 p-6 rounded-3xl border border-violet-100/50 h-full">
+                                            <p className="text-lg font-bold text-violet-900">{member.goal || 'General Fitness'}</p>
+                                            <p className="text-violet-700/70 text-sm mt-1 leading-relaxed">
                                                 {member.goal === 'Weight Loss' ? 'Focusing on caloric deficit and high-intensity interval training.' :
                                                     member.goal === 'Muscle Gain' ? 'Focusing on compound movements with progressive overload.' :
                                                         'Maintaining consistency and building a foundational level of fitness.'}
@@ -260,7 +308,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-4">Recent Sessions</h3>
                                     <div className="space-y-3">
                                         {member.recentWorkouts && member.recentWorkouts.length > 0 ? member.recentWorkouts.map((workout) => (
-                                            <div key={workout.id || Math.random()} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-blue-200 hover:bg-blue-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
+                                            <div key={workout.id || Math.random()} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 group hover:border-violet-200 hover:bg-violet-50/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer">
                                                 <div className="flex items-center gap-4 overflow-hidden">
                                                     <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-600 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 flex-shrink-0">
                                                         <Dumbbell size={18} />
@@ -355,7 +403,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                             return (
                                                 <div key={p.id} className="p-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
                                                     <div className="flex items-center gap-4">
-                                                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                                        <div className="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center text-violet-600">
                                                             <CreditCard size={18} />
                                                         </div>
                                                         <div>
@@ -383,11 +431,11 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-300">
                             <div className="lg:col-span-2 space-y-6">
                                 {/* Active Plan Section */}
-                                <div className="bg-indigo-600 rounded-[32px] p-6 text-white shadow-xl shadow-indigo-100 mb-8 overflow-hidden relative group">
+                                <div className="bg-violet-600 rounded-[32px] p-6 text-white shadow-xl shadow-violet-100 mb-8 overflow-hidden relative group">
                                     <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:rotate-12 transition-transform">
                                         <Dumbbell size={120} />
                                     </div>
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-indigo-200">Current Program</h3>
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-violet-200">Current Program</h3>
                                     {member.workoutPlan ? (
                                         <>
                                             <h2 className="text-2xl font-black mb-2">{member.workoutPlan.name}</h2>
@@ -405,21 +453,21 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                         </>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center py-6 text-center">
-                                            <p className="font-bold text-indigo-100/60 italic">No Active Training Program</p>
-                                            <button onClick={() => setIsAssignOpen(true)} className="mt-4 px-6 py-2 bg-white text-indigo-600 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg">Assign Program</button>
+                                            <p className="font-bold text-violet-100/60 italic">No Active Training Program</p>
+                                            <button onClick={() => setIsAssignOpen(true)} className="mt-4 px-6 py-2 bg-violet-600 !text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-violet-700 transition-all">Assign Program</button>
                                         </div>
                                     )}
                                 </div>
 
                                 <div className="flex items-center justify-between mb-2">
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Workout History</h3>
-                                    <button className="text-sm font-bold text-blue-600 hover:text-blue-700">View All</button>
+                                    <button className="text-sm font-bold text-violet-600 hover:text-violet-700">View All</button>
                                 </div>
                                 <div className="space-y-4">
                                     {member.recentWorkouts && member.recentWorkouts.length > 0 ? member.recentWorkouts.map((workout, idx) => (
-                                        <div key={idx} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:border-blue-100 hover:shadow-lg transition-all duration-300">
+                                        <div key={idx} className="flex items-center justify-between p-5 bg-gray-50 rounded-2xl border border-gray-100 group hover:bg-white hover:border-violet-100 hover:shadow-lg transition-all duration-300">
                                             <div className="flex items-center gap-5">
-                                                <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-blue-600 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 shadow-sm">
+                                                <div className="w-12 h-12 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-violet-600 group-hover:scale-110 group-hover:bg-violet-600 group-hover:text-white transition-all duration-300 shadow-sm">
                                                     <Dumbbell size={20} />
                                                 </div>
                                                 <div>
@@ -451,13 +499,13 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                         {(() => {
                                             const totalCalories = member.recentWorkouts ? member.recentWorkouts.reduce((sum, w) => sum + (w.calories || 0), 0) : 0;
                                             const intensity = totalCalories > 1500 ? 'High' : (totalCalories > 800 ? 'Medium' : 'Light');
-                                            const intensityColor = intensity === 'High' ? 'bg-green-500/20 text-green-400' : (intensity === 'Medium' ? 'bg-orange-500/20 text-orange-400' : 'bg-blue-500/20 text-blue-400');
+                                            const intensityColor = intensity === 'High' ? 'bg-green-500/20 text-green-400' : (intensity === 'Medium' ? 'bg-orange-500/20 text-orange-400' : 'bg-violet-500/20 text-violet-400');
 
                                             return (
                                                 <>
                                                     <div className="flex items-center gap-3 mb-6">
                                                         <div className="p-3 rounded-xl bg-white/10 backdrop-blur-sm">
-                                                            <Activity size={24} className="text-blue-400" />
+                                                            <Activity size={24} className="text-violet-400" />
                                                         </div>
                                                         <div>
                                                             <p className="text-sm text-gray-400 font-medium">Total Calories</p>
@@ -495,7 +543,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest">Core Metrics</h3>
                                     <button
                                         onClick={() => navigate(`/progress?memberId=${member.id}`)}
-                                        className="px-4 py-2 bg-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-violet-700 transition-all shadow-lg shadow-violet-200"
+                                        className="px-4 py-2 bg-violet-600 !text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-violet-700 transition-all shadow-lg shadow-violet-200"
                                     >
                                         <Plus size={14} /> Manage Progress
                                     </button>
@@ -522,7 +570,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                         ];
 
                                         return stats.map((stat, i) => (
-                                            <div key={i} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:bg-blue-50/50 hover:border-blue-100 transition-all cursor-default">
+                                            <div key={i} className="bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:bg-violet-50/50 hover:border-violet-100 transition-all cursor-default">
                                                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
                                                 <div className="flex items-baseline gap-1">
                                                     <span className="text-2xl font-black text-gray-900">{stat.value}</span>
@@ -563,12 +611,12 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                                             <span className="font-bold text-gray-700">{item.label}</span>
                                                             <div className="flex gap-4 text-xs font-medium text-gray-500">
                                                                 <span>Prev: {prevVal}cm</span>
-                                                                <span className="text-blue-600 font-bold">Goal: {item.goal}cm</span>
+                                                                <span className="text-violet-600 font-bold">Goal: {item.goal}cm</span>
                                                             </div>
                                                         </div>
                                                         <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                                                             <div
-                                                                className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-1000"
+                                                                className="h-full bg-gradient-to-r from-violet-500 to-violet-600 rounded-full transition-all duration-1000"
                                                                 style={{ width: `${progressPercent}%` }}
                                                             />
                                                         </div>
@@ -619,12 +667,12 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                     }
 
                                     return (
-                                        <div className="bg-blue-600 rounded-[32px] p-6 text-white shadow-xl shadow-blue-200">
+                                        <div className="bg-violet-600 rounded-[32px] p-6 text-white shadow-xl shadow-violet-200">
                                             <h3 className="font-bold text-xl mb-2">BMI Calculator</h3>
-                                            <p className="text-blue-100 text-sm mb-6">Based on latest measurements</p>
+                                            <p className="text-violet-100 text-sm mb-6">Based on latest measurements</p>
 
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-sm font-bold text-blue-200">Current Score</span>
+                                                <span className="text-sm font-bold text-violet-200">Current Score</span>
                                                 <span className="text-3xl font-black">{bmi > 0 ? bmi : '-'}</span>
                                             </div>
                                             <div className="w-full h-4 bg-black/20 rounded-full overflow-hidden mb-2 relative">
@@ -632,7 +680,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                                                 <div className="absolute left-[66%] top-0 bottom-0 w-1 bg-white/50" />
                                                 <div className="h-full bg-white/90 rounded-full transition-all duration-1000" style={{ width: `${bmiPercent}%` }} />
                                             </div>
-                                            <div className="flex justify-between text-[10px] font-bold text-blue-200 uppercase tracking-widest">
+                                            <div className="flex justify-between text-[10px] font-bold text-violet-200 uppercase tracking-widest">
                                                 <span className={status === 'Underweight' ? 'text-white' : ''}>Underweight</span>
                                                 <span className={status === 'Normal' ? 'text-white' : ''}>Normal</span>
                                                 <span className={status === 'Overweight' ? 'text-white' : ''}>Overweight</span>
@@ -671,7 +719,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                         {/* Modal Header */}
                         <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">
+                                <div className="w-10 h-10 rounded-xl bg-violet-600 flex items-center justify-center text-white font-bold">
                                     {member.name.charAt(0)}
                                 </div>
                                 <div>
@@ -690,42 +738,47 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
                             </button>
                         </div>
 
-                        {/* Chat Body (Simulated) */}
-                        <div className="p-6 h-[350px] overflow-y-auto bg-gray-50/30 flex flex-col gap-4">
-                            <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm max-w-[85%] self-start">
-                                <p className="text-sm text-gray-700">Hello! I noticed you missed your session yesterday. Is everything okay with your training?</p>
-                                <span className="text-[10px] font-bold text-gray-400 mt-2 block">10:30 AM</span>
-                            </div>
-
-                            <div className="bg-blue-600 p-4 rounded-2xl rounded-tr-none text-white shadow-lg shadow-blue-200 max-w-[85%] self-end">
-                                <p className="text-sm font-medium">Just checking in to keep you on track!</p>
-                                <span className="text-[10px] font-bold text-blue-100 mt-2 block">10:31 AM</span>
-                            </div>
-
-                            <div className="mt-auto flex justify-center">
-                                <div className="px-3 py-1 bg-gray-200/50 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    Today
+                        {/* Chat Body */}
+                        <div className="p-6 h-[400px] overflow-y-auto bg-gray-50/30 flex flex-col gap-4 custom-scrollbar">
+                            {chatHistory.length > 0 ? chatHistory.map((msg, idx) => {
+                                const isMe = msg.senderId === user?.id;
+                                return (
+                                    <div
+                                        key={msg.id || idx}
+                                        className={`p-4 rounded-2xl border shadow-sm max-w-[85%] ${isMe
+                                            ? 'bg-violet-600 border-violet-500 !text-white rounded-tr-none self-end ml-auto'
+                                            : 'bg-white border-gray-100 rounded-tl-none self-start'
+                                            }`}
+                                    >
+                                        <p className={`text-sm ${isMe ? 'text-white' : 'text-gray-700'}`}>{msg.message}</p>
+                                        <span className={`text-[10px] font-bold mt-2 block ${isMe ? 'text-violet-100' : 'text-gray-400'}`}>
+                                            {formatTime(msg.createdAt)}
+                                        </span>
+                                    </div>
+                                );
+                            }) : (
+                                <div className="text-center py-10">
+                                    <p className="text-gray-400 text-sm">No messages yet.</p>
                                 </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Chat Input */}
-                        <div className="p-4 bg-white border-t border-gray-100 flex gap-2">
+                        <form onSubmit={handleSendMessage} className="p-4 bg-white border-t border-gray-100 flex gap-2">
                             <input
                                 type="text"
                                 placeholder="Type a message..."
-                                className="flex-1 px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                                className="flex-1 px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                                 value={chatMessage}
                                 onChange={(e) => setChatMessage(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && setChatMessage('')}
                             />
                             <button
-                                onClick={() => setChatMessage('')}
-                                className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:bg-blue-700 active:scale-90 transition-all shadow-lg shadow-blue-200"
+                                type="submit"
+                                className="w-10 h-10 bg-violet-600 !text-white rounded-xl flex items-center justify-center hover:bg-violet-700 active:scale-90 transition-all shadow-lg shadow-violet-200"
                             >
                                 <Send size={18} />
                             </button>
-                        </div>
+                        </form>
                     </div>
                 </div>
             )}
@@ -744,7 +797,7 @@ const MemberProfileView = ({ memberId: propMemberId, onClose }) => {
             {/* Read-Only Mode Badge */}
             <div className="mt-8 flex justify-center">
                 <div className="px-6 py-2 bg-gray-900/5 backdrop-blur-sm border border-gray-900/10 rounded-full flex items-center gap-2 animate-bounce">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-violet-600 animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Read-Only Trainer Mode</span>
                     <Info size={12} className="text-gray-400" />
                 </div>

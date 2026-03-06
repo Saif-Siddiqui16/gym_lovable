@@ -38,6 +38,15 @@ export const BranchProvider = ({ children }) => {
 
             console.log('[BranchContext] Fetched branches count:', formattedBranches.length);
             setBranches(formattedBranches);
+
+            // Validate current selection
+            if (selectedBranch !== 'all') {
+                const isValid = formattedBranches.some(b => String(b.id) === String(selectedBranch) || String(b._id) === String(selectedBranch));
+                if (!isValid) {
+                    console.log('[BranchContext] Current selection invalid for this user, falling back to all');
+                    setSelectedBranch('all');
+                }
+            }
         } catch (error) {
             console.error('[BranchContext] Fetch error:', error.response?.data || error.message);
             setBranches([]);

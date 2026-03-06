@@ -34,8 +34,15 @@ const TrainerAttendance = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.get('/staff/attendance/me');
-            setAttendanceData(response.data);
+            const [meResponse, liveResponse] = await Promise.all([
+                apiClient.get('/staff/attendance/me'),
+                apiClient.get('/admin/attendance/live')
+            ]);
+
+            setAttendanceData({
+                ...meResponse.data,
+                liveData: liveResponse.data?.data || []
+            });
         } catch (error) {
             console.error('Failed to fetch attendance:', error);
             toast.error('Failed to load attendance data');
@@ -107,7 +114,7 @@ const TrainerAttendance = () => {
 
                 {/* Info Section - Personal View */}
                 <div className="bg-[#eff6ff] border border-[#dbeafe] rounded-xl md:rounded-2xl p-4 md:p-6 flex items-center gap-4 md:gap-5 shadow-sm group hover:border-violet-200 transition-all duration-300">
-                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white text-blue-600 flex items-center justify-center border border-blue-50 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl bg-white text-violet-600 flex items-center justify-center border border-violet-50 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
                         <Shield size={20} className="md:w-5 md:h-5" />
                     </div>
                     <div>
@@ -140,9 +147,9 @@ const TrainerAttendance = () => {
                         <button
                             onClick={handleCheckInToggle}
                             disabled={actionLoading || (isCheckedIn && attendanceData.logs.some(l => l.checkOut))}
-                            className={`w-full md:w-auto relative z-10 flex items-center justify-center gap-3 px-8 md:px-12 py-3.5 md:py-4 rounded-xl md:rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-xl active:scale-95 ${isCheckedIn
+                            className={`w-full md:w-auto relative z-10 flex items-center justify-center gap-3 px-8 md:px-12 py-3.5 md:py-4 rounded-xl md:rounded-2xl text-[10px] font-semibold uppercase tracking-widest transition-all shadow-xl active:scale-95 ${isCheckedIn
                                 ? 'bg-amber-500 text-white shadow-amber-200 hover:bg-amber-600'
-                                : 'bg-violet-600 text-white shadow-violet-200 hover:bg-violet-700'} hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed`}
+                                : 'bg-violet-600 !text-white shadow-violet-200 hover:bg-violet-700'} hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
                             {actionLoading ? <RefreshCw className="animate-spin" size={18} /> : (isCheckedIn ? <LogOut size={18} /> : <UserCheck size={18} />)}
                             {isCheckedIn ? 'Check Out Now' : 'Check In Now'}
@@ -198,27 +205,37 @@ const TrainerAttendance = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {attendanceData.activeShift ? (
-                                        <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
-                                            <td className="px-6 md:px-10 py-5 md:py-6">
-                                                <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wider">{attendanceData.activeShift.name}</span>
-                                            </td>
-                                            <td className="px-6 md:px-10 py-5 md:py-6">
-                                                <span className="text-[10px] md:text-xs font-bold text-slate-500">{formatTime(attendanceData.activeShift.checkIn)}</span>
-                                            </td>
-                                            <td className="px-6 md:px-10 py-5 md:py-6">
-                                                <span className="text-[10px] md:text-xs font-bold text-violet-600">{calculateDuration(attendanceData.activeShift.checkIn)}</span>
-                                            </td>
-                                            <td className="px-6 md:px-10 py-5 md:py-6">
-                                                <span className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-green-100">Working</span>
-                                            </td>
-                                        </tr>
+                                    {attendanceData.liveData && attendanceData.liveData.length > 0 ? (
+                                        attendanceData.liveData.map((person) => (
+                                            <tr key={person.id} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                                <td className="px-6 md:px-10 py-5 md:py-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500 overflow-hidden">
+                                                            {person.avatar ? <img src={person.avatar} alt="" className="w-full h-full object-cover" /> : <User size={14} />}
+                                                        </div>
+                                                        <div className="flex flex-col">
+                                                            <span className="text-[10px] md:text-xs font-bold text-slate-700 uppercase tracking-wider">{person.name}</span>
+                                                            <span className="text-[8px] font-black text-violet-500 uppercase tracking-widest leading-none mt-0.5">{person.role}</span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 md:px-10 py-5 md:py-6">
+                                                    <span className="text-[10px] md:text-xs font-bold text-slate-500">{person.time}</span>
+                                                </td>
+                                                <td className="px-6 md:px-10 py-5 md:py-6">
+                                                    <span className="text-[10px] md:text-xs font-bold text-violet-600">Active</span>
+                                                </td>
+                                                <td className="px-6 md:px-10 py-5 md:py-6">
+                                                    <span className="px-3 py-1 bg-green-50 text-green-600 rounded-lg text-[9px] font-black uppercase tracking-widest border border-green-100">Inside</span>
+                                                </td>
+                                            </tr>
+                                        ))
                                     ) : (
                                         <tr>
                                             <td colSpan="4" className="py-16 md:py-24 text-center">
                                                 <div className="flex flex-col items-center justify-center opacity-40">
                                                     <XCircle size={40} strokeWidth={1} className="text-slate-300 mb-4" />
-                                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.3em] text-slate-400 px-6">You are not currently checked in</p>
+                                                    <p className="text-[9px] md:text-[10px] font-black uppercase tracking-widest md:tracking-[0.3em] text-slate-400 px-6">No one is currently in the gym</p>
                                                 </div>
                                             </td>
                                         </tr>

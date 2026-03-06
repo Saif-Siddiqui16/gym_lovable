@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, MoreVertical, Eye, MessageSquare, ChevronLeft, ChevronRight, User, Trophy, Calendar, ArrowUpRight, X, Send, Phone, Info, Trash2, ShieldAlert, Clock, ClipboardList, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { getAssignedMembers, flagMember } from '../../api/trainer/trainerApi';
+import { sendChatMessage, getChatMessages } from '../../api/communication/communicationApi';
 import CustomDropdown from '../../components/common/CustomDropdown';
 
 import ActionDropdown from '../../components/common/ActionDropdown';
@@ -10,10 +11,12 @@ import RightDrawer from '../../components/common/RightDrawer';
 import QuickAssignPlanDrawer from './components/QuickAssignPlanDrawer';
 
 import { useBranchContext } from '../../context/BranchContext';
+import { useAuth } from '../../context/AuthContext';
 
 const AssignedMembers = () => {
     const navigate = useNavigate();
     const { selectedBranch } = useBranchContext();
+    const { user } = useAuth();
     const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -26,6 +29,8 @@ const AssignedMembers = () => {
     const [isChatModalOpen, setIsChatModalOpen] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
     const [chatMessage, setChatMessage] = useState('');
+    const [chatHistory, setChatHistory] = useState([]);
+    const [chatLoading, setChatLoading] = useState(false);
     // activeDropdown removed
 
     // New Action States
@@ -38,6 +43,46 @@ const AssignedMembers = () => {
     useEffect(() => {
         loadMembers();
     }, [searchTerm, statusFilter, currentPage, itemsPerPage, selectedBranch]);
+
+    // Chat History Polling
+    useEffect(() => {
+        let pollInterval;
+        if (isChatModalOpen && selectedMember) {
+            loadChatHistory();
+            pollInterval = setInterval(loadChatHistory, 3000); // Poll every 3 seconds for new messages
+        }
+        return () => clearInterval(pollInterval);
+    }, [isChatModalOpen, selectedMember]);
+
+    const loadChatHistory = async () => {
+        if (!selectedMember) return;
+        try {
+            const messages = await getChatMessages(selectedMember.id, true);
+            setChatHistory(messages);
+        } catch (error) {
+            console.error('Failed to load chat history:', error);
+        }
+    };
+
+    const handleSendMessage = async (e) => {
+        if (e) e.preventDefault();
+        if (!chatMessage.trim() || !selectedMember) return;
+
+        const messageText = chatMessage;
+        setChatMessage('');
+
+        try {
+            await sendChatMessage({
+                receiverId: selectedMember.id,
+                message: messageText,
+                receiverType: 'MEMBER'
+            });
+            loadChatHistory();
+        } catch (error) {
+            console.error('Failed to send message:', error);
+            alert('Failed to send message');
+        }
+    };
 
     const loadMembers = async () => {
         setLoading(true);
@@ -104,7 +149,7 @@ const AssignedMembers = () => {
                     <input
                         type="text"
                         placeholder="Search by name, ID or plan..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500 transition-all outline-none"
                         value={searchTerm}
                         onChange={handleSearch}
                     />
@@ -130,7 +175,7 @@ const AssignedMembers = () => {
             {loading ? (
                 <div className="flex items-center justify-center py-20">
                     <div className="flex flex-col items-center gap-3">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <div className="w-10 h-10 border-4 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
                         <p className="text-gray-500 font-medium">Loading your members...</p>
                     </div>
                 </div>
@@ -153,7 +198,7 @@ const AssignedMembers = () => {
                                     <tr key={member.id} className="group hover:bg-slate-50/50 transition-colors">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center font-black text-sm uppercase">
+                                                <div className="w-10 h-10 rounded-xl bg-violet-600 !text-white flex items-center justify-center font-black text-sm uppercase">
                                                     {(member.name || '?').charAt(0)}
                                                 </div>
                                                 <div>
@@ -164,7 +209,7 @@ const AssignedMembers = () => {
                                         </td>
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-2">
-                                                <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                                                <div className="p-1.5 bg-violet-50 text-violet-600 rounded-lg">
                                                     <ClipboardList size={14} />
                                                 </div>
                                                 <div className="flex flex-col">
@@ -172,7 +217,7 @@ const AssignedMembers = () => {
                                                         {member.assignedProtocol !== 'None' ? member.assignedProtocol : (member.plan || 'No Active Plan')}
                                                     </span>
                                                     {member.assignedProtocol !== 'None' && (
-                                                        <span className="text-[10px] text-indigo-500 font-bold uppercase">{member.plan} Plan</span>
+                                                        <span className="text-[10px] text-violet-500 font-bold uppercase">{member.plan} Plan</span>
                                                     )}
                                                 </div>
                                             </div>
@@ -196,13 +241,13 @@ const AssignedMembers = () => {
                                                         setSelectedMember(member);
                                                         setIsAssignOpen(true);
                                                     }}
-                                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-md shadow-indigo-100"
+                                                    className="px-4 py-2 bg-violet-600 !text-white rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-violet-700 transition-all shadow-md shadow-violet-100"
                                                 >
                                                     Assign Plan
                                                 </button>
                                                 <ActionDropdown
                                                     trigger={
-                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-indigo-600 transition-all border border-transparent hover:border-slate-100">
+                                                        <button className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-white hover:text-violet-600 transition-all border border-transparent hover:border-slate-100">
                                                             <MoreVertical size={18} />
                                                         </button>
                                                     }
@@ -225,12 +270,12 @@ const AssignedMembers = () => {
                     {/* Mobile/Tablet Card View */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:hidden gap-6">
                         {members.map((member) => (
-                            <div key={member.id} className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-blue-100 transition-all duration-300 flex flex-col relative">
+                            <div key={member.id} className="group bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl hover:border-violet-100 transition-all duration-300 flex flex-col relative">
                                 <div className="p-6 flex-1 hover:bg-slate-50/50 transition-colors duration-300">
                                     <div className="flex justify-between items-start mb-6">
                                         <div className="flex items-center gap-4">
                                             <div className="relative group/avatar">
-                                                <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-indigo-100 group-hover/avatar:scale-110 group-hover/avatar:rotate-3 transition-all duration-500 overflow-hidden">
+                                                <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl shadow-xl shadow-violet-100 group-hover/avatar:scale-110 group-hover/avatar:rotate-3 transition-all duration-500 overflow-hidden">
                                                     {(member.name || '?').charAt(0)}
                                                     <div className="absolute inset-0 bg-white/20 opacity-0 group-hover/avatar:opacity-100 transition-opacity"></div>
                                                 </div>
@@ -241,7 +286,7 @@ const AssignedMembers = () => {
                                                 )}
                                             </div>
                                             <div>
-                                                <h3 className="font-black text-slate-800 text-lg group-hover:text-indigo-600 transition-colors uppercase tracking-tight truncate max-w-[140px]">{member.name}</h3>
+                                                <h3 className="font-black text-slate-800 text-lg group-hover:text-violet-600 transition-colors uppercase tracking-tight truncate max-w-[140px]">{member.name}</h3>
                                                 <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border mt-2 ${getStatusStyles(member.status)}`}>
                                                     <div className={`w-1.5 h-1.5 rounded-full ${member.status?.toLowerCase() === 'active' ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
                                                     {member.status}
@@ -250,7 +295,7 @@ const AssignedMembers = () => {
                                         </div>
                                         <ActionDropdown
                                             trigger={
-                                                <button className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-white hover:text-indigo-600 hover:shadow-md transition-all border border-transparent hover:border-slate-100">
+                                                <button className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-400 hover:bg-white hover:text-violet-600 hover:shadow-md transition-all border border-transparent hover:border-slate-100">
                                                     <MoreVertical size={20} />
                                                 </button>
                                             }
@@ -272,7 +317,7 @@ const AssignedMembers = () => {
                                                 }}
                                                 className="w-full px-4 py-3 text-left text-xs font-black text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-colors uppercase tracking-widest"
                                             >
-                                                <Calendar size={16} className="text-indigo-500" /> Attendance Log
+                                                <Calendar size={16} className="text-violet-500" /> Attendance Log
                                             </button>
                                             <button
                                                 onClick={(e) => {
@@ -282,7 +327,7 @@ const AssignedMembers = () => {
                                                 }}
                                                 className="w-full px-4 py-3 text-left text-xs font-black text-slate-600 hover:bg-slate-50 flex items-center gap-3 transition-colors uppercase tracking-widest"
                                             >
-                                                <ArrowUpRight size={16} className="text-indigo-600" /> Assign Plan
+                                                <ArrowUpRight size={16} className="text-violet-600" /> Assign Plan
                                             </button>
                                             <div className="h-px bg-slate-100 my-1 mx-2" />
                                             <button
@@ -330,7 +375,7 @@ const AssignedMembers = () => {
                                                 setSelectedMember(member);
                                                 setIsChatModalOpen(true);
                                             }}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-white hover:border-indigo-100 hover:text-indigo-600 hover:shadow-xl hover:shadow-indigo-50 transition-all active:scale-95"
+                                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border-2 border-slate-100 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 hover:bg-white hover:border-violet-100 hover:text-violet-600 hover:shadow-xl hover:shadow-violet-50 transition-all active:scale-95"
                                         >
                                             <MessageSquare size={16} />
                                             Chat
@@ -340,7 +385,7 @@ const AssignedMembers = () => {
                                                 setSelectedMember(member);
                                                 setIsProfileModalOpen(true);
                                             }}
-                                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-200 transition-all active:scale-95"
+                                            className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-white border border-slate-200 text-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-violet-200 transition-all active:scale-95"
                                         >
                                             <Eye size={16} />
                                             Profile
@@ -351,7 +396,7 @@ const AssignedMembers = () => {
                                             setSelectedMember(member);
                                             setIsAssignOpen(true);
                                         }}
-                                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-xl shadow-indigo-200"
+                                        className="w-full flex items-center justify-center gap-2 py-3.5 bg-violet-600 !text-white rounded-2xl text-[10px] font-semibold uppercase tracking-widest hover:bg-violet-700 transition-all active:scale-95 shadow-xl shadow-violet-200"
                                     >
                                         <ArrowUpRight size={16} />
                                         Assign Plan
@@ -390,7 +435,7 @@ const AssignedMembers = () => {
                                 <button
                                     key={page}
                                     onClick={() => setCurrentPage(page)}
-                                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-gray-500 hover:bg-gray-50'}`}
+                                    className={`w-10 h-10 rounded-xl text-sm font-bold transition-all ${currentPage === page ? 'bg-violet-600 !text-white shadow-lg shadow-violet-200' : 'text-gray-500 hover:bg-gray-50'}`}
                                 >
                                     {page}
                                 </button>
@@ -415,41 +460,52 @@ const AssignedMembers = () => {
                 subtitle="Member Online"
                 maxWidth="max-w-md"
                 footer={
-                    <div className="flex gap-2 w-full">
+                    <form onSubmit={handleSendMessage} className="flex gap-2 w-full">
                         <input
                             type="text"
                             placeholder="Type a message..."
-                            className="flex-1 px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                            className="flex-1 px-4 py-2.5 bg-gray-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-violet-500 outline-none transition-all"
                             value={chatMessage}
                             onChange={(e) => setChatMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && setChatMessage('')}
                         />
                         <button
-                            onClick={() => setChatMessage('')}
-                            className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:bg-blue-700 active:scale-90 transition-all shadow-lg shadow-blue-200"
+                            type="submit"
+                            className="w-10 h-10 bg-violet-600 !text-white rounded-xl flex items-center justify-center hover:bg-violet-700 active:scale-90 transition-all shadow-lg shadow-violet-200"
                         >
                             <Send size={18} />
                         </button>
-                    </div>
+                    </form>
                 }
             >
                 {selectedMember && (
                     <div className="flex flex-col h-full">
-                        {/* Chat Body (Simulated) */}
+                        {/* Chat Body */}
                         <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar bg-gray-50/30">
-                            <div className="bg-white p-4 rounded-2xl rounded-tl-none border border-gray-100 shadow-sm max-w-[85%] self-start">
-                                <p className="text-sm text-gray-700">Hello! I noticed you missed your session yesterday. Is everything okay with your training?</p>
-                                <span className="text-[10px] font-bold text-gray-400 mt-2 block">10:30 AM</span>
-                            </div>
-
-                            <div className="bg-blue-600 p-4 rounded-2xl rounded-tr-none text-white shadow-lg shadow-blue-200 max-w-[85%] self-endml-auto">
-                                <p className="text-sm font-medium">Just checking in to keep you on track!</p>
-                                <span className="text-[10px] font-bold text-blue-100 mt-2 block">10:31 AM</span>
-                            </div>
+                            {chatHistory.length > 0 ? chatHistory.map((msg, idx) => {
+                                const isMe = msg.senderId === user?.id;
+                                return (
+                                    <div
+                                        key={msg.id || idx}
+                                        className={`p-4 rounded-2xl border shadow-sm max-w-[85%] ${isMe
+                                                ? 'bg-violet-600 border-violet-500 !text-white rounded-tr-none self-end ml-auto'
+                                                : 'bg-white border-gray-100 rounded-tl-none self-start'
+                                            }`}
+                                    >
+                                        <p className={`text-sm ${isMe ? 'text-white' : 'text-gray-700'}`}>{msg.message}</p>
+                                        <span className={`text-[10px] font-bold mt-2 block ${isMe ? 'text-violet-100' : 'text-gray-400'}`}>
+                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+                                );
+                            }) : (
+                                <div className="text-center py-10">
+                                    <p className="text-gray-400 text-sm">No messages yet. Send a message to start the conversation!</p>
+                                </div>
+                            )}
 
                             <div className="mt-auto flex justify-center pt-4">
                                 <div className="px-3 py-1 bg-gray-200/50 rounded-full text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                                    Today
+                                    Latest
                                 </div>
                             </div>
                         </div>

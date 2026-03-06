@@ -59,7 +59,11 @@ const MemberBookings = () => {
 
     const formatTime = (timeStr) => {
         if (!timeStr) return '';
-        // Handles "09:00:00" mapping
+        // If it already has AM/PM, return as is (maybe trim seconds if present)
+        if (timeStr.toLowerCase().includes('am') || timeStr.toLowerCase().includes('pm')) {
+            return timeStr;
+        }
+        // Handles "09:00:00" mapping -> "09:00"
         return timeStr.substring(0, 5);
     };
 

@@ -11,11 +11,13 @@ import {
     Info
 } from 'lucide-react';
 import { fetchAnnouncements } from '../../api/communication/communicationApi';
+import RightDrawer from '../../components/common/RightDrawer';
 import toast from 'react-hot-toast';
 
 const MemberAnnouncements = () => {
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedAnnouncement, setSelectedAnnouncement] = useState(null);
 
     const loadData = async () => {
         try {
@@ -111,7 +113,7 @@ const MemberAnnouncements = () => {
                                             {item.title}
                                         </h3>
 
-                                        <p className="text-slate-500 text-sm font-bold leading-relaxed mb-8 max-w-3xl">
+                                        <p className="text-slate-500 text-sm font-bold leading-relaxed mb-8 max-w-3xl line-clamp-3">
                                             {item.content}
                                         </p>
 
@@ -122,7 +124,10 @@ const MemberAnnouncements = () => {
                                                 </div>
                                                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Broadcasted to Members</span>
                                             </div>
-                                            <button className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:translate-x-1 transition-transform">
+                                            <button
+                                                onClick={() => setSelectedAnnouncement(item)}
+                                                className="flex items-center gap-2 text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:translate-x-1 transition-transform"
+                                            >
                                                 Read More <ChevronRight size={14} />
                                             </button>
                                         </div>
@@ -141,6 +146,59 @@ const MemberAnnouncements = () => {
                     </div>
                 )}
             </div>
+
+            {/* Announcement Detail Drawer */}
+            <RightDrawer
+                isOpen={!!selectedAnnouncement}
+                onClose={() => setSelectedAnnouncement(null)}
+                title="Announcement Detail"
+            >
+                {selectedAnnouncement && (
+                    <div className="p-8 space-y-8 animate-in fade-in slide-in-from-right-8 duration-300">
+                        <div className="flex items-center justify-between">
+                            <div className={`px-4 py-1.5 rounded-full ${getPriorityStyle(selectedAnnouncement.priority).badge} text-[10px] font-black uppercase tracking-widest`}>
+                                {selectedAnnouncement.priority || 'Update'}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <Calendar size={14} />
+                                {new Date(selectedAnnouncement.createdAt).toLocaleDateString()}
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 className="text-3xl font-black text-slate-900 tracking-tight leading-tight mb-4">
+                                {selectedAnnouncement.title}
+                            </h3>
+                            <div className="h-1.5 w-20 bg-indigo-600 rounded-full mb-8" />
+                        </div>
+
+                        <div className="bg-slate-50/50 p-8 rounded-[2.5rem] border border-slate-100">
+                            <p className="text-slate-600 text-lg font-medium leading-relaxed whitespace-pre-wrap">
+                                {selectedAnnouncement.content}
+                            </p>
+                        </div>
+
+                        <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
+                                <Sparkles size={20} />
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-indigo-900 uppercase tracking-widest mb-1">Stay Notified</p>
+                                <p className="text-xs text-indigo-700/70 font-bold leading-normal">
+                                    Turn on push notifications in your profile settings to get instant updates on gym events and schedule changes.
+                                </p>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setSelectedAnnouncement(null)}
+                            className="w-full h-14 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 mt-4"
+                        >
+                            Close Detail
+                        </button>
+                    </div>
+                )}
+            </RightDrawer>
 
             {/* Footer Tip */}
             <div className="flex items-center justify-center pt-10">

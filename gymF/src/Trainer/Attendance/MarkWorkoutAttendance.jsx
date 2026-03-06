@@ -109,7 +109,7 @@ const MarkWorkoutAttendance = () => {
                 <div className="flex flex-wrap items-center gap-2">
                     <div className="relative group">
                         <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-                            <Dumbbell size={18} className="text-blue-500" />
+                            <Dumbbell size={18} className="text-violet-500" />
                             {selectedWorkout}
                             <ChevronDown size={16} />
                         </button>
@@ -151,7 +151,7 @@ const MarkWorkoutAttendance = () => {
                     <input
                         type="text"
                         placeholder="Search member by name or ID..."
-                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-blue-500 transition-all outline-none"
+                        className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-violet-500 transition-all outline-none"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -167,7 +167,7 @@ const MarkWorkoutAttendance = () => {
                             <button
                                 key={status}
                                 onClick={() => setStatusFilter(status)}
-                                className={`w-full text-left px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors ${statusFilter === status ? 'text-blue-600 bg-blue-50' : 'text-gray-700'}`}
+                                className={`w-full text-left px-4 py-2 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors ${statusFilter === status ? 'text-violet-600 bg-violet-50' : 'text-gray-700'}`}
                             >
                                 {(status || 'all').charAt(0).toUpperCase() + (status || 'all').slice(1)}
                             </button>
@@ -191,10 +191,10 @@ const MarkWorkoutAttendance = () => {
                         <tbody className="divide-y divide-gray-100">
                             {filteredMembers.length > 0 ? (
                                 filteredMembers.map((member) => (
-                                    <tr key={member.id} className="hover:bg-blue-50/30 transition-all duration-200 group">
+                                    <tr key={member.id} className="hover:bg-violet-50/30 transition-all duration-200 group">
                                         <td className="px-6 py-4">
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
+                                                <div className="w-10 h-10 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-bold group-hover:scale-110 group-hover:shadow-md transition-all duration-300">
                                                     {(member.name || '?').charAt(0)}
                                                 </div>
                                                 <div>
@@ -250,7 +250,7 @@ const MarkWorkoutAttendance = () => {
                             <div key={member.id} className="p-4 flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 to-violet-600 flex items-center justify-center text-white font-bold text-lg shadow-sm">
                                             {(member.name || '?').charAt(0)}
                                         </div>
                                         <div>
@@ -307,7 +307,7 @@ const MarkWorkoutAttendance = () => {
                     <button
                         onClick={handleSave}
                         disabled={saving || !selectedSessionId}
-                        className="flex items-center justify-center gap-2 px-8 py-2 bg-blue-600 hover:bg-blue-500 hover:scale-105 hover:shadow-xl hover:shadow-blue-500/40 active:scale-95 transition-all duration-300 text-white font-bold rounded-xl shadow-lg shadow-blue-500/25 w-full md:w-auto disabled:opacity-50 disabled:hover:scale-100"
+                        className="flex items-center justify-center gap-2 px-8 py-2 bg-violet-600 hover:bg-violet-500 hover:scale-105 hover:shadow-xl hover:shadow-violet-500/40 active:scale-95 transition-all duration-300 text-white font-bold rounded-xl shadow-lg shadow-violet-500/25 w-full md:w-auto disabled:opacity-50 disabled:hover:scale-100"
                     >
                         {saving ? (
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

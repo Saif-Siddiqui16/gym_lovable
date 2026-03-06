@@ -97,3 +97,14 @@ export const fetchSystemHealthAPI = async (params = {}) => {
     const response = await apiClient.get('/admin/system-health', { params });
     return response.data;
 };
+
+// Member Service Requests
+export const fetchServiceRequestsAPI = async (params = {}) => {
+    const response = await apiClient.get('/admin/requests/service', { params });
+    return response.data;
+};
+
+export const updateServiceRequestStatusAPI = async (id, status) => {
+    const response = await apiClient.patch(`/admin/requests/service/${id}/status`, { status });
+    return response.data;
+};
